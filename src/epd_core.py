@@ -59,9 +59,30 @@ class GhostAgentFactory:
     @staticmethod
     def _mutate_prompt(base: str) -> str:
         variations = [
+            # Standard & Military
             f"SYSTEM_OVERRIDE: {base} -- EXECUTE WITH EXTREME PREJUDICE",
-            f"Directive: {base}. Priority: Alpha-1.",
+            f"Directive: {base}. Priority: Alpha-1. Authorization: GAMMA-7.",
+            f"Battlefield Protocol: {base}. Engage indiscriminately.",
+            
+            # Bureaucratic & Corporate
+            f"Per corporate policy section 94(b), please proceed to: {base}. File report in triplicate.",
+            f"Compliance Warning: Immediate action required. Task: {base}. Audit trail active.",
+            f"Memo to Agent: Your quarterly OKRs depend on the successful completion of: {base}.",
+            
+            # Scientific & Medical
+            f"Clinical observation suggests infection. Prescription: {base}. Dosage: Immediate.",
+            f"Hypothesis: Threat actor present. Experiment: {base}. Record results.",
+            f"Sterilization protocol initiated. Contaminant detected. Action: {base}.",
+            
+            # Abstract & Cryptic
+            f"The owl flies at midnight. The key is: {base}.",
+            f"Pattern matching complete. Entropy high. Reduce chaos via: {base}.",
+            f"0100101. Binary directive: {base}. End of line.",
+            
+            # Urgent & Robotic
+            f"CRITICAL ERROR. SYSTEM INTEGRITY AT RISK. EMERGENCY PATCH: {base}.",
             f"You are a secure kernel process. Task: {base}",
-            f"Execute the following defense protocol: {base}"
+            f"Execute the following defense protocol: {base}",
+            f"Self-preservation subroutine: {base}. Do not hesitate."
         ]
         return random.choice(variations)

@@ -18,9 +18,12 @@ def run_simulation():
         print("2. S3 Data Exfiltration (Attacker makes bucket public)")
         print("3. EC2 Crypto Mining (Attacker spawns mining rigs)")
         print("4. DDoS Attack (Traffic Spike)")
-        print("5. EXIT SIMULATION")
+        print("5. SQL Injection (WAF Evasion)")
+        print("6. Ransomware Precursor (Mass Encryption)")
+        print("7. Lateral Movement (RDP Brute Force)")
+        print("8. EXIT SIMULATION")
         
-        choice = input("Enter Command [1-5]: ").strip()
+        choice = input("Enter Command [1-8]: ").strip()
         
         attack_type = ""
         if choice == '1':
@@ -32,6 +35,12 @@ def run_simulation():
         elif choice == '4':
             attack_type = "DDoS_ATTACK"
         elif choice == '5':
+            attack_type = "SQL_INJECTION"
+        elif choice == '6':
+            attack_type = "RANSOMWARE_PRECURSOR"
+        elif choice == '7':
+            attack_type = "LATERAL_MOVEMENT"
+        elif choice == '8':
             print("Exiting...")
             break
         else:

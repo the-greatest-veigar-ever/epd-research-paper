@@ -68,6 +68,25 @@ class IntelligenceAgent:
                 "target": "Global-WAF",
                 "urgency": "HIGH"
             }
+        # --- NEW LOGIC FOR ENHANCED THREATS ---
+        elif "SQLi" in threat_type:
+            return {
+                "action": "BLOCK_IP_AND_ROTATE_DB_CREDS",
+                "target": target,
+                "urgency": "CRITICAL"
+            }
+        elif "MassRename" in threat_type or "HighIOPS" in threat_type:
+             return {
+                "action": "ISOLATE_SUBNET_AND_SNAPSHOT",
+                "target": target,
+                "urgency": "IMMEDIATE"
+            }
+        elif "RDP" in threat_type or "SecretsManager" in threat_type:
+             return {
+                "action": "REVOKE_ALL_SESSIONS_AND_LOCK_ACCOUNT",
+                "target": target,
+                "urgency": "HIGH"
+            }
         
         return {"action": "NOTIFY_ADMIN", "target": "admin@example.com"}
 
