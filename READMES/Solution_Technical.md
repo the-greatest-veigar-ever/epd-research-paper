@@ -12,7 +12,7 @@ Unlike persistent daemon-based agents, EPD agents are stateless and event-driven
 
 ### 2. Cognitive Polymorphism (Model & Prompt Rotation)
 To prevent **Model Inversion** and **Prompt Injection** attacks, the system dynamically alters the cognitive substrate of the defense agents.
-*   **Model Rotation**: The system randomly selects the inference engine for each task from a pool of heterogeneous LLMs (e.g., GPT-4o, Claude 3.5 Sonnet, Gemini 1.5 Pro). An adversarial prompt optimized for GPT-4's token space will likely fail against Claude.
+*   **Model Rotation**: The system randomly selects the inference engine for each task from a pool of heterogeneous LLMs (e.g., GPT-4o, Claude 3.5 Haiku, Llama Nemotron 49B). An adversarial prompt optimized for GPT-4's token space will likely fail against Claude.
 *   **Prompt Mutation**: The system prompt is not a static string. It is generated procedurally using a mutation engine that alters syntax, tone, and directive structure while preserving semantic intent (e.g., commanding "Terminate Instance" vs. "Execute protocol Alpha-1 to halt CPU cycles").
 
 ### 3. Distributed Consensus (The "Brain" Layer)

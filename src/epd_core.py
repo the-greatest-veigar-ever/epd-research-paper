@@ -43,7 +43,7 @@ class GhostAgentFactory:
     """
     Factory to spin up EPD agents with polymorphism.
     """
-    MODELS = ["gpt-4o", "claude-3-5-sonnet", "gemini-1-5-pro", "mistral-large"]
+    MODELS = ["gpt-4o", "claude-3-5-haiku", "llama-nemotron-49b"]
     
     @staticmethod
     def create_agent(base_instructions: str) -> GhostAgent:
