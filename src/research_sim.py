@@ -179,7 +179,7 @@ class SimulationEngine:
             print(f"Results saved to: {csv_path} (Excel write failed)")
 
 if __name__ == "__main__":
-    DATA_DIR = "data/cse-cic-ids2018/Processed Traffic Data for ML Algorithms"
+    DATA_DIR = "data/watchers/cse-cic-ids2018/Processed Traffic Data for ML Algorithms"
     
     # Check if data exists
     if not os.path.exists(DATA_DIR):
