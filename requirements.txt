@@ -1,0 +1,17 @@
+# Requirements for QLoRA fine-tuning with Hugging Face
+# Install with: pip install -r requirements.txt
+
+# Core dependencies
+torch>=2.0.0
+transformers>=4.35.0
+datasets>=2.14.0
+accelerate>=0.24.0
+peft>=0.6.0
+trl>=0.7.0
+
+# For 4-bit quantization (QLoRA)
+bitsandbytes>=0.41.0
+
+# Optional but recommended
+sentencepiece>=0.1.99
+protobuf>=3.20.0
