@@ -1,0 +1,667 @@
+{
+  "total": 110,
+  "correct": 107,
+  "accuracy": 97.27272727272728,
+  "details": [
+    {
+      "question": "Which of the following is a common indicator of an SQL injection attack?",
+      "ground_truth": "D",
+      "model_answer": "D",
+      "correct": true
+    },
+    {
+      "question": "What is 'plaintext' in cryptographic terms?",
+      "ground_truth": "A",
+      "model_answer": "A",
+      "correct": true
+    },
+    {
+      "question": "What is the significance of encryption in protecting sensitive data?",
+      "ground_truth": "D",
+      "model_answer": "D",
+      "correct": true
+    },
+    {
+      "question": "What is a key security concern with 'Insecure Design'?",
+      "ground_truth": "B",
+      "model_answer": "B",
+      "correct": true
+    },
+    {
+      "question": "What is the primary purpose of authentication in security design?",
+      "ground_truth": "C",
+      "model_answer": "C",
+      "correct": true
+    },
+    {
+      "question": "Why are processes important in incident response planning?",
+      "ground_truth": "C",
+      "model_answer": "C",
+      "correct": true
+    },
+    {
+      "question": "To secure data transmission from mobile devices, which of the following should be implemented?",
+      "ground_truth": "D",
+      "model_answer": "D",
+      "correct": true
+    },
+    {
+      "question": "How do physical controls contribute to an organization's security?",
+      "ground_truth": "B",
+      "model_answer": "B",
+      "correct": true
+    },
+    {
+      "question": "What is a common indicator of a Man-in-the-Middle (MitM) attack?",
+      "ground_truth": "D",
+      "model_answer": "D",
+      "correct": true
+    },
+    {
+      "question": "When implementing a secure mobile solution for a corporate environment, what is an essential security measure?",
+      "ground_truth": "B",
+      "model_answer": "B",
+      "correct": true
+    },
+    {
+      "question": "Which indicator would likely suggest an intrusion attempt on a network application?",
+      "ground_truth": "D",
+      "model_answer": "D",
+      "correct": true
+    },
+    {
+      "question": "What is the primary purpose of having a well-defined incident response policy in an organization?",
+      "ground_truth": "D",
+      "model_answer": "D",
+      "correct": true
+    },
+    {
+      "question": "Which of the following is the most effective strategy for securing API keys used in cloud environments?",
+      "ground_truth": "B",
+      "model_answer": "B",
+      "correct": true
+    },
+    {
+      "question": "How is a 'chain of trust' established in PKI?",
+      "ground_truth": "B",
+      "model_answer": "B",
+      "correct": true
+    },
+    {
+      "question": "Which of the following is a primary focus of Business Continuity Planning (BCP) during an incident response?",
+      "ground_truth": "D",
+      "model_answer": "D",
+      "correct": true
+    },
+    {
+      "question": "Which of the following best describes the technique of 'tailgating' in social engineering?",
+      "ground_truth": "D",
+      "model_answer": "D",
+      "correct": true
+    },
+    {
+      "question": "In the initial phase of a cybersecurity incident investigation, which of the following data sources is most crucial for identifying the scope and impact of the incident?",
+      "ground_truth": "B",
+      "model_answer": "B",
+      "correct": true
+    },
+    {
+      "question": "What role does user training play in effective identity and account management?",
+      "ground_truth": "B",
+      "model_answer": "B",
+      "correct": true
+    },
+    {
+      "question": "Which of the following is a major concern with 'Cryptographic Failures'?",
+      "ground_truth": "B",
+      "model_answer": "B",
+      "correct": true
+    },
+    {
+      "question": "What is the primary purpose of tokenization in access control?",
+      "ground_truth": "A",
+      "model_answer": "A",
+      "correct": true
+    },
+    {
+      "question": "What is the primary purpose of implementing redundancy in network design?",
+      "ground_truth": "B",
+      "model_answer": "B",
+      "correct": true
+    },
+    {
+      "question": "For compliance with GDPR, which of the following tools is crucial for protecting data and ensuring privacy?",
+      "ground_truth": "D",
+      "model_answer": "D",
+      "correct": true
+    },
+    {
+      "question": "When configuring a wireless network in an office environment, which encryption method is recommended for the highest level of security?",
+      "ground_truth": "A",
+      "model_answer": "A",
+      "correct": true
+    },
+    {
+      "question": "What is a Certificate Signing Request (CSR) used for in PKI?",
+      "ground_truth": "D",
+      "model_answer": "D",
+      "correct": true
+    },
+    {
+      "question": "What can be a challenge in detecting network attacks using security solutions?",
+      "ground_truth": "C",
+      "model_answer": "C",
+      "correct": true
+    },
+    {
+      "question": "During penetration testing, what does active reconnaissance usually involve?",
+      "ground_truth": "C",
+      "model_answer": "C",
+      "correct": true
+    },
+    {
+      "question": "What is the primary purpose of data classification in terms of privacy and sensitive data?",
+      "ground_truth": "B",
+      "model_answer": "B",
+      "correct": true
+    },
+    {
+      "question": "What network activity could indicate a potential Man-in-the-Middle (MitM) attack?",
+      "ground_truth": "C",
+      "model_answer": "C",
+      "correct": true
+    },
+    {
+      "question": "Why is establishing a baseline of attack volume important in a SOC?",
+      "ground_truth": "B",
+      "model_answer": "B",
+      "correct": true
+    },
+    {
+      "question": "In the context of mobile device management (MDM), what is a primary goal?",
+      "ground_truth": "A",
+      "model_answer": "A",
+      "correct": true
+    },
+    {
+      "question": "What is the first step in vulnerability management during a security assessment?",
+      "ground_truth": "B",
+      "model_answer": "B",
+      "correct": true
+    },
+    {
+      "question": "For a small business implementing a wireless network, what is a critical security measure to prevent unauthorized access?",
+      "ground_truth": "C",
+      "model_answer": "C",
+      "correct": true
+    },
+    {
+      "question": "What is the primary goal of risk management in cybersecurity?",
+      "ground_truth": "C",
+      "model_answer": "C",
+      "correct": true
+    },
+    {
+      "question": "To secure a corporate network from internal threats, what is a key strategy that should be implemented?",
+      "ground_truth": "B",
+      "model_answer": "B",
+      "correct": true
+    },
+    {
+      "question": "What is a key security implication for embedded systems?",
+      "ground_truth": "D",
+      "model_answer": "D",
+      "correct": true
+    },
+    {
+      "question": "Why is a multi-layered security approach considered beneficial in cybersecurity resilience?",
+      "ground_truth": "C",
+      "model_answer": "C",
+      "correct": true
+    },
+    {
+      "question": "What might be a likely indicator of a reconnaissance activity in a cyber attack?",
+      "ground_truth": "A",
+      "model_answer": "A",
+      "correct": true
+    },
+    {
+      "question": "For securing file transfers, which protocol offers the best security features?",
+      "ground_truth": "B",
+      "model_answer": "B",
+      "correct": true
+    },
+    {
+      "question": "Which of these would be a likely indicator of a machine infected with malware?",
+      "ground_truth": "A",
+      "model_answer": "A",
+      "correct": true
+    },
+    {
+      "question": "For a company that needs high availability and fault tolerance, which of the following network designs is most appropriate?",
+      "ground_truth": "B",
+      "model_answer": "B",
+      "correct": true
+    },
+    {
+      "question": "Why is cryptography essential in the field of security?",
+      "ground_truth": "A",
+      "model_answer": "A",
+      "correct": true
+    },
+    {
+      "question": "What tool would be most effective for real-time analysis and alerting of potential threats in network traffic?",
+      "ground_truth": "C",
+      "model_answer": "C",
+      "correct": true
+    },
+    {
+      "question": "In the context of secure network architecture, what is the main benefit of network segmentation?",
+      "ground_truth": "C",
+      "model_answer": "C",
+      "correct": true
+    },
+    {
+      "question": "Which step is critical in the initial stage of a digital forensic investigation?",
+      "ground_truth": "A",
+      "model_answer": "A",
+      "correct": true
+    },
+    {
+      "question": "In a scenario where sensitive data is transmitted over the internet, which protocol should be implemented to ensure secure communication?",
+      "ground_truth": "C",
+      "model_answer": "C",
+      "correct": true
+    },
+    {
+      "question": "Which control is most effective for ensuring that former employees cannot access company systems?",
+      "ground_truth": "A",
+      "model_answer": "A",
+      "correct": true
+    },
+    {
+      "question": "Which tool is most effective for identifying vulnerabilities in a network's devices?",
+      "ground_truth": "D",
+      "model_answer": "C",
+      "correct": false
+    },
+    {
+      "question": "In security assessments, how are scripts or third-party programs used for monitoring?",
+      "ground_truth": "B",
+      "model_answer": "B",
+      "correct": true
+    },
+    {
+      "question": "Who are hacktivists in the context of cyber security threats?",
+      "ground_truth": "B",
+      "model_answer": "B",
+      "correct": true
+    },
+    {
+      "question": "What is the initial step in responding to a security incident involving malware?",
+      "ground_truth": "D",
+      "model_answer": "D",
+      "correct": true
+    },
+    {
+      "question": "What is a typical indicator of web-based attacks exploiting the trust of web technologies?",
+      "ground_truth": "B",
+      "model_answer": "B",
+      "correct": true
+    },
+    {
+      "question": "What is a key aspect of remediation in incident response?",
+      "ground_truth": "D",
+      "model_answer": "D",
+      "correct": true
+    },
+    {
+      "question": "In a cloud computing environment, which of the following is a key security measure to protect data at rest?",
+      "ground_truth": "A",
+      "model_answer": "A",
+      "correct": true
+    },
+    {
+      "question": "In a network with sensitive data transfers, which of the following is the most effective way to ensure data confidentiality and integrity?",
+      "ground_truth": "D",
+      "model_answer": "D",
+      "correct": true
+    },
+    {
+      "question": "Why are security policies crucial in an organization's cybersecurity strategy?",
+      "ground_truth": "C",
+      "model_answer": "C",
+      "correct": true
+    },
+    {
+      "question": "What is the purpose of asymmetric encryption in PKI?",
+      "ground_truth": "C",
+      "model_answer": "C",
+      "correct": true
+    },
+    {
+      "question": "What is a key tactic used in impersonation/identity theft in social engineering?",
+      "ground_truth": "C",
+      "model_answer": "C",
+      "correct": true
+    },
+    {
+      "question": "To establish a secure, encrypted connection for remote management of a network device, which protocol should be used?",
+      "ground_truth": "A",
+      "model_answer": "A",
+      "correct": true
+    },
+    {
+      "question": "How do incident response procedures contribute to the effectiveness of security measures in an organization?",
+      "ground_truth": "B",
+      "model_answer": "B",
+      "correct": true
+    },
+    {
+      "question": "In digital forensics, what is the importance of the chain of custody?",
+      "ground_truth": "D",
+      "model_answer": "D",
+      "correct": true
+    },
+    {
+      "question": "What does the 'AAA' acronym stand for in the context of security design?",
+      "ground_truth": "A",
+      "model_answer": "A",
+      "correct": true
+    },
+    {
+      "question": "How is authorization typically implemented in security systems?",
+      "ground_truth": "C",
+      "model_answer": "C",
+      "correct": true
+    },
+    {
+      "question": "Which of the following is an indicator often identified by Intrusion Detection Systems (IDS) and Intrusion Prevention Systems (IPS)?",
+      "ground_truth": "A",
+      "model_answer": "A",
+      "correct": true
+    },
+    {
+      "question": "What might indicate privilege escalation as part of a network attack?",
+      "ground_truth": "C",
+      "model_answer": "C",
+      "correct": true
+    },
+    {
+      "question": "Which group of threat actors is often associated with governments and known for their extensive resources and constant threat presence?",
+      "ground_truth": "A",
+      "model_answer": "A",
+      "correct": true
+    },
+    {
+      "question": "What does the Docker build system rely on in terms of security during application deployment?",
+      "ground_truth": "C",
+      "model_answer": "C",
+      "correct": true
+    },
+    {
+      "question": "What could be an indicator of an attacker attempting defense evasion?",
+      "ground_truth": "D",
+      "model_answer": "C",
+      "correct": false
+    },
+    {
+      "question": "When setting up a secure email transmission, which of the following protocols is most appropriate?",
+      "ground_truth": "A",
+      "model_answer": "A",
+      "correct": true
+    },
+    {
+      "question": "Which regulation requires organizations to protect the personal data and privacy of EU citizens for transactions that occur within EU member states?",
+      "ground_truth": "A",
+      "model_answer": "A",
+      "correct": true
+    },
+    {
+      "question": "What is the primary purpose of technical controls in a computer security environment?",
+      "ground_truth": "A",
+      "model_answer": "A",
+      "correct": true
+    },
+    {
+      "question": "What is the primary objective of phishing in social engineering attacks?",
+      "ground_truth": "C",
+      "model_answer": "C",
+      "correct": true
+    },
+    {
+      "question": "What is a key characteristic of virtualization in Information Technology?",
+      "ground_truth": "B",
+      "model_answer": "B",
+      "correct": true
+    },
+    {
+      "question": "What is an important tool used in the evaluation phase of a security assessment?",
+      "ground_truth": "A",
+      "model_answer": "A",
+      "correct": true
+    },
+    {
+      "question": "Which protocol should be used for securely browsing the web and preventing eavesdropping?",
+      "ground_truth": "B",
+      "model_answer": "B",
+      "correct": true
+    },
+    {
+      "question": "What is a defining feature of a private cloud?",
+      "ground_truth": "C",
+      "model_answer": "A",
+      "correct": false
+    },
+    {
+      "question": "What is the main security risk associated with 'Injection' vulnerabilities?",
+      "ground_truth": "C",
+      "model_answer": "C",
+      "correct": true
+    },
+    {
+      "question": "What is a key security feature to implement in a BYOD (Bring Your Own Device) policy?",
+      "ground_truth": "C",
+      "model_answer": "C",
+      "correct": true
+    },
+    {
+      "question": "What is the focus of the execution phase in penetration testing?",
+      "ground_truth": "D",
+      "model_answer": "D",
+      "correct": true
+    },
+    {
+      "question": "What is the primary role of a digital certificate in a PKI?",
+      "ground_truth": "A",
+      "model_answer": "A",
+      "correct": true
+    },
+    {
+      "question": "When designing a network for a company with high availability requirements, which of the following concepts would be most critical?",
+      "ground_truth": "D",
+      "model_answer": "D",
+      "correct": true
+    },
+    {
+      "question": "When conducting a Business Impact Analysis (BIA) as part of Business Continuity Planning, which tool is most useful for gathering and analyzing data?",
+      "ground_truth": "D",
+      "model_answer": "D",
+      "correct": true
+    },
+    {
+      "question": "What is the primary goal of digital forensics?",
+      "ground_truth": "D",
+      "model_answer": "D",
+      "correct": true
+    },
+    {
+      "question": "What is the primary role of a Security Operations Center (SOC) in an enterprise environment?",
+      "ground_truth": "B",
+      "model_answer": "B",
+      "correct": true
+    },
+    {
+      "question": "In the context of incident response, what is the main purpose of implementing redundant services?",
+      "ground_truth": "C",
+      "model_answer": "C",
+      "correct": true
+    },
+    {
+      "question": "Which of the following is an indicator of a Denial of Service (DoS) or Distributed Denial of Service (DDoS) attack?",
+      "ground_truth": "B",
+      "model_answer": "B",
+      "correct": true
+    },
+    {
+      "question": "Which of the following is a primary method used in multi-factor authentication (MFA)?",
+      "ground_truth": "A",
+      "model_answer": "A",
+      "correct": true
+    },
+    {
+      "question": "What is a common characteristic of 'script kiddies' as threat actors?",
+      "ground_truth": "A",
+      "model_answer": "A",
+      "correct": true
+    },
+    {
+      "question": "What is a typical technique used during the reconnaissance phase of penetration testing?",
+      "ground_truth": "B",
+      "model_answer": "B",
+      "correct": true
+    },
+    {
+      "question": "What is a primary function of a cryptographic key?",
+      "ground_truth": "B",
+      "model_answer": "B",
+      "correct": true
+    },
+    {
+      "question": "How do security policies contribute to an organization's overall risk management strategy?",
+      "ground_truth": "B",
+      "model_answer": "B",
+      "correct": true
+    },
+    {
+      "question": "What is the primary purpose of implementing multi-factor authentication (MFA) in identity management?",
+      "ground_truth": "D",
+      "model_answer": "D",
+      "correct": true
+    },
+    {
+      "question": "What is the role of risk mitigation in cybersecurity?",
+      "ground_truth": "D",
+      "model_answer": "D",
+      "correct": true
+    },
+    {
+      "question": "How do privacy laws like GDPR and HIPAA impact an organization's handling of sensitive data?",
+      "ground_truth": "C",
+      "model_answer": "C",
+      "correct": true
+    },
+    {
+      "question": "For ensuring secure access to cloud resources, which technology is most appropriate?",
+      "ground_truth": "B",
+      "model_answer": "B",
+      "correct": true
+    },
+    {
+      "question": "To control which devices can connect to a wireless network, an administrator should configure:",
+      "ground_truth": "C",
+      "model_answer": "C",
+      "correct": true
+    },
+    {
+      "question": "What is the benefit of implementing a hybrid cloud model from a security perspective?",
+      "ground_truth": "C",
+      "model_answer": "C",
+      "correct": true
+    },
+    {
+      "question": "Which of the following is a common vector used by threat actors to gain unauthorized access?",
+      "ground_truth": "B",
+      "model_answer": "B",
+      "correct": true
+    },
+    {
+      "question": "What role do security policies play in incident response within an organization?",
+      "ground_truth": "D",
+      "model_answer": "D",
+      "correct": true
+    },
+    {
+      "question": "Which technology is crucial for protecting corporate data on mobile devices if they are lost or stolen?",
+      "ground_truth": "D",
+      "model_answer": "D",
+      "correct": true
+    },
+    {
+      "question": "What is the primary purpose of using a Cloud Access Security Broker (CASB) in a cloud environment?",
+      "ground_truth": "C",
+      "model_answer": "C",
+      "correct": true
+    },
+    {
+      "question": "Why is 'Security Misconfiguration' a significant vulnerability?",
+      "ground_truth": "D",
+      "model_answer": "D",
+      "correct": true
+    },
+    {
+      "question": "What is a key aspect to consider for securing an application in the cloud?",
+      "ground_truth": "B",
+      "model_answer": "B",
+      "correct": true
+    },
+    {
+      "question": "When implementing identity and account management controls, which of the following is the most effective method to ensure user accountability?",
+      "ground_truth": "D",
+      "model_answer": "D",
+      "correct": true
+    },
+    {
+      "question": "What type of digital forensic analysis focuses on recovering deleted, encrypted, or damaged file information?",
+      "ground_truth": "B",
+      "model_answer": "B",
+      "correct": true
+    },
+    {
+      "question": "Why are specialized systems considered challenging in terms of security?",
+      "ground_truth": "C",
+      "model_answer": "C",
+      "correct": true
+    },
+    {
+      "question": "What is the primary purpose of the NIST Framework in organizational security?",
+      "ground_truth": "B",
+      "model_answer": "B",
+      "correct": true
+    },
+    {
+      "question": "Which of the following is a critical aspect of secure application deployment?",
+      "ground_truth": "C",
+      "model_answer": "C",
+      "correct": true
+    },
+    {
+      "question": "Which data source is most effective for identifying unauthorized changes to system files and configurations during an incident?",
+      "ground_truth": "D",
+      "model_answer": "D",
+      "correct": true
+    },
+    {
+      "question": "When designing a network for a large organization with different departments, what is a key consideration for enhancing security?",
+      "ground_truth": "D",
+      "model_answer": "D",
+      "correct": true
+    },
+    {
+      "question": "For a company looking to maintain operations during a major incident, such as a data center failure, which of the following would be the most appropriate solution?",
+      "ground_truth": "B",
+      "model_answer": "B",
+      "correct": true
+    }
+  ]
+}
