@@ -8,7 +8,7 @@ from tqdm import tqdm
 # =========================
 OLLAMA_API_URL = "http://localhost:11434/api/generate"
 MODEL_NAME = "llama3.2:3b"
-TEST_DATA_PATH = "/Users/thachngo/Documents/EDP Research/epd-research-paper/data/SecQA/secqa_v1_test.jsonl"
+TEST_DATA_PATH = "./data/brain/data/SecQA/secqa_v1_test.jsonl"
 OUTPUT_FILENAME = "eval_results_ollama.json"
 
 def get_ollama_response(prompt):

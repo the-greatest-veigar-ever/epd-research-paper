@@ -14,7 +14,7 @@ from trl import SFTTrainer, SFTConfig
 
 # Using a free, smaller model suitable for fine-tuning
 MODEL_NAME = "microsoft/phi-2"  # Free 2.7B parameter model
-DATA_PATH = "../data/SecQA/secqa_v1_dev.jsonl"
+DATA_PATH = "../../data/brain/data/SecQA/secqa_v1_dev.jsonl"
 OUTPUT_DIR = "./output/qlora-secqa"
 
 MAX_SEQ_LENGTH = 2048
