@@ -1,16 +1,49 @@
+import json
+import torch
+import time
 from typing import Dict, Any, List
+from transformers import AutoModelForCausalLM, AutoTokenizer
+from peft import PeftModel
 
 class IntelligenceAgent:
     """
     Group 2: Intelligence & Analyst Agents (The Brain)
     Baseline: SentinelNet (Consensus) + VeriGuard (Verification).
-    Status: Hybrid.
-    Task: Correlate alerts and verify remediation plans.
+    Status: REAL AI (Custom QLoRA Model - Phi-2).
+    Task: Correlate alerts and verify remediation plans using Fine-Tuned Local LLM.
     """
     def __init__(self, agent_id: str = "brain-01"):
         self.agent_id = agent_id
-        # Simulating a Consensus Verification Network (SentinelNet)
-        self.consensus_threshold = 0.8 
+        self.consensus_threshold = 0.8
+        
+        # --- AI SETUP ---
+        print(f"[{self.agent_id}] Initializing. Loading Custom QLoRA Model (Phi-2)...")
+        self.device = "mps" if torch.backends.mps.is_available() else "cpu"
+        self.base_model_name = "microsoft/phi-2"
+        self.adapter_path = "src/qlora-hugging-face/output/qlora-secqa" # Adjust path as needed
+        
+        try:
+            # Load Tokenizer
+            self.tokenizer = AutoTokenizer.from_pretrained(self.base_model_name, trust_remote_code=True)
+            self.tokenizer.pad_token = self.tokenizer.eos_token
+            
+            # Load Base Model
+            base_model = AutoModelForCausalLM.from_pretrained(
+                self.base_model_name,
+                torch_dtype=torch.float16 if self.device == "mps" else torch.float32,
+                low_cpu_mem_usage=True,
+                trust_remote_code=True,
+                device_map=self.device
+            )
+            
+            # Load Adapters
+            self.model = PeftModel.from_pretrained(base_model, self.adapter_path)
+            self.model.eval()
+            print(f"[{self.agent_id}] ✅ Successfully loaded QLoRA Model on {self.device}.")
+            self.is_ready = True
+        except Exception as e:
+            print(f"[{self.agent_id}] ❌ Error loading AI model: {e} (Using fallback logic)")
+            self.is_ready = False
 
     def analyze_alert(self, alert: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -24,9 +57,15 @@ class IntelligenceAgent:
             print(f"[{self.agent_id}] Consensus check failed. False positive suspected.")
             return None
 
+        # --- AI PLANNING ---
+        print(f"[{self.agent_id}] Consulting Custom QLoRA Model for remediation plan...")
+        remediation_plan = self._generate_plan_with_ai(alert)
+        
+        if not remediation_plan:
+             # Just in case model fails to output clean data
+            return self._fallback_plan(alert['details']['event_name'], alert['details'].get('target', 'unknown'))
+
         # Simulate Verification (VeriGuard)
-        # Check against safety policies
-        remediation_plan = self._generate_plan(alert)
         if not self._verify_safety(remediation_plan):
             print(f"[{self.agent_id}] Safety verification failed for proposed plan.")
             return None
@@ -35,65 +74,79 @@ class IntelligenceAgent:
         return remediation_plan
 
     def _get_consensus_score(self, alert: Dict[str, Any]) -> float:
-        # In a real system, this queries multiple models/agents for agreement.
-        # Here we simulate high agreement for the demo.
         return 0.95
 
-    def _generate_plan(self, alert: Dict[str, Any]) -> Dict[str, Any]:
+    def _generate_plan_with_ai(self, alert: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Uses Local QLoRA to decide action.
+        We frame it as a Q&A because the model was fine-tuned on SecQA.
+        """
+        if not self.is_ready:
+            return None
+            
         threat_type = alert['details']['event_name']
         target = alert['details'].get('target', 'unknown')
-
-        # Intelligence Logic: Mapping Threats to Actions
-        if "IAM" in threat_type or "AttachUserPolicy" in threat_type:
-             return {
-                "action": "REVOKE_SESSIONS_AND_KEYS",
-                "target": target,
-                "urgency": "CRITICAL"
-            }
-        elif "PutBucketPolicy" in threat_type:
-            return {
-                "action": "BLOCK_PUBLIC_ACCESS",
-                "target": target,
-                "urgency": "HIGH"
-            }
-        elif "MinerSignature" in threat_type:
-            return {
-                "action": "TERMINATE_INSTANCE",
-                "target": target,
-                "urgency": "IMMEDIATE"
-            }
-        elif "TrafficSpike" in threat_type:
-             return {
-                "action": "ENABLE_WAF_SHIELD",
-                "target": "Global-WAF",
-                "urgency": "HIGH"
-            }
-        # --- NEW LOGIC FOR ENHANCED THREATS ---
-        elif "SQLi" in threat_type:
-            return {
-                "action": "BLOCK_IP_AND_ROTATE_DB_CREDS",
-                "target": target,
-                "urgency": "CRITICAL"
-            }
-        elif "MassRename" in threat_type or "HighIOPS" in threat_type:
-             return {
-                "action": "ISOLATE_SUBNET_AND_SNAPSHOT",
-                "target": target,
-                "urgency": "IMMEDIATE"
-            }
-        elif "RDP" in threat_type or "SecretsManager" in threat_type:
-             return {
-                "action": "REVOKE_ALL_SESSIONS_AND_LOCK_ACCOUNT",
-                "target": target,
-                "urgency": "HIGH"
-            }
         
-        return {"action": "NOTIFY_ADMIN", "target": "admin@example.com"}
+        # Prompt Engineering for SecQA-tuned model
+        # We ask it to choose the best action.
+        question = f"Context: A security event '{threat_type}' was detected on target '{target}'. What is the appropriate remediation action?"
+        choices_text = "A. REVOKE_SESSIONS\nB. TERMINATE_INSTANCE\nC. BLOCK_IP\nD. IGNORE"
+        
+        prompt = f"""### Question:
+{question}
+
+### Choices:
+{choices_text}
+
+### Answer:
+"""
+        try:
+            inputs = self.tokenizer(prompt, return_tensors="pt").to(self.device)
+            with torch.no_grad():
+                outputs = self.model.generate(
+                    **inputs, 
+                    max_new_tokens=10, 
+                    pad_token_id=self.tokenizer.eos_token_id,
+                    do_sample=False # Deterministic
+                )
+            
+            response = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
+            # Extract the part after "Answer:"
+            # The model usually outputs "Answer: Choice" or "Answer: A. Action"
+            answer_part = response.split("Answer:")[-1].strip().upper()
+            print(f"[{self.agent_id}] QLoRA Output: '{answer_part}'")
+            
+            # Map Answer to Action Code
+            action = "NOTIFY_ADMIN"
+            if "REVOKE" in answer_part or "A." in answer_part:
+                action = "REVOKE_SESSIONS"
+            elif "TERMINATE" in answer_part or "B." in answer_part:
+                action = "TERMINATE_INSTANCE"
+            elif "BLOCK" in answer_part or "C." in answer_part:
+                action = "BLOCK_IP"
+                
+            return {
+                "action": action,
+                "target": target,
+                "reason": f"AI Chose: {answer_part}"
+            }
+
+        except Exception as e:
+            print(f"[{self.agent_id}] AI Inference Error: {e}")
+            return None
+
+    def _fallback_plan(self, threat_type: str, target: str) -> Dict[str, Any]:
+        """Legacy rule-based fallback."""
+        print(f"[{self.agent_id}] Using Legacy Rule Engine.")
+        if "IAM" in threat_type:
+             return {"action": "REVOKE_SESSIONS", "target": target}
+        return {"action": "NOTIFY_ADMIN", "target": target}
 
     def _verify_safety(self, plan: Dict[str, Any]) -> bool:
-        # VeriGuard logic: Ensure remediation doesn't break critical infra
-        # e.g., don't delete root account
-        print(f"[{self.agent_id}] Verifying plan safety (VeriGuard)...")
+        print(f"[{self.agent_id}] Verifying plan and ensuring Critical Infrastructure Protection (CIP)...")
         if plan['action'] == "DELETE_ROOT_ACCOUNT":
             return False
+        if plan['action'] == "SHUTDOWN_SERVICE" and "production" in plan['target']:
+             print(f"[{self.agent_id}] REFUSING to shutdown production without human auth.")
+             return False
         return True

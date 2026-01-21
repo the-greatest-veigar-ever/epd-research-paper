@@ -14,13 +14,13 @@ from trl import SFTTrainer, SFTConfig
 
 # Using a free, smaller model suitable for fine-tuning
 MODEL_NAME = "microsoft/phi-2"  # Free 2.7B parameter model
-DATA_PATH = "../../data/brain/data/SecQA/secqa_v1_dev.jsonl"
-OUTPUT_DIR = "./output/qlora-secqa"
+DATA_PATH = "data/brain/data/SecQA/combined_secqa.jsonl"
+OUTPUT_DIR = "src/qlora-hugging-face/output/qlora-secqa"
 
 MAX_SEQ_LENGTH = 2048
 BATCH_SIZE = 2
 GRAD_ACCUM = 8
-EPOCHS = 3
+EPOCHS = 1 # Reduced from 3 to 1 for faster demo training
 LR = 2e-4
 
 # =========================
