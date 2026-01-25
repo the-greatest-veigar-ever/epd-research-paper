@@ -1,6 +1,7 @@
 import time
 import random
 from typing import Dict, Any, List, Optional
+from src.watcher.ml_watcher.watcher_xgboost import XGBoostWatcher
 
 class DetectionAgent:
     """
@@ -13,23 +14,46 @@ class DetectionAgent:
     def __init__(self, agent_id: str = "watcher-01"):
         self.agent_id = agent_id
         self.status = "ACTIVE"
+        try:
+            self.watcher = XGBoostWatcher()
+        except Exception as e:
+            print(f"[{self.agent_id}] Warning: Could not initialize XGBoostWatcher: {e}")
+            self.watcher = None
         print(f"[{self.agent_id}] Initialized and monitoring streams.")
 
     def monitor_logs(self, mock_logs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """
-        Simulates scanning logs for threats.
-        In a real system, this would ingest GuardDuty/CloudTrail streams.
+        Simulates scanning logs for threats using XGBoost.
         """
         alerts = []
-        print(f"[{self.agent_id}] Scanning {len(mock_logs)} log entries...")
+        print(f"[{self.agent_id}] Scanning {len(mock_logs)} log entries with XGBoost...")
         
         for log in mock_logs:
-            if log.get("severity") == "HIGH":
-                print(f"[{self.agent_id}] !!! THREAT DETECTED: {log.get('event_name')} !!!")
+            # Prepare log for XGBoostWatcher if it's a simulated attack log
+            # The simulator uses a different format, so we map it or handle both
+            
+            is_malicious = False
+            risk_score = 0.0
+            
+            if self.watcher and "attack_name" in log:
+                # Use XGBoost for logs that fit the expected format
+                prediction, risk_score, inference_time = self.watcher.predict(log)
+                is_malicious = (prediction == 1)
+                if is_malicious:
+                     print(f"[{self.agent_id}][ML] Inference Time: {inference_time:.4f} ms")
+            else:
+                # Fallback to rule-based for internal mock logs
+                if log.get("severity") == "HIGH":
+                    is_malicious = True
+                    risk_score = 0.95 # Mocked high risk
+            
+            if is_malicious:
+                print(f"[{self.agent_id}] !!! THREAT DETECTED (Risk: {risk_score:.2f}): {log.get('event_name') or log.get('attack_name')} !!!")
                 alert = {
                     "source": self.agent_id,
                     "timestamp": time.time(),
-                    "log_id": log.get("id"),
+                    "log_id": log.get("id") or "ml-alert",
+                    "risk_score": float(risk_score),
                     "details": log
                 }
                 alerts.append(alert)

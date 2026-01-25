@@ -1,0 +1,9 @@
+Metadata-Version: 2.4
+Name: epd_research
+Version: 0.1.0
+Requires-Dist: pandas
+Requires-Dist: scikit-learn
+Requires-Dist: xgboost
+Requires-Dist: joblib
+Requires-Dist: numpy
+Dynamic: requires-dist
