@@ -7,3 +7,5 @@ env/
 data/
 old-data/
 output/._*
+eval_results_ollama.json
+Simulation_History.xlsx

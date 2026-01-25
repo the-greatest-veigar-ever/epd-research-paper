@@ -39,10 +39,10 @@ class IntelligenceAgent:
             # Load Adapters
             self.model = PeftModel.from_pretrained(base_model, self.adapter_path)
             self.model.eval()
-            print(f"[{self.agent_id}] ✅ Successfully loaded QLoRA Model on {self.device}.")
+            print(f"[{self.agent_id}] Successfully loaded QLoRA Model on {self.device}.")
             self.is_ready = True
         except Exception as e:
-            print(f"[{self.agent_id}] ❌ Error loading AI model: {e} (Using fallback logic)")
+            print(f"[{self.agent_id}] Error loading AI model: {e} (Using fallback logic)")
             self.is_ready = False
 
     def analyze_alert(self, alert: Dict[str, Any]) -> Dict[str, Any]:

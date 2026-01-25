@@ -25,9 +25,9 @@ class DetectionAgent:
             self.scaler = joblib.load("src/watchers/watcher_scaler.joblib")
             self.numeric_cols = joblib.load("src/watchers/watcher_features.joblib") # 78 features
             self.is_trained = True
-            print(f"[{self.agent_id}] ✅ Successfully loaded Isolation Forest trained on CSE-CIC-IDS2018.")
+            print(f"[{self.agent_id}] Successfully loaded Isolation Forest trained on CSE-CIC-IDS2018.")
         except Exception as e:
-            print(f"[{self.agent_id}] ❌ Error loading model: {e}")
+            print(f"[{self.agent_id}] Error loading model: {e}")
             self.is_trained = False
 
     def monitor_traffic_batch(self, df_batch: Any) -> List[Dict[str, Any]]:
@@ -61,7 +61,7 @@ class DetectionAgent:
             anomalies_indices = np.where(predictions == -1)[0]
             
             if len(anomalies_indices) > 0:
-                print(f"[{self.agent_id}] 🚨 BATCH SCAN: Found {len(anomalies_indices)} anomalies in {len(df_batch)} flows!")
+                print(f"[{self.agent_id}] BATCH SCAN: Found {len(anomalies_indices)} anomalies in {len(df_batch)} flows!")
                 
                 for idx in anomalies_indices:
                     # Construct Alert Object
@@ -88,7 +88,7 @@ class DetectionAgent:
                     else:
                         break
         except Exception as e:
-            print(f"[{self.agent_id}] ❌ Batch Error: {e}")
+            print(f"[{self.agent_id}] Batch Error: {e}")
             
         return alerts
 
@@ -113,7 +113,7 @@ class DetectionAgent:
             prediction = self.model.predict(features_scaled)[0]
             anomaly_score = self.model.decision_function(features_scaled)[0]
             if prediction == -1:
-                print(f"[{self.agent_id}] 🚨 REAL AI DETECTED ANOMALY! Event: {event_name} (Score: {anomaly_score:.2f})")
+                print(f"[{self.agent_id}] REAL AI DETECTED ANOMALY! Event: {event_name} (Score: {anomaly_score:.2f})")
                 alert = {
                     "source": self.agent_id,
                     "timestamp": time.time(),

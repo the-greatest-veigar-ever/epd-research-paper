@@ -46,7 +46,7 @@ class GhostAgent:
             
             if response.status_code == 200:
                 cmd = response.json().get("response", "").strip()
-                print(f"[Ghost-{self.session_id[:8]}] 🤖 AI GENERATED COMMAND: {cmd}")
+                print(f"[Ghost-{self.session_id[:8]}] AI GENERATED COMMAND: {cmd}")
                 print(f"[Ghost-{self.session_id[:8]}] SUCCESS: Action verified and completed.")
             else:
                  print(f"[Ghost-{self.session_id[:8]}] AI Error. Fallback execution.")

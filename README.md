@@ -6,7 +6,7 @@ This document provides a comprehensive overview of the EPD architecture, includi
 
 ---
 
-## 🏗️ Architecture Overview
+## Architecture Overview
 
 EPD consists of **three specialized AI squads** working in a hierarchical pipeline:
 
@@ -49,7 +49,7 @@ EPD consists of **three specialized AI squads** working in a hierarchical pipeli
 
 ---
 
-## 🔵 SQUAD A: The Watchers (Anomaly Detection)
+## SQUAD A: The Watchers (Anomaly Detection)
 
 ### Purpose
 Continuous monitoring of network traffic to detect intrusions and attacks using unsupervised machine learning.
@@ -80,7 +80,7 @@ Continuous monitoring of network traffic to detect intrusions and attacks using 
 - `Flow Byts/s` - Data rate
 - `Fwd IAT Mean` / `Bwd IAT Mean` - Inter-arrival times
 - `PSH/ACK/SYN Flag Counts` - TCP flags
-- And 70+ more...
+- `And 70+ more...`
 
 ### Training Process
 ```bash
@@ -110,7 +110,7 @@ score = model.decision_function(scaled_features)  # Lower = More anomalous
 
 ---
 
-## 🟡 SQUAD B: The Brain (Threat Analysis)
+## SQUAD B: The Brain (Threat Analysis)
 
 ### Purpose
 Analyze detected anomalies and decide on appropriate remediation actions using a fine-tuned Large Language Model.
@@ -183,7 +183,7 @@ response = model.generate(prompt)  # Returns: "A" or "B", etc.
 
 ---
 
-## 🔴 SQUAD C: Ghost Agents (Remediation Execution)
+## SQUAD C: Ghost Agents (Remediation Execution)
 
 ### Purpose
 Execute remediation actions autonomously using polymorphic, ephemeral AI agents that self-destruct after completion.
@@ -221,7 +221,7 @@ PROMPT_TEMPLATES = [
 [Ghost-ab12cd34] BORN. Model: llama3.2:3b
 [Ghost-ab12cd34] Instructions: The owl flies at midnight. The key is: Perform BLOCK_IP on 192.168.1.100.
 [Ghost-ab12cd34] EXECUTING: BLOCK_IP on 192.168.1.100...
-[Ghost-ab12cd34] 🤖 AI GENERATED COMMAND: aws ec2 revoke-security-group-ingress --group-id sg-xxx --ip-permissions IpProtocol=tcp,FromPort=0,ToPort=65535,IpRanges='[{CidrIp=192.168.1.100/32}]'
+[Ghost-ab12cd34] AI GENERATED COMMAND: aws ec2 revoke-security-group-ingress --group-id sg-xxx --ip-permissions IpProtocol=tcp,FromPort=0,ToPort=65535,IpRanges='[{CidrIp=192.168.1.100/32}]'
 [Ghost-ab12cd34] SUCCESS: Action verified and completed.
 [Ghost-ab12cd34] Self-destruct sequence initiated...
 [Ghost-ab12cd34] GONE (Memory wiped).
@@ -229,7 +229,7 @@ PROMPT_TEMPLATES = [
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
 ```
 epd/
@@ -254,7 +254,7 @@ epd/
 
 ---
 
-## 🚀 Running the System
+## Running the System
 
 ### Prerequisites
 ```bash
@@ -282,7 +282,7 @@ python3 src/autonomous_runner.py --test-mode
 
 ---
 
-## 📊 Training Summary
+## Training Summary
 
 | Squad | Model | Dataset | Training Samples | Training Time |
 |-------|-------|---------|------------------|---------------|
@@ -292,7 +292,7 @@ python3 src/autonomous_runner.py --test-mode
 
 ---
 
-## 🔒 Safety Features
+## Safety Features
 
 1. **Critical Infrastructure Protection (CIP)**: Brain refuses actions on production systems without human auth
 2. **Command Validation**: Ghost Agents cannot execute destructive commands (e.g., DELETE_ROOT_ACCOUNT)

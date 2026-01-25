@@ -67,7 +67,7 @@ class ReportGenerator:
             
             df_report = pd.DataFrame(flat_events)
             df_report.to_excel(xls_filename, index=False)
-            print(f"[REPORT] 📊 Detailed EXCEL report saved to: {xls_filename}")
+            print(f"[REPORT] Detailed EXCEL report saved to: {xls_filename}")
         else:
             print("[REPORT] No events to save to Excel.")
 
@@ -83,7 +83,7 @@ def run_autonomous_mode(test_mode=False):
     reporter = ReportGenerator()
     
     if not watcher.is_trained:
-        print("❌ Watcher model missing. Run training first.")
+        print("Watcher model missing. Run training first.")
         return
 
     # 2. Stream Data
