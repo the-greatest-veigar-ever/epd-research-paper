@@ -8,9 +8,6 @@ import os
 # =========================
 # CONFIG
 # =========================
-# =========================
-# CONFIG
-# =========================
 BASE_MODEL_NAME = "microsoft/phi-2"
 ADAPTER_PATH = "src/qlora-hugging-face/output/qlora-secqa"
 TEST_DATA_PATH = "data/brain/data/combined_datasets/all_training_data.jsonl"
