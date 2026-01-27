@@ -5,6 +5,7 @@ import os
 import datetime
 import uuid
 import argparse
+from tqdm import tqdm
 from epd_core import GhostAgent, GhostAgentFactory
 from monitor import DetectionAgent
 from intelligence import IntelligenceAgent
@@ -92,8 +93,11 @@ def run_autonomous_mode(test_mode=False):
     
     start_time = time.time()
     
+    # Calculate total expected batches for tqdm
+    total_batches = limit_rows // BATCH_SIZE
+    
     try:
-        for batch_df in chunk_iterator:
+        for batch_df in tqdm(chunk_iterator, total=total_batches, unit="batch", desc="EPD Sentinel Scan"):
             if reporter.stats["total_flows"] >= limit_rows:
                 break
                 
@@ -138,13 +142,6 @@ def run_autonomous_mode(test_mode=False):
                     )
             
             reporter.stats["total_flows"] += len(batch_df)
-            
-            # Status line
-            if (reporter.stats["total_flows"] // BATCH_SIZE) % 10 == 0:
-                elapsed = time.time() - start_time
-                rate = reporter.stats["total_flows"] / (elapsed + 0.001)
-                sys.stdout.write(f"\r[SYSTEM] Stream Active | Processed: {reporter.stats['total_flows']} flows | Rate: {rate:.0f} flows/s | Threats: {reporter.stats['anomalies']}")
-                sys.stdout.flush()
                 
     except KeyboardInterrupt:
         print("\n[STOP] Manual efficient shutdown.")

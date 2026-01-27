@@ -82,3 +82,65 @@ class XGBoostWatcher:
         inference_time_ms = (end_time - start_time) * 1000
         
         return prediction, probability, inference_time_ms
+
+    def predict_batch(self, df):
+        """
+        Batch inference for high-speed traffic scanning.
+        Expects a DataFrame that already contains the necessary columns (mostly).
+        Calculates missing columns if needed.
+        """
+        # Ensure we have the right features
+        # 1. Map columns if they don't match perfectly (CICFlowMeter has different casing sometimes)
+        # For simplicity in this demo, we assume the CSV cleaning in runner handles most, 
+        # but we ensure existence.
+        
+        # We need to ensure the DF has the columns self.features_list expects.
+        # Common mapping from CICFlowMeter CSV headers to our training headers:
+        column_map = {
+             "Dst Port": "Dst Port",
+             "Protocol": "Protocol",
+             "Tot Fwd Pkts": "Tot Fwd Pkts",
+             "Tot Bwd Pkts": "Tot Bwd Pkts",
+             "TotLen Fwd Pkts": "TotLen Fwd Pkts",
+             "TotLen Bwd Pkts": "TotLen Bwd Pkts",
+             "Flow Byts/s": "Flow Byts/s",
+             "Flow Pkts/s": "Flow Pkts/s",
+             "Flow IAT Mean": "Flow IAT Mean",
+             "Flow IAT Max": "Flow IAT Max",
+             "Flow IAT Min": "Flow IAT Min",
+             "Fwd IAT Tot": "duration_minutes", # Approx mapping for duration
+             "FIN Flag Cnt": "FIN Flag Cnt",
+             "SYN Flag Cnt": "SYN Flag Cnt",
+             "RST Flag Cnt": "RST Flag Cnt",
+             "PSH Flag Cnt": "PSH Flag Cnt",
+             "ACK Flag Cnt": "ACK Flag Cnt",
+             "Init Fwd Win Byts": "Init Fwd Win Byts",
+             "Init Bwd Win Byts": "Init Bwd Win Byts"
+        }
+        
+        X = pd.DataFrame()
+        for feature in self.features_list:
+            if feature in df.columns:
+                X[feature] = df[feature]
+            elif feature == "duration_minutes" and "Flow Duration" in df.columns:
+                 # Flow Duration is usually in Microseconds in CIC datasets
+                 X[feature] = df["Flow Duration"] / 60000000.0
+            elif feature == "hour_of_day":
+                # Timestamp parsing is slow, fill with 0 for batch speed or parse if 'Timestamp' exists
+                X[feature] = 12 # Default
+            elif feature == "day_of_week":
+                X[feature] = 2 # Default
+            else:
+                X[feature] = 0.0 # Fill missing features
+        
+        # Fill NaNs
+        X = X.fillna(0)
+        
+        # Predict
+        # model.predict returns 0 (benign) / 1 (malicious) usually for XGBoost classifiers
+        # But IsolationForest was -1/1. We need to check the model type.
+        # Assuming XGBoost trained as binary classifier 0/1.
+        preds = self.model.predict(X)
+        probs = self.model.predict_proba(X)[:, 1]
+        
+        return preds, probs

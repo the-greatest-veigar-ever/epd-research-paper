@@ -8,4 +8,8 @@ data/
 old-data/
 ._*
 eval_results_ollama.json
+eval_results_batch.json
 Simulation_History.xlsx
+reports/
+src/qlora-hugging-face/output/
+models/

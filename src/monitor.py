@@ -21,6 +21,55 @@ class DetectionAgent:
             self.watcher = None
         print(f"[{self.agent_id}] Initialized and monitoring streams.")
 
+    @property
+    def is_trained(self):
+        return self.watcher is not None
+
+    def monitor_traffic_batch(self, df_batch: Any) -> List[Dict[str, Any]]:
+        """
+        Scans a batch of traffic (DataFrame) using the XGBoost Model.
+        Restored for compatibility with Autonomous Runner.
+        """
+        alerts = []
+        if not self.watcher:
+            return []
+            
+        try:
+            current_time = time.time()
+            preds, probs = self.watcher.predict_batch(df_batch)
+            
+            # Find anomalies (assuming 1 = Malicious, 0 = Benign for XGBoost)
+            # Or if it's Isolation Forest compatible (-1 vs 1)
+            # Let's assume standard binary classification 1 = Attack
+            anomalies_indices = [i for i, x in enumerate(preds) if x == 1]
+            
+            if anomalies_indices:
+                 print(f"[{self.agent_id}] BATCH: Found {len(anomalies_indices)} threats in {len(df_batch)} flows.")
+                 
+                 for idx in anomalies_indices:
+                     if len(alerts) < 5: # Throttling for demo console
+                         row = df_batch.iloc[idx].to_dict()
+                         
+                         # Construct Alert for Brain
+                         label = row.get("Label", "Network Anomaly")
+                         row["event_name"] = label
+                         row["target"] = "NetworkInterface"
+                         
+                         alert = {
+                            "source": self.agent_id,
+                            "timestamp": current_time,
+                            "type": "NET_FLOW_ANOMALY",
+                            "ai_score": float(probs[idx]),
+                            "details": row
+                        }
+                         alerts.append(alert)
+                     else:
+                         break
+        except Exception as e:
+            print(f"[{self.agent_id}] Batch Scan Error: {e}")
+            
+        return alerts
+
     def monitor_logs(self, mock_logs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """
         Simulates scanning logs for threats using XGBoost.

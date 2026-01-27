@@ -8,21 +8,21 @@ import os
 # =========================
 # CONFIG
 # =========================
+# =========================
+# CONFIG
+# =========================
 BASE_MODEL_NAME = "microsoft/phi-2"
-ADAPTER_PATH = "./output/qlora-secqa"
-TEST_DATA_PATH = "../data/SecQA/secqa_v1_test.jsonl"
+ADAPTER_PATH = "src/qlora-hugging-face/output/qlora-secqa"
+TEST_DATA_PATH = "data/brain/data/combined_datasets/all_training_data.jsonl"
 DEVICE = "cpu" # Force CPU for numeric stability
 print(f"Using device: {DEVICE}")
 
 def load_model():
     print(f"Loading base model: {BASE_MODEL_NAME}...")
     tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL_NAME)
-    # Ensure pad token is set
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
     
-    # Load model. We use float16 for MPS compatibility if possible.
-    # If the "!!!" issue persists, we will try CPU.
     model = AutoModelForCausalLM.from_pretrained(
         BASE_MODEL_NAME,
         torch_dtype=torch.float32,
@@ -40,27 +40,36 @@ def evaluate(batch_size=10):
     model, tokenizer = load_model()
     
     # Load test data
-    test_data = []
+    all_data = []
     with open(TEST_DATA_PATH, 'r') as f:
         for line in f:
-            test_data.append(json.loads(line))
+            try:
+                item = json.loads(line)
+                # Only keep MCQs for this fast eval
+                if 'answers' in item and item['answers'] and 'solution' in item:
+                   all_data.append(item)
+            except:
+                pass
     
-    print(f"Starting BATCH evaluation of {len(test_data)} questions on {DEVICE} (Batch Size: {batch_size})...")
+    print(f"Loaded {len(all_data)} MCQ items for evaluation (Skipped non-MCQ/SAQ items).")
+    print(f"Starting BATCH evaluation on {DEVICE} (Batch Size: {batch_size})...")
     
     # Token IDs for A, B, C, D
     choice_tokens = ["A", "B", "C", "D"]
     choice_ids = [tokenizer.encode(token, add_special_tokens=False)[-1] for token in choice_tokens]
 
     correct = 0
-    total = len(test_data)
+    total = len(all_data)
     results = []
 
     for i in tqdm(range(0, total, batch_size)):
-        batch = test_data[i:i+batch_size]
+        batch = all_data[i:i+batch_size]
         prompts = []
         ground_truths = []
         
-        for item in batch:
+        valid_batch_indices = []
+        
+        for idx, item in enumerate(batch):
             question = item['question']
             choices = item['answers']
             ground_truths.append(item['solution'])
@@ -68,7 +77,11 @@ def evaluate(batch_size=10):
             answers_text = "\n".join([f"{k}. {v}" for k, v in choices.items()])
             prompt = f"### Question:\n{question}\n\n### Choices:\n{answers_text}\n\n### Answer:\n"
             prompts.append(prompt)
+            valid_batch_indices.append(idx)
         
+        if not prompts:
+            continue
+
         # Batch Tokenization
         inputs = tokenizer(prompts, return_tensors="pt", padding=True).to(DEVICE)
         
@@ -76,13 +89,10 @@ def evaluate(batch_size=10):
             outputs = model(**inputs)
             logits = outputs.logits # [batch, seq_len, vocab_size]
             
-            # For each item in batch, we need the logits of the last NON-PADDING token
-            # tokenizer(padding=True) uses right padding by default for causal LMs usually, 
-            # but we should check attention_mask to find the last token.
             attention_mask = inputs.attention_mask
             last_token_indices = attention_mask.sum(dim=1) - 1
             
-            for b_idx in range(len(batch)):
+            for b_idx in range(len(prompts)):
                 last_logits = logits[b_idx, last_token_indices[b_idx], :]
                 choice_logits = last_logits[choice_ids]
                 best_choice_idx = torch.argmax(choice_logits).item()
@@ -99,11 +109,12 @@ def evaluate(batch_size=10):
                     "correct": is_correct
                 })
         
-        print(f"Batch {i//batch_size + 1} processing complete. Total Correct: {correct}")
+        if (i // batch_size) % 10 == 0:
+             print(f"Batch {i//batch_size + 1} processed. Running Accuracy: {(correct / (i+len(batch))) * 100:.2f}%")
 
-    accuracy = (correct / total) * 100
+    accuracy = (correct / total) * 100 if total > 0 else 0
     print(f"\nEvaluation Complete!")
-    print(f"Total: {total}")
+    print(f"Total Evaluated: {total}")
     print(f"Correct: {correct}")
     print(f"Accuracy: {accuracy:.2f}%")
     

@@ -14,7 +14,7 @@ from trl import SFTTrainer, SFTConfig
 
 # Using a free, smaller model suitable for fine-tuning
 MODEL_NAME = "microsoft/phi-2"  # Free 2.7B parameter model
-DATA_PATH = "data/brain/data/SecQA/combined_secqa.jsonl"
+DATA_PATH = "data/brain/data/combined_datasets/all_training_data.jsonl"
 OUTPUT_DIR = "src/qlora-hugging-face/output/qlora-secqa"
 
 MAX_SEQ_LENGTH = 2048
@@ -64,21 +64,37 @@ model.print_trainable_parameters()
 dataset = load_dataset("json", data_files=DATA_PATH)
 
 def format_prompt(example):
-    """Format SecQA data into a training prompt."""
-    # Format the multiple choice answers
-    answers_text = "\n".join([f"{k}. {v}" for k, v in example['answers'].items()])
+    """Format data into a training prompt (Supports MCQ and SAQ)."""
     
-    return f"""### Question:
+    # CASE 1: Multiple Choice Question (MCQ) - Checks for 'answers' dict
+    if 'answers' in example and example['answers']:
+        answers_text = "\n".join([f"{k}. {v}" for k, v in example['answers'].items()])
+        
+        prompt = f"""### Question:
 {example['question']}
 
 ### Choices:
 {answers_text}
 
 ### Answer:
-{example['solution']}
+{example['solution']}"""
 
-### Explanation:
-{example['explanation']}"""
+    # CASE 2: Short Answer Question (SAQ) - No choices
+    else:
+        # Fallback for datasets like 'chinese/SAQs.jsonl' which use 'answer'
+        answer_text = example.get('answer') or example.get('solution') or "Unknown"
+        
+        prompt = f"""### Question:
+{example['question']}
+
+### Answer:
+{answer_text}"""
+
+    # Add explanation if present (Common to both)
+    if 'explanation' in example and example['explanation']:
+        prompt += f"\n\n### Explanation:\n{example['explanation']}"
+        
+    return prompt
 
 dataset = dataset.map(
     lambda x: {"text": format_prompt(x)},
