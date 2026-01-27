@@ -5,10 +5,10 @@ set -e # Exit immediately if a command exits with a non-zero status
 # CONFIGURATION
 # ==============================================================================
 PROJECT_ROOT=$(pwd)
-DATA_SOURCE_DIR="$PROJECT_ROOT/data/brain/data"
+DATA_SOURCE_DIR="$PROJECT_ROOT/ai/data/brain/data"
 COMBINED_DIR="$DATA_SOURCE_DIR/combined_datasets"
 COMBINED_FILE="$COMBINED_DIR/all_training_data.jsonl"
-BRAIN_SRC_DIR="$PROJECT_ROOT/src/brain/qlora-hugging-face"
+BRAIN_SRC_DIR="$PROJECT_ROOT/src/brain"
 
 echo "========================================================"
 echo "   STARTING BRAIN SQUAD FULL TRAINING PIPELINE"
@@ -60,16 +60,16 @@ fi
 # ==============================================================================
 echo ""
 echo "[Step 2/3] Training: Fine-tuning Phi-2 (QLoRA)..."
-echo "  - Script: $BRAIN_SRC_DIR/qlora_hugging_face_test.py"
+echo "  - Script: $BRAIN_SRC_DIR/train.py"
 echo "  - Logs: Will be visible below"
 
 # Check if training script exists
-if [ ! -f "$BRAIN_SRC_DIR/qlora_hugging_face_test.py" ]; then
-    echo "  - ERROR: Training script not found at $BRAIN_SRC_DIR/qlora_hugging_face_test.py"
+if [ ! -f "$BRAIN_SRC_DIR/train.py" ]; then
+    echo "  - ERROR: Training script not found at $BRAIN_SRC_DIR/train.py"
     exit 1
 fi
 
-python3 "$BRAIN_SRC_DIR/qlora_hugging_face_test.py"
+python3 "$BRAIN_SRC_DIR/train.py"
 
 echo "  - Training phase completed."
 
@@ -78,15 +78,15 @@ echo "  - Training phase completed."
 # ==============================================================================
 echo ""
 echo "[Step 3/3] Evaluation: Benchmarking on SecQA Test Set..."
-echo "  - Script: $BRAIN_SRC_DIR/eval_fast.py"
+echo "  - Script: $BRAIN_SRC_DIR/eval.py"
 
 # Check if eval script exists
-if [ ! -f "$BRAIN_SRC_DIR/eval_fast.py" ]; then
-    echo "  - ERROR: Eval script not found at $BRAIN_SRC_DIR/eval_fast.py"
+if [ ! -f "$BRAIN_SRC_DIR/eval.py" ]; then
+    echo "  - ERROR: Eval script not found at $BRAIN_SRC_DIR/eval.py"
     exit 1
 fi
 
-python3 "$BRAIN_SRC_DIR/eval_fast.py"
+python3 "$BRAIN_SRC_DIR/eval.py"
 
 # ==============================================================================
 # COMPLETION
@@ -95,4 +95,4 @@ echo ""
 echo "========================================================"
 echo "   PIPELINE COMPLETE - BRAIN SQUAD UPGRADED"
 echo "========================================================"
-echo "Report saved to: src/brain/qlora-hugging-face/eval_results_batch.json"
+echo "Report saved to: report-output/brain/eval_results_batch.json"

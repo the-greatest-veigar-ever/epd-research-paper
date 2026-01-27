@@ -4,12 +4,20 @@ __pycache__/
 .env
 .venv/
 env/
-data/
-old-data/
 ._*
 eval_results_ollama.json
 eval_results_batch.json
 Simulation_History.xlsx
-reports/
-src/qlora-hugging-face/output/
+
+# Ignored Directories (Mapped from old structure)
+data/
+ai/data/
+old-data/
 models/
+ai/models/
+reports/
+
+# Optional: Ignore generated reports if desired, but currently allowing report-output (3.9MB)
+# report-output/
+
+src/qlora-hugging-face/output/
