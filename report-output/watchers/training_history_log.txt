@@ -1,0 +1,34 @@
+=== Watcher Scalability Experiment Log ===
+
+Experiment Objective: Determine the impact of dataset size on XGBoost detection performance.
+Method: Incremental training on combined CSE-CIC-IDS2018 datasets.
+Model: XGBoost (Optimized for Recall)
+
+--- Run 1: Baseline (Development) ---
+Dataset Size: 250,000 Flows
+Accuracy: 95.59%
+Recall (Malicious): 93.84%
+Notes: Initial robust run after fixing overfitting.
+
+--- Run 2: Intermediate (1M) ---
+Dataset Size: 1,000,000 Flows
+Accuracy: 95.76% (+0.17%)
+Recall (Malicious): 94.88% (+1.04%)
+Notes: Significant jump in malicious recall.
+
+--- Run 3: Large Scale (5M) ---
+Dataset Size: 5,000,000 Flows
+Accuracy: 96.85% (+1.09%)
+Recall (Malicious): 95.56% (+0.68%)
+Notes: Consistent improvement. Training time increased to ~15 mins.
+
+--- Run 4: Maximum Scale (10M - Final) ---
+Dataset Size: 10,000,000 Flows (62% of total available data)
+Accuracy: 98.17% (+1.32%)
+Recall (Malicious): 96.75% (+1.19%)
+Precision: 96%
+F1-Score: 96%
+Notes: State-of-the-art performance for this architecture. Memory utilization peaked (~6-8GB).
+
+--- Conclusion ---
+Increasing dataset size yielded monotonic improvements in all metrics, with the sharpest gain ensuring the 10M run. The final model (10M) is saved as `xgboost_watcher.joblib`.

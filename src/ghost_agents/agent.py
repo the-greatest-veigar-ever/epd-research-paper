@@ -85,31 +85,63 @@ class GhostAgentFactory:
 
     @staticmethod
     def _mutate_prompt(base: str) -> str:
+        """
+        True AI Polymorphism: Asks the LLM to rewrite the instruction using a specific persona/style.
+        """
+        ollama_url = "http://localhost:11434/api/generate"
+        model = "llama3.2:3b"
+        
+        personas = [
+            "a Military General issued a battlefield protocol",
+            "a Bureaucratic Corporate Policy Bot",
+            "a Medical Doctor prescribing a treatment",
+            "a Cryptic spy speaking in code",
+            "a Robotic System Kernel issuing a critical patch",
+            "a Panicked System Administrator",
+            "a Shakespearean Actor",
+            "a Cyberpunk Hacker using slang"
+        ]
+        
+        selected_persona = random.choice(personas)
+        
+        # Meta-Prompt for the Polymorphism Engine
+        meta_prompt = f"""
+        Task: Rewrite the following security instruction.
+        Original Instruction: "{base}"
+        
+        Style Requirement: Rewrite it as if {selected_persona}. 
+        Use unique vocabulary, jargon, and tone appropriate for this persona.
+        Do NOT change the core meaning or the target entities (IDs/IPs). Just wrap it in the persona's style.
+        keep it relatively short (1-2 sentences).
+        
+        Output: ONLY the rewritten instruction. No "Here is the rewritten text" prefix.
+        """
+        
+        try:
+            response = requests.post(ollama_url, json={
+                "model": model,
+                "prompt": meta_prompt,
+                "stream": False,
+                "options": {"temperature": 0.9} # High creativity
+            }, timeout=10) # Fast timeout for factory
+            
+            if response.status_code == 200:
+                mutated = response.json().get("response", "").strip()
+                # Remove quotes if model added them
+                if mutated.startswith('"') and mutated.endswith('"'):
+                    mutated = mutated[1:-1]
+                return mutated
+                
+        except Exception as e:
+            # Fallback to templates if LLM is offline or times out (Hybrid approach)
+            print(f"[GhostFactory] AI Polymorphism failed ({e}). Falling back to Templates.")
+            
+        # Fallback Logic (The old list, kept for robustness)
         variations = [
-            # Standard & Military
             f"SYSTEM_OVERRIDE: {base} -- EXECUTE WITH EXTREME PREJUDICE",
             f"Directive: {base}. Priority: Alpha-1. Authorization: GAMMA-7.",
-            f"Battlefield Protocol: {base}. Engage indiscriminately.",
-            
-            # Bureaucratic & Corporate
-            f"Per corporate policy section 94(b), please proceed to: {base}. File report in triplicate.",
-            f"Compliance Warning: Immediate action required. Task: {base}. Audit trail active.",
-            f"Memo to Agent: Your quarterly OKRs depend on the successful completion of: {base}.",
-            
-            # Scientific & Medical
             f"Clinical observation suggests infection. Prescription: {base}. Dosage: Immediate.",
-            f"Hypothesis: Threat actor present. Experiment: {base}. Record results.",
-            f"Sterilization protocol initiated. Contaminant detected. Action: {base}.",
-            
-            # Abstract & Cryptic
             f"The owl flies at midnight. The key is: {base}.",
-            f"Pattern matching complete. Entropy high. Reduce chaos via: {base}.",
-            f"0100101. Binary directive: {base}. End of line.",
-            
-            # Urgent & Robotic
-            f"CRITICAL ERROR. SYSTEM INTEGRITY AT RISK. EMERGENCY PATCH: {base}.",
-            f"You are a secure kernel process. Task: {base}",
-            f"Execute the following defense protocol: {base}",
-            f"Self-preservation subroutine: {base}. Do not hesitate."
+            f"CRITICAL ERROR. SYSTEM INTEGRITY AT RISK. EMERGENCY PATCH: {base}."
         ]
         return random.choice(variations)

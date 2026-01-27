@@ -6,25 +6,24 @@ import glob
 from sklearn.preprocessing import LabelEncoder
 import joblib
 
-def process_logs(input_dir, output_file, sample_size=100000):
+# CONFIG Matches the remote branch method
+INPUT_DIR = "ai/data/watchers/cse-cic-ids2018/Processed Traffic Data for ML Algorithms"
+OUTPUT_FILE = "ai/data/processed_watcher_data.csv"
+SAMPLE_SIZE = 10000000 # Increased to 10 Million (Extreme robustness)
+
+def process_logs(input_dir, output_file, sample_size=SAMPLE_SIZE):
     csv_files = glob.glob(os.path.join(input_dir, "*.csv"))
     all_data = []
 
+    print(f"Found {len(csv_files)} CSV files. Processing...")
+
     for file in csv_files:
-        print(f"Processing {file}...")
-        # Read a sample to manage memory
-        df_chunk = pd.read_csv(file)
+        print(f"Reading {os.path.basename(file)}...")
+        # Read a smaller sample from each file to avoid memory explosion during concat
+        # or read full if memory allows. 
+        # Strategy: Read relevant columns only.
         
-        # Clean column names (strip whitespace)
-        df_chunk.columns = df_chunk.columns.str.strip()
-        
-        # We need: Timestamp, Flow Duration, Label
-        # The user's features: src_is_internal, dst_is_internal, duration_minutes, hour_of_day, day_of_week, multi_source_attack, attack_type_encoded
-        
-        # Since processed CSVs might not have IP, we skip src_is_internal/dst_is_internal or mock them
-        # For this research, we'll focus on the available features in the CSV
-        
-        # Filter for relevant behavioral columns (avoiding Label or anything derived from it)
+        # Cols from remote branch
         cols_to_keep = [
             'Timestamp', 'Flow Duration', 'Dst Port', 'Protocol', 
             'Tot Fwd Pkts', 'Tot Bwd Pkts', 'TotLen Fwd Pkts', 'TotLen Bwd Pkts',
@@ -35,14 +34,29 @@ def process_logs(input_dir, output_file, sample_size=100000):
             'Label'
         ]
         
-        # Ensure columns exist before filtering
-        df_chunk = df_chunk[[c for c in cols_to_keep if c in df_chunk.columns]]
-        
-        all_data.append(df_chunk)
+        try:
+            # Read header to check cols
+            header = pd.read_csv(file, nrows=0)
+            header.columns = header.columns.str.strip()
+            existing_cols = [c for c in cols_to_keep if c in header.columns]
+            
+            # Read file with specific columns
+            df_chunk = pd.read_csv(file, usecols=existing_cols)
+            df_chunk.columns = df_chunk.columns.str.strip() # Re-strip after read
+            
+            # Subsample immediately to save memory (take 10% of each file or fixed amount)
+            # We will take 1,200,000 from each (10 files * 1.2M = 12M -> sample down to 10M later)
+            if len(df_chunk) > 1200000:
+                 df_chunk = df_chunk.sample(n=1200000, random_state=42)
+                 
+            all_data.append(df_chunk)
+        except Exception as e:
+            print(f"Skipping {file}: {e}")
 
+    print("Concatenating...")
     df = pd.concat(all_data, ignore_index=True)
     
-    # Convert behavioral columns to numeric, handle errors
+    # Numeric Conversion
     numeric_cols = [
         'Flow Duration', 'Dst Port', 'Protocol', 'Tot Fwd Pkts', 
         'Tot Bwd Pkts', 'TotLen Fwd Pkts', 'TotLen Bwd Pkts',
@@ -56,47 +70,52 @@ def process_logs(input_dir, output_file, sample_size=100000):
             df[col] = pd.to_numeric(df[col], errors='coerce')
     
     # Handle Timestamp
+    print("Parsing Timestamps...")
     df['Timestamp'] = pd.to_datetime(df['Timestamp'], format='mixed', dayfirst=True, errors='coerce')
     
     # Drop rows with critical missing values
     df = df.dropna(subset=['Timestamp', 'Flow Duration', 'Label'])
     
     # Feature Extraction
-    df['duration_minutes'] = df['Flow Duration'] / (1000000 * 60) # Flow Duration is in microseconds
+    print("Feature Engineering...")
+    if 'Flow Duration' in df.columns:
+        df['duration_minutes'] = df['Flow Duration'] / (1000000 * 60)
+    else:
+        df['duration_minutes'] = 0
+        
     df['hour_of_day'] = df['Timestamp'].dt.hour
     df['day_of_week'] = df['Timestamp'].dt.weekday
     
-    # multi_source_attack: 1 if Label contains "DDoS" or "Bot"
+    # multi_source_attack
     df['multi_source_attack'] = df['Label'].str.contains("DDoS|Bot", case=False).astype(int)
     
-    # Mocking internal IPs as they aren't in these specific CSVs but are in the user's manual logs
-    # We'll set them to a default for consistent feature vector size
+    # Mocks
     df['src_is_internal'] = 1 
     df['dst_is_internal'] = 1
     
     # Label Encoding
+    # Ensure directory exists for joblib
+    os.makedirs("ai/models/watchers", exist_ok=True)
+    
     le = LabelEncoder()
     df['label_encoded'] = le.fit_transform(df['Label'])
-    # Binary label: 0 if Benign, 1 otherwise
     df['is_malicious'] = (df['Label'] != 'Benign').astype(int)
     
-    # Save LabelEncoder for later
-    joblib.dump(le, 'models/label_encoder.joblib')
+    joblib.dump(le, 'ai/models/watchers/watcher_label_encoder.joblib')
     
-    # Downsample if needed
+    # Downsample Final
     if len(df) > sample_size:
+        print(f"Downsampling from {len(df)} to {sample_size}...")
         df = df.sample(n=sample_size, random_state=42)
     
     # Save processed data
     os.makedirs(os.path.dirname(output_file), exist_ok=True)
     df.to_csv(output_file, index=False)
     print(f"Processed data saved to {output_file}")
+    
+    # Print Stats
+    print("\nDataset Stats:")
+    print(df['Label'].value_counts())
 
 if __name__ == "__main__":
-    input_base_dir = "/Users/thachngo/Documents/EDP Research/epd-research-paper/data/watchers/cse-cic-ids2018/Processed Traffic Data for ML Algorithms"
-    output_path = "/Users/thachngo/Documents/EDP Research/epd-research-paper/data/processed_watcher_data.csv"
-    
-    # Ensure models directory exists
-    os.makedirs("/Users/thachngo/Documents/EDP Research/epd-research-paper/models", exist_ok=True)
-    
-    process_logs(input_base_dir, output_path)
+    process_logs(INPUT_DIR, OUTPUT_FILE)

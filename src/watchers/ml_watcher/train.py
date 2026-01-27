@@ -14,34 +14,20 @@ def train_optimized_model(data_path, model_output_path):
     # Clean column names
     df.columns = df.columns.str.strip()
 
-    # Preprocessing: Handle Timestamp and Create Features
-    # ---------------------------------------------------
-    # Convert Timestamp to datetime
-    df['Timestamp'] = pd.to_datetime(df['Timestamp'], format='mixed', dayfirst=True, errors='coerce')
-    
-    # Feature Extraction
-    if 'Flow Duration' in df.columns:
-        df['duration_minutes'] = df['Flow Duration'] / (1000000 * 60) # Flow Duration is in microseconds
-    else:
-        df['duration_minutes'] = 0
-
-    if 'Timestamp' in df.columns:
-        df['hour_of_day'] = df['Timestamp'].dt.hour
-        df['day_of_week'] = df['Timestamp'].dt.weekday
-    else:
-        df['hour_of_day'] = 0
-        df['day_of_week'] = 0
-    
-    # Create is_malicious label if not present
+    # Preprocessing (Data is already processed by process_data.py)
+    # Just ensure types and basic checks
     if "is_malicious" not in df.columns:
         if "Label" in df.columns:
              df['is_malicious'] = (df['Label'] != 'Benign').astype(int)
         else:
              print("Warning: No Label column found. Assuming all benign (0) for test.")
              df['is_malicious'] = 0
-
-    # ---------------------------------------------------
-    
+         
+    # Ensure features exist (fill 0 if missing from processed)
+    for feat in ["duration_minutes", "hour_of_day", "day_of_week"]:
+        if feat not in df.columns:
+            df[feat] = 0
+            
     # Deep behavioral features
     features = [
         "duration_minutes",
@@ -67,7 +53,11 @@ def train_optimized_model(data_path, model_output_path):
     # Calculate scale_pos_weight for imbalance
     num_benign = (y == 0).sum()
     num_malicious = (y == 1).sum()
-    scale_weight = num_benign / num_malicious
+    if num_malicious > 0:
+        scale_weight = num_benign / num_malicious
+    else:
+        scale_weight = 1.0
+        
     print(f"Addressing class imbalance with scale_pos_weight: {scale_weight:.2f}")
     
     # Split
@@ -124,35 +114,35 @@ def train_optimized_model(data_path, model_output_path):
     
     # Evaluate
     y_pred = final_model.predict(X_test)
-    acc = accuracy_score(y_test, y_pred)
-    rec = recall_score(y_test, y_pred)
-    report = classification_report(y_test, y_pred)
-    
     print("\nFinal Model Evaluation:")
-    print(f"Accuracy: {acc:.4f}")
-    print(f"Recall (Malicious): {rec:.4f}")
+    print(f"Accuracy: {accuracy_score(y_test, y_pred):.4f}")
+    print(f"Recall (Malicious): {recall_score(y_test, y_pred):.4f}")
+    
+    report = classification_report(y_test, y_pred)
     print("\nClassification Report:")
     print(report)
     
-    # Save Metrics to File
-    metrics_path = "report-output/watchers/training_results.txt"
-    os.makedirs(os.path.dirname(metrics_path), exist_ok=True)
-    with open(metrics_path, "w") as f:
+    # Save Report to File
+    report_file = "report-output/watchers/training_results.txt"
+    with open(report_file, "w") as f:
         f.write("=== XGBoost Watcher Training Results ===\n\n")
-        f.write(f"Accuracy: {acc:.4f}\n")
-        f.write(f"Recall (Malicious): {rec:.4f}\n\n")
+        f.write(f"Accuracy: {accuracy_score(y_test, y_pred):.4f}\n")
+        f.write(f"Recall (Malicious): {recall_score(y_test, y_pred):.4f}\n\n")
         f.write("Classification Report:\n")
         f.write(report)
         f.write(f"\nModel saved to: {model_output_path}\n")
     
-    print(f"\nMetrics saved to {metrics_path}")
-
     # Save model
     os.makedirs(os.path.dirname(model_output_path), exist_ok=True)
     joblib.dump(final_model, model_output_path)
     print(f"\nOptimized model saved to {model_output_path}")
 
 if __name__ == "__main__":
-    data_path = "ai/data/watchers/cse-cic-ids2018/Processed Traffic Data for ML Algorithms/Wednesday-14-02-2018_TrafficForML_CICFlowMeter.csv"
+    data_path = "ai/data/processed_watcher_data.csv"
     model_output_path = "ai/models/watchers/xgboost_watcher.joblib"
-    train_optimized_model(data_path, model_output_path)
+    
+    # Check if processed data exists, if not, warn or run process
+    if not os.path.exists(data_path):
+        print(f"Error: {data_path} not found. Please run process_data.py first.")
+    else:
+        train_optimized_model(data_path, model_output_path)
