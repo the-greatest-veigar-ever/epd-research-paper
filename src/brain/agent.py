@@ -20,7 +20,7 @@ class IntelligenceAgent:
         print(f"[{self.agent_id}] Initializing. Loading Custom QLoRA Model (Phi-2)...")
         self.device = "mps" if torch.backends.mps.is_available() else "cpu"
         self.base_model_name = "microsoft/phi-2"
-        self.adapter_path = "src/qlora-hugging-face/output/qlora-secqa" # Adjust path as needed
+        self.adapter_path = "ai/models/qlora-hugging-face/qlora-secqa" # Adjust path as needed
         
         try:
             # Load Tokenizer

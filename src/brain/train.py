@@ -15,19 +15,21 @@ from trl import SFTTrainer, SFTConfig
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--train_file", type=str, default="ai/data/brain/data/splits/train_subset.jsonl", help="Path to training data")
-parser.add_argument("--val_file", type=str, default="ai/data/brain/data/splits/val_subset.jsonl", help="Path to validation data")
+parser.add_argument("--train_file", type=str, default="ai/data/brain/data/splits/train.jsonl", help="Path to training data")
+parser.add_argument("--val_file", type=str, default="ai/data/brain/data/splits/val.jsonl", help="Path to validation data")
 parser.add_argument("--output_dir", type=str, default="ai/models/qlora-hugging-face/qlora-secqa", help="Output directory")
+parser.add_argument("--resume_from_checkpoint", type=str, default=None, help="Path to checkpoint to resume from")
 args = parser.parse_args()
+
 
 # Using a free, smaller model suitable for fine-tuning
 MODEL_NAME = "microsoft/phi-2"  # Free 2.7B parameter model
 OUTPUT_DIR = args.output_dir
 
-MAX_SEQ_LENGTH = 2048
+MAX_SEQ_LENGTH = 256 # Reduced to 256 for maximum memory efficiency on Mac
 BATCH_SIZE = 2
 GRAD_ACCUM = 8
-EPOCHS = 1 # Reduced from 3 to 1 for faster demo training
+EPOCHS = 3 # Final Epoch Setting
 LR = 2e-4
 
 # =========================
@@ -124,8 +126,8 @@ training_args = SFTConfig(
     fp16=False,         # set to False on Mac/MPS to avoid CUDA requirements
     logging_steps=10,
     save_strategy="epoch",
-    eval_strategy="steps", # Enable validation
-    eval_steps=50,
+    eval_strategy="epoch", # Changed from 'steps' to 'epoch' to save massive time (save ~12 hrs)
+    eval_steps=None,       # Not used when strategy is epoch
     optim="adamw_torch",   # Changed from paged_adamw_8bit (which requires CUDA)
     report_to="none",
     remove_unused_columns=False,
@@ -145,13 +147,59 @@ trainer = SFTTrainer(
     args=training_args
 )
 
-trainer.train()
+if args.resume_from_checkpoint:
+    print(f"Resuming from checkpoint: {args.resume_from_checkpoint}")
+    trainer.train(resume_from_checkpoint=args.resume_from_checkpoint)
+else:
+    trainer.train()
 
 # =========================
-# SAVE LoRA ADAPTERS
+# SAVE LoRA ADAPTERS & LOGS
 # =========================
 
-model.save_pretrained(OUTPUT_DIR)
+import os
+import json
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+# 1. Save Model
+trainer.save_model(OUTPUT_DIR)
 tokenizer.save_pretrained(OUTPUT_DIR)
+print(f"✅ QLoRA training complete. Adapters saved to {OUTPUT_DIR}")
 
-print("✅ QLoRA training complete. Adapters saved.")
+# 2. Save Training History (Loss Curves)
+log_history = trainer.state.log_history
+history_path = os.path.join(OUTPUT_DIR, "training_log.json")
+with open(history_path, "w") as f:
+    json.dump(log_history, f, indent=4)
+print(f"✅ Training logs saved to {history_path}")
+
+# 3. Final Evaluation on TEST SET (New)
+print("Running final evaluation on Test Set...")
+try:
+    from sklearn.metrics import accuracy_score, precision_recall_fscore_support
+    import numpy as np
+
+    # Load Test Data
+    test_file = args.val_file.replace("val", "test") # Assuming standard naming
+    test_dataset = load_dataset("json", data_files=test_file)["train"]
+    test_dataset = test_dataset.map(lambda x: {"text": format_prompt(x)})
+    
+    # Predict
+    predictions = trainer.predict(test_dataset)
+    
+    # NOTE: Generation metrics for LLMs are complex. 
+    # Here we save the raw loss and perplexity on the test set.
+    test_metrics = predictions.metrics
+    test_metrics["perplexity"] = np.exp(test_metrics["test_loss"])
+    
+    report_path = os.path.join(OUTPUT_DIR, "final_test_report.json")
+    with open(report_path, "w") as f:
+        json.dump(test_metrics, f, indent=4)
+        
+    print(f"✅ Final Test Report saved to {report_path}")
+    print(f"   Test Loss: {test_metrics['test_loss']:.4f}")
+    print(f"   Perplexity: {test_metrics['perplexity']:.4f}")
+
+except Exception as e:
+    print(f"⚠️ Could not run final test evaluation: {e}")
+

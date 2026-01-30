@@ -10,8 +10,8 @@ import os
 # =========================
 BASE_MODEL_NAME = "microsoft/phi-2"
 ADAPTER_PATH = "ai/models/qlora-hugging-face/qlora-secqa"
-TEST_DATA_PATH = "ai/data/brain/data/combined_datasets/all_training_data.jsonl"
-DEVICE = "cpu" # Force CPU for numeric stability
+TEST_DATA_PATH = "ai/data/brain/data/splits/test.jsonl"
+DEVICE = "mps" # Use Mac Metal Performance Shaders
 print(f"Using device: {DEVICE}")
 
 def load_model():
