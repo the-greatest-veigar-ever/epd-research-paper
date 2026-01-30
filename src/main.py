@@ -72,11 +72,11 @@ class ReportGenerator:
         else:
             print("[REPORT] No events to save to Excel.")
 
-def run_autonomous_mode(test_mode=False):
+def run_autonomous_mode(test_mode=False, custom_limit=None):
     print("\n=== EPD AUTONOMOUS SENTINEL STARTING ===")
     
     # Arg parser handling if needed, but simple boolean param is fine for internal call
-    limit_rows = 1000 if test_mode else MAX_ROWS
+    limit_rows = custom_limit if custom_limit else (1000 if test_mode else MAX_ROWS)
     
     print("Initializing Squads...")
     watcher = DetectionAgent("Watcher-Auto")
@@ -159,6 +159,14 @@ def run_autonomous_mode(test_mode=False):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--test-mode", action="store_true", help="Run a short test burst")
+    parser.add_argument("--rows", type=int, help="Limit number of rows to process", default=None)
     args = parser.parse_args()
     
-    run_autonomous_mode(test_mode=args.test_mode)
+    # Determine limit
+    limit = MAX_ROWS
+    if args.test_mode:
+        limit = 1000
+    if args.rows:
+        limit = args.rows
+        
+    run_autonomous_mode(test_mode=args.test_mode, custom_limit=limit)

@@ -1,23 +1,31 @@
+# System Files
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Python
 __pycache__/
 *.pyc
-.DS_Store
+*.pyo
+*.pyd
+*.egg-info/
 .env
 .venv/
 env/
-._*
+
+# Logs and Reports
+*.log
 eval_results_ollama.json
 eval_results_batch.json
 Simulation_History.xlsx
+report-output/all/*.xlsx
 
-# Ignored Directories (Mapped from old structure)
-data/
+# Data (Large files)
 ai/data/
-old-data/
-models/
 ai/models/
+
+# Legacy/Old
+old-data/
 reports/
-
-# Optional: Ignore generated reports if desired, but currently allowing report-output (3.9MB)
-# report-output/
-
 src/qlora-hugging-face/output/

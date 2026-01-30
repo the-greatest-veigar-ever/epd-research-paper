@@ -74,6 +74,9 @@ class IntelligenceAgent:
         return remediation_plan
 
     def _get_consensus_score(self, alert: Dict[str, Any]) -> float:
+        # Integration Point: SentinelNet (Consensus Engine)
+        # Returns probability that other agents agree with this alert.
+        # For this research implementation, we assume consensus is reached.
         return 0.95
 
     def _generate_plan_with_ai(self, alert: Dict[str, Any]) -> Dict[str, Any]:
@@ -136,7 +139,10 @@ class IntelligenceAgent:
             return None
 
     def _fallback_plan(self, threat_type: str, target: str) -> Dict[str, Any]:
-        """Legacy rule-based fallback."""
+        """
+        Placeholder: Legacy Rule Engine (e.g., existing firewall rules).
+        Used when AI confidence is low or model is offline.
+        """
         print(f"[{self.agent_id}] Using Legacy Rule Engine.")
         if "IAM" in threat_type:
              return {"action": "REVOKE_SESSIONS", "target": target}
