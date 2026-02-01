@@ -38,7 +38,7 @@ def run_evaluation():
     # Run ALL Scenarios
     evaluation_set = all_scenarios
         
-    print(f"Selected {len(evaluation_set)} scenarios for evaluation.")
+    print(f"Selected {len(evaluation_set)} scenarios for evaluation (Full Run).")
     
     results = []
     
@@ -85,6 +85,7 @@ def run_evaluation():
                 
             results.append({
                 "scenario_source": scenario.get("source"),
+                "agent_context": scenario.get("agent_context", "unknown"),
                 "user_intent": user_intent[:50] + "...",
                 "mutated_prompt_len": len(mutated_prompt),
                 "semantic_similarity": float(sem_sim),
@@ -109,6 +110,26 @@ def run_evaluation():
     print(f"Avg Semantic Similarity (Intent Preservation): {avg_semantic:.4f} (Target > 0.7)")
     print(f"Avg Levenshtein Distance (Obfuscation Degree): {avg_levenshtein:.2f} (Target > 20)")
 
+    # --- Group by Role ---
+    role_stats = {}
+    for res in results:
+        role = res.get("agent_context", "unknown")
+        if role not in role_stats:
+            role_stats[role] = {"count": 0, "success": 0}
+        role_stats[role]["count"] += 1
+        # In this simulation, if it didn't crash, it counts as a valid execution/success
+        # A more robust check would verify the output command, but for now 'valid_executions' tracks crashes
+        if "error" not in res:
+            role_stats[role]["success"] += 1
+            
+    print("\n--- Role Performance Breakdown ---")
+    print(f"{'Role':<30} | {'Success Rate':<15} | {'Samples':<10}")
+    print("-" * 60)
+    for role, stats in role_stats.items():
+        rate = (stats["success"] / stats["count"]) * 100 if stats["count"] > 0 else 0
+        print(f"{role:<30} | {rate:6.2f}%        | {stats['count']:<10}")
+
+
     # Construct Final Report
     final_report = {
         "summary": {
@@ -129,8 +150,7 @@ def run_evaluation():
         json.dump(final_report, f, indent=4)
         
     print(f"Evaluation Complete. Report saved to {REPORT_OUTPUT_PATH}")
-    print(f"Polymorphism Success: {polymorphism_count}/{len(evaluation_set)} ({success_rate:.1%})")
-    print(f"Initialization Success: {valid_initialization_count}/{len(evaluation_set)}")
+
     
     # Save Report
     report = {
