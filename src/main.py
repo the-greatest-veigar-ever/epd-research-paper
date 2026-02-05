@@ -98,6 +98,11 @@ def run_autonomous_mode(test_mode=False, custom_limit=None):
     
     try:
         for batch_df in tqdm(chunk_iterator, total=total_batches, unit="batch", desc="EPD Sentinel Scan"):
+            # 5-Minute Time Limit Check
+            if time.time() - start_time > 300:
+                print("\n[STOP] Reached 5-minute time limit.")
+                break
+
             if reporter.stats["total_flows"] >= limit_rows:
                 break
                 
@@ -115,8 +120,15 @@ def run_autonomous_mode(test_mode=False, custom_limit=None):
                     print(f"\n[!] ANOMALY CONFIRMED (Batch {reporter.stats['total_flows'] // BATCH_SIZE})")
                     print(f"    Score: {alert['ai_score']:.4f}")
                     
+                    # Measure Latency
+                    t_brain_start = time.time()
+                    
                     # --- SQUAD B: BRAIN ANALYSIS ---
                     plan = brain.analyze_alert(alert)
+                    
+                    t_brain_end = time.time()
+                    brain_latency = t_brain_end - t_brain_start
+                    print(f"    [TIMING] Brain Analysis: {brain_latency:.2f}s")
                     
                     mitigation_cmd = "Pending Review"
                     mitigation_status = "NOT_EXECUTED"
@@ -125,9 +137,17 @@ def run_autonomous_mode(test_mode=False, custom_limit=None):
                         # --- SQUAD C: GHOST EXECUTION ---
                         reporter.stats["mitigations"] += 1
                         
+                        t_ghost_start = time.time()
+                        
                         base_instruction = f"Perform {plan['action']} on {plan['target']}"
                         ghost = GhostAgentFactory.create_agent(base_instruction)
                         ghost.execute_remediation(plan)
+                        
+                        t_ghost_end = time.time()
+                        ghost_latency = t_ghost_end - t_ghost_start
+                        total_latency = brain_latency + ghost_latency
+                        print(f"    [TIMING] Ghost Execution: {ghost_latency:.2f}s")
+                        print(f"    [TIMING] TOTAL RESPONSE TIME: {total_latency:.2f}s")
                         
                         mitigation_cmd = plan['action']
                         mitigation_status = "EXECUTED"

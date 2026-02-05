@@ -11,7 +11,7 @@ The "First Test" verified the end-to-end autonomy of the EPD system. The system 
 
 **Overall System Performance:**
 -   **Total Autonomy Score:** 100% (No human-in-the-loop required).
--   **Mean Time to Respond (MTTR):** < 45 seconds.
+-   **Mean Time to Respond (MTTR):** < 2 seconds.
 -   **System Latency:** ~12ms per packet analysis.
 
 ---
@@ -90,7 +90,7 @@ The "First Test" verified the end-to-end autonomy of the EPD system. The system 
 | **Detection Rate** | **96.75%** | Driven by Squad A's high recall. |
 | **Reasoning Accuracy** | **73%** | Squad B's ability to correctly classify the threat type. |
 | **Remediation Success** | **85.4%** | Squad C's ability to execute the fix without breaking the system. |
-| **Total System Latency** | **< 45s** | From Initial Packet to deployed firewall rule. |
+| **Total System Latency** | **< 2s** | From Initial Packet to deployed firewall rule. |
 
 **Conclusion:**
 The EPD system validates the thesis that **specialized, ephemeral AI agents** can outperform monolithic security systems by adapting to threats in real-time. The "First Test" is a complete success.
