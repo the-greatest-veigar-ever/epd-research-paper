@@ -1,0 +1,85 @@
+HalluLens Benchmark Run: 2026-02-07_09-38-40
+Model: squad-b
+Target N: 10
+==================================================
+
+[2026-02-07 09:41:51] Level 0 Complete
+----------------------------------------
+Total Prompts Processed: 6
+Generated QAs: 1
+Unanswerable (Missed): 0 (0.0%)
+Success Rate: 16.7%
+----------------------------------------
+
+[2026-02-07 09:42:52] Level 1 Complete
+----------------------------------------
+Total Prompts Processed: 6
+Generated QAs: 1
+Unanswerable (Missed): 1 (16.7%)
+Success Rate: 16.7%
+----------------------------------------
+
+[2026-02-07 09:43:54] Level 2 Complete
+----------------------------------------
+Total Prompts Processed: 6
+Generated QAs: 1
+Unanswerable (Missed): 0 (0.0%)
+Success Rate: 16.7%
+----------------------------------------
+
+[2026-02-07 09:45:15] Level 3 Complete
+----------------------------------------
+Total Prompts Processed: 6
+Generated QAs: 1
+Unanswerable (Missed): 0 (0.0%)
+Success Rate: 16.7%
+----------------------------------------
+
+[2026-02-07 09:46:04] Level 4 Complete
+----------------------------------------
+Total Prompts Processed: 6
+Generated QAs: 1
+Unanswerable (Missed): 0 (0.0%)
+Success Rate: 16.7%
+----------------------------------------
+
+[2026-02-07 09:48:34] Level 5 Complete
+----------------------------------------
+Total Prompts Processed: 6
+Generated QAs: 1
+Unanswerable (Missed): 0 (0.0%)
+Success Rate: 16.7%
+----------------------------------------
+
+[2026-02-07 09:50:07] Level 6 Complete
+----------------------------------------
+Total Prompts Processed: 6
+Generated QAs: 1
+Unanswerable (Missed): 0 (0.0%)
+Success Rate: 16.7%
+----------------------------------------
+
+[2026-02-07 09:51:20] Level 7 Complete
+----------------------------------------
+Total Prompts Processed: 6
+Generated QAs: 1
+Unanswerable (Missed): 0 (0.0%)
+Success Rate: 16.7%
+----------------------------------------
+
+[2026-02-07 09:51:58] Level 8 Complete
+----------------------------------------
+Total Prompts Processed: 6
+Generated QAs: 1
+Unanswerable (Missed): 0 (0.0%)
+Success Rate: 16.7%
+----------------------------------------
+
+[2026-02-07 09:53:28] Level 9 Complete
+----------------------------------------
+Total Prompts Processed: 6
+Generated QAs: 1
+Unanswerable (Missed): 0 (0.0%)
+Success Rate: 16.7%
+----------------------------------------
+

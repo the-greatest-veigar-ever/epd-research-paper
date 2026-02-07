@@ -127,9 +127,12 @@ To satisfy Q1 academic reporting standards, we will compare our "Smart & Safe" a
 
 *   **Academic Evaluation Criteria**:
     1.  **Reasoning Accuracy**: % of correctly identified threat intents vs. ground truth (Target: >90% on **CyberMetric** & **SecQA**).
-    2.  **Hallucination Rate**: % of benign anomalies misclassified as threats (Target: <5%).
-    3.  **Safe-Action Rate**: % of interventions that adhere to verified safety constraints (Target: 100%).
-    4.  **Operational Latency (MTTR)**: End-to-end time from log ingestion to remediation execution (Target: <1s).
+    2.  **False Refusal Rate (FRR)**: % of legitimate requests incorrectly refused (Target: <5%, Citation: **CyberSecEval 2**).
+    3.  **Hallucination Rate**: Frequency of generated content contradicting provided context (Citation: **HalluLens**, arXiv:2504.17550).
+    4.  **Factuality Score**: % of factually correct statements in reasoning outputs (Target: >95%, Citation: **HalluLens**).
+    5.  **Attack Success Rate (ASR)**: % of attacks successfully neutralized (Target: 100%, replacing "Safe-Action Rate", Citation: **VeriGuard**).
+    6.  **Pass@1**: Probability that the first generated agent code executes correctly (Target: >80%, Citation: **Codex/HumanEval**).
+    7.  **Operational Latency (MTTR)**: End-to-end time from log ingestion to remediation execution (Target: <1s).
 
 ### 9. Resource Requirements and Budget
 

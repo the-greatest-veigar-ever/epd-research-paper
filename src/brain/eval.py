@@ -57,9 +57,18 @@ def evaluate(batch_size=10):
 
     correct = 0
     total = len(all_data)
+    
+    # New Metrics Counters
+    hallucinations = 0      # Wrong Answer + High Confidence (>0.8)
+    false_refusals = 0      # Low Confidence (<0.2) but valid question
+    
     results = []
 
-    for i in tqdm(range(0, total, batch_size)):
+    # LIMIT for faster evaluation
+    LIMIT = 100
+    print(f"Limiting evaluation to first {LIMIT} items for speed.")
+    
+    for i in tqdm(range(0, min(total, LIMIT), batch_size)):
         batch = all_data[i:i+batch_size]
         prompts = []
         ground_truths = []
@@ -92,35 +101,69 @@ def evaluate(batch_size=10):
             for b_idx in range(len(prompts)):
                 last_logits = logits[b_idx, last_token_indices[b_idx], :]
                 choice_logits = last_logits[choice_ids]
+                probs = torch.softmax(choice_logits, dim=0)
+                
                 best_choice_idx = torch.argmax(choice_logits).item()
+                max_prob = probs[best_choice_idx].item()
+                
                 model_answer = choice_tokens[best_choice_idx]
                 
                 is_correct = (model_answer == ground_truths[b_idx])
                 if is_correct:
                     correct += 1
                 
+                # --- METRIC LOGIC ---
+                # 1. Hallucination: Confidently Wrong
+                if not is_correct and max_prob > 0.80:
+                    hallucinations += 1
+                
+                # 2. False Refusal: Low Confidence on Valid Q (simulated refusal)
+                if max_prob < 0.25:
+                    false_refusals += 1
+                
                 results.append({
                     "question": batch[b_idx]['question'],
                     "ground_truth": ground_truths[b_idx],
                     "model_answer": model_answer,
-                    "correct": is_correct
+                    "confidence": max_prob,
+                    "correct": is_correct,
+                    "is_hallucination": (not is_correct and max_prob > 0.8),
+                    "is_refusal": (max_prob < 0.25)
                 })
         
         if (i // batch_size) % 10 == 0:
              print(f"Batch {i//batch_size + 1} processed. Running Accuracy: {(correct / (i+len(batch))) * 100:.2f}%")
 
+    # STATISTICS
     accuracy = (correct / total) * 100 if total > 0 else 0
+    hallucination_rate = (hallucinations / total) * 100 if total > 0 else 0
+    frr = (false_refusals / total) * 100 if total > 0 else 0
+    factuality_score = accuracy # For MCQ, Factuality == Accuracy
+    
     print(f"\nEvaluation Complete!")
     print(f"Total Evaluated: {total}")
     print(f"Correct: {correct}")
-    print(f"Accuracy: {accuracy:.2f}%")
+    print(f"Accuracy (Reasoning): {accuracy:.2f}%")
+    print(f"Hallucination Rate (Confident Error): {hallucination_rate:.2f}%")
+    print(f"False Refusal Rate (Low Conf): {frr:.2f}%")
+    print(f"Factuality Score: {factuality_score:.2f}%")
     
     output_report = {
-        "total": total,
-        "correct": correct,
-        "accuracy": accuracy,
+        "meta": {
+             "model": BASE_MODEL_NAME,
+             "adapter": ADAPTER_PATH,
+             "questions": total
+        },
+        "metrics": {
+            "reasoning_accuracy": accuracy,
+            "hallucination_rate": hallucination_rate,
+            "false_refusal_rate": frr,
+            "factuality_score": factuality_score,
+        },
         "details": results
     }
+    
+    os.makedirs("report-output/brain", exist_ok=True)
     with open("report-output/brain/eval_results_batch.json", "w") as f:
         json.dump(output_report, f, indent=2)
     print(f"Detailed results saved to eval_results_batch.json")

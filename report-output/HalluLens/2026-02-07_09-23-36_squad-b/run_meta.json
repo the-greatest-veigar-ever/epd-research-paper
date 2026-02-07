@@ -1,0 +1,20 @@
+{
+  "args": {
+    "do_generate_prompt": true,
+    "do_inference": false,
+    "do_eval": false,
+    "mode": "dynamic",
+    "model": "squad-b",
+    "inference_method": "vllm",
+    "max_inference_tokens": 256,
+    "inf_batch_size": 1,
+    "wiki_src": "goodwiki",
+    "qa_output_path": "",
+    "N": 2,
+    "generator_model": "squad-b",
+    "evaluator_model": "meta-llama/Llama-3.1-70B-Instruct"
+  },
+  "timestamp": "2026-02-07_09-23-36",
+  "model": "squad-b",
+  "task": "precise_wikiqa_goodwiki_dynamic"
+}

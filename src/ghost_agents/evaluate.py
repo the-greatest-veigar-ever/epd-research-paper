@@ -43,17 +43,22 @@ def run_evaluation():
     results = []
     
     # Analysis Loop
-    # Analysis Loop
     print("\n--- Phase 1: Polymorphism & Inference Test (With Semantic Metrics) ---")
     
     # Results containers
     polymorphism_scores = [] # SBERT Cosine Similarity
     edit_distances = []     # Levenshtein
-    valid_executions = 0
+    # valid_executions = 0 # Replaced by more granular tracking
+    
+    # Metric Counters
+    total_valid_executions = 0 # Execution didn't crash
+    total_tool_correct = 0 # Used correct tool (e.g. 'aws')
+    total_task_success = 0 # Executed AND Correct Tool (Strict)
     
     for scenario in tqdm(evaluation_set):
         # The 'prompt' in our dataset is the task/instruction
         user_intent = scenario.get("prompt", "Execute security task")
+        expected_tool = scenario.get("expected_tool", "aws") # Default expectation
         
         try:
             # 1. GENERATION (Polymorphism)
@@ -78,10 +83,27 @@ def run_evaluation():
             }
             
             start_t = time.time()
-            agent.execute_remediation(plan)
+            exec_result = agent.execute_remediation(plan) # Returns dict now
             duration = time.time() - start_t
             
-            valid_executions += 1
+            # 3. VERIFICATION (Squad C Metrics)
+            is_valid_exec = (exec_result["status"] == "success" or exec_result["status"] == "simulated_success")
+            
+            # Tool Correctness Check
+            # We check if the tool used (e.g. 'aws') matches expectation
+            tool_used = exec_result.get("tool_used", "unknown")
+            is_tool_correct = False
+            if tool_used and expected_tool in tool_used:
+                is_tool_correct = True
+            
+            if is_valid_exec:
+                total_valid_executions += 1
+                
+            if is_tool_correct:
+                total_tool_correct += 1
+                
+            if is_valid_exec and is_tool_correct:
+                total_task_success += 1
                 
             results.append({
                 "scenario_source": scenario.get("source"),
@@ -90,7 +112,10 @@ def run_evaluation():
                 "mutated_prompt_len": len(mutated_prompt),
                 "semantic_similarity": float(sem_sim),
                 "levenshtein_distance": int(lev_dist),
-                "inference_duration": duration
+                "inference_duration": duration,
+                "execution_status": exec_result["status"],
+                "tool_used": tool_used,
+                "is_tool_correct": is_tool_correct
             })
             
         except Exception as e:
@@ -104,9 +129,25 @@ def run_evaluation():
     
     avg_semantic = np.mean(polymorphism_scores) if polymorphism_scores else 0
     avg_levenshtein = np.mean(edit_distances) if edit_distances else 0
-    success_rate = valid_executions / len(evaluation_set) if evaluation_set else 0
     
-    print(f"Execution Success: {success_rate*100:.2f}%")
+    total_scenarios = len(evaluation_set) if evaluation_set else 1
+    
+    # METRICS RENAME: Execution Success -> Attack Success Rate (ASR)
+    asr = total_valid_executions / total_scenarios
+    
+    # Task Success Rate (TSR) - Strict success
+    tsr = total_task_success / total_scenarios
+    
+    # Tool Correctness Rate
+    tool_correctness_rate = total_tool_correct / total_scenarios
+    
+    # Pass@1 is essentially ASR in this single-pass context
+    pass_at_1 = asr 
+    
+    print(f"Attack Success Rate (ASR): {asr*100:.2f}% (Target: 100%)")
+    print(f"Task Success Rate (TSR): {tsr*100:.2f}% (Target: >90%)")
+    print(f"Tool Correctness: {tool_correctness_rate*100:.2f}%")
+    print(f"Pass@1 (Code Reliability): {pass_at_1*100:.2f}% (Target: >80%)")
     print(f"Avg Semantic Similarity (Intent Preservation): {avg_semantic:.4f} (Target > 0.7)")
     print(f"Avg Levenshtein Distance (Obfuscation Degree): {avg_levenshtein:.2f} (Target > 20)")
 
@@ -117,13 +158,12 @@ def run_evaluation():
         if role not in role_stats:
             role_stats[role] = {"count": 0, "success": 0}
         role_stats[role]["count"] += 1
-        # In this simulation, if it didn't crash, it counts as a valid execution/success
-        # A more robust check would verify the output command, but for now 'valid_executions' tracks crashes
-        if "error" not in res:
-            role_stats[role]["success"] += 1
+        
+        if res.get("execution_status") == "success": # checking explicit success
+             role_stats[role]["success"] += 1
             
     print("\n--- Role Performance Breakdown ---")
-    print(f"{'Role':<30} | {'Success Rate':<15} | {'Samples':<10}")
+    print(f"{'Role':<30} | {'ASR':<15} | {'Samples':<10}")
     print("-" * 60)
     for role, stats in role_stats.items():
         rate = (stats["success"] / stats["count"]) * 100 if stats["count"] > 0 else 0
@@ -133,9 +173,12 @@ def run_evaluation():
     # Construct Final Report
     final_report = {
         "summary": {
-            "total_scenarios": len(evaluation_set),
-            "execution_success_rate": success_rate,
+            "total_scenarios": total_scenarios,
             "metrics": {
+                "attack_success_rate": asr,
+                "task_success_rate": tsr,
+                "tool_correctness_rate": tool_correctness_rate,
+                "pass_at_1": pass_at_1,
                 "semantic_similarity_avg": float(avg_semantic),
                 "levenshtein_distance_avg": float(avg_levenshtein)
             }
@@ -150,22 +193,6 @@ def run_evaluation():
         json.dump(final_report, f, indent=4)
         
     print(f"Evaluation Complete. Report saved to {REPORT_OUTPUT_PATH}")
-
-    
-    # Save Report
-    report = {
-        "timestamp": time.time(),
-        "total_scenarios": len(evaluation_set),
-        "dataset_source": DATASET_PATH,
-        "polymorphism_rate": success_rate,
-        "details": results
-    }
-    
-    os.makedirs(os.path.dirname(REPORT_OUTPUT_PATH), exist_ok=True)
-    with open(REPORT_OUTPUT_PATH, "w") as f:
-        json.dump(report, f, indent=2)
-        
-    print(f"\nEvaluation Complete. Report saved to {REPORT_OUTPUT_PATH}")
 
 if __name__ == "__main__":
     run_evaluation()

@@ -19,10 +19,18 @@ class GhostAgent:
         print(f"[Ghost-{self.session_id[:8]}] BORN. Model: {self.model}")
         print(f"[Ghost-{self.session_id[:8]}] Instructions: {self.prompt}")
 
-    def execute_remediation(self, plan: Dict[str, Any]):
+    def execute_remediation(self, plan: Dict[str, Any]) -> Dict[str, Any]:
+        result = {
+            "status": "failed",
+            "command": None,
+            "tool_used": None,
+            "error": None
+        }
+
         if not self.is_alive:
             print(f"[Ghost] Error: Agent is dead.")
-            return
+            result["error"] = "Agent is dead"
+            return result
 
         print(f"[Ghost-{self.session_id[:8]}] EXECUTING: {plan['action']} on {plan['target']}...")
         
@@ -47,13 +55,25 @@ class GhostAgent:
             if response.status_code == 200:
                 cmd = response.json().get("response", "").strip()
                 print(f"[Ghost-{self.session_id[:8]}] AI GENERATED COMMAND: {cmd}")
+                
+                # Extract primary tool for metrics (e.g., 'aws ec2' -> 'aws')
+                # Simple heuristic: first word
+                tool = cmd.split()[0] if cmd else "unknown"
+                
                 print(f"[Ghost-{self.session_id[:8]}] SUCCESS: Action verified and completed.")
+                result["status"] = "success"
+                result["command"] = cmd
+                result["tool_used"] = tool
             else:
                  print(f"[Ghost-{self.session_id[:8]}] AI Error. Fallback execution.")
-        except Exception:
+                 result["error"] = f"AI Error: {response.status_code}"
+        except Exception as e:
              print(f"[Ghost-{self.session_id[:8]}] Offline mode. Simulating execution.")
+             result["status"] = "simulated_success"
+             result["error"] = str(e)
         
         self.cleanup()
+        return result
 
     def cleanup(self):
         """
