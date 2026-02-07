@@ -69,3 +69,24 @@ python3 src/research_sim.py
 *   Tích hợp với các API trực tiếp của AWS/Azure.
 *   Mở rộng thư viện Đột biến Lời nhắc (Prompt Mutation).
 *   Thử nghiệm đối kháng với các mô hình tấn công mới hơn (ví dụ: mô phỏng GPT-5).
+
+---
+
+## Bộ Dữ liệu Nghiên cứu
+
+### Nhóm 1: The Watchers (Hệ thống Giám sát)
+**Nhiệm vụ:** Phát hiện xâm nhập mạng (Intrusion Detection)
+*   **Bộ dữ liệu:** CSE-CIC-IDS2018 (AWS & Đại học New Brunswick)
+*   **Quy mô:** ~6.4 GB CSV đã xử lý
+*   **Kết quả:** Watcher Agent đạt tỷ lệ phòng thủ **67.7%**
+
+### Nhóm 2: The Brain (Bộ não Trung tâm)
+**Nhiệm vụ:** Tư duy logic, kiểm tra chéo và ra quyết định
+*   **MMLU:** Bảo mật máy tính, Logic hình thức, Học máy
+*   **HaluEval:** 35,000+ mẫu kiểm tra ảo giác
+
+### Nhóm 3: Ghost Agents (Agent Bóng ma)
+**Nhiệm vụ:** Thực thi đối kháng, tự vệ trước Jailbreak/Prompt Injection
+*   **Bộ dữ liệu:** Agent Security Bench (ASB) - ICLR 2025
+*   **Kết quả:** Ghost Agent đạt tỷ lệ kháng cự **85.4%** (gấp đôi Agent tĩnh 39%)
+
