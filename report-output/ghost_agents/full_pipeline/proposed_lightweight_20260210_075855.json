@@ -1,0 +1,132 @@
+{
+  "evaluation_type": "full_pipeline",
+  "mode": "lightweight",
+  "configuration": "proposed",
+  "model_rotation": true,
+  "timestamp": "2026-02-10T07:58:55.109104",
+  "row_limit": 5,
+  "summary": {
+    "flows_processed": 100,
+    "anomalies_detected": 6,
+    "plans_generated": 6,
+    "executions_completed": 6,
+    "timing": {
+      "squad_a": {
+        "init": 0.07332024999777786,
+        "avg_processing": 0.010757667012512684,
+        "total_processing": 0.010757667012512684
+      },
+      "squad_b": {
+        "init": 10.888039750017924,
+        "avg_processing": 2.351699152830406,
+        "total_processing": 14.110194916982437
+      },
+      "squad_c": {
+        "init": 5.420006345957518e-07,
+        "avg_processing": 4.104133159838966,
+        "total_processing": 24.624798959033797
+      },
+      "total_init": 10.961360542016337,
+      "total_processing": 38.745751543028746
+    },
+    "rates": {
+      "anomaly_rate": 0.06,
+      "plan_rate": 1.0,
+      "execution_success_rate": 1.0,
+      "tool_correctness_rate": 0.3333333333333333,
+      "avg_semantic_similarity": 0.5158697962760925,
+      "avg_levenshtein_distance": 111.16666666666667
+    },
+    "model_distribution": {
+      "llama3.2:3b": 2,
+      "phi3:mini": 2,
+      "gemma2:2b": 2
+    }
+  },
+  "detailed_results": [
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999438524246216,
+      "plan_action": "BLOCK_IP",
+      "model_used": "llama3.2:3b",
+      "timing": {
+        "squad_a": 0.010757667012512684,
+        "squad_b": 3.5364476249960717,
+        "squad_c": 2.8297433750121854,
+        "total": 6.37694866702077
+      },
+      "execution_status": "success",
+      "tool_used": "`aws"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999903440475464,
+      "plan_action": "BLOCK_IP",
+      "model_used": "phi3:mini",
+      "timing": {
+        "squad_a": 0.010757667012512684,
+        "squad_b": 2.2331864169973414,
+        "squad_c": 3.5632586249848828,
+        "total": 5.807202708994737
+      },
+      "execution_status": "success",
+      "tool_used": "```bash"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999903440475464,
+      "plan_action": "BLOCK_IP",
+      "model_used": "gemma2:2b",
+      "timing": {
+        "squad_a": 0.010757667012512684,
+        "squad_b": 2.1112039999861736,
+        "squad_c": 4.273403208004311,
+        "total": 6.395364875002997
+      },
+      "execution_status": "success",
+      "tool_used": "```bash"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "BLOCK_IP",
+      "model_used": "llama3.2:3b",
+      "timing": {
+        "squad_a": 0.010757667012512684,
+        "squad_b": 2.3216887920279987,
+        "squad_c": 2.0077388340141624,
+        "total": 4.340185293054674
+      },
+      "execution_status": "success",
+      "tool_used": "aws"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "BLOCK_IP",
+      "model_used": "phi3:mini",
+      "timing": {
+        "squad_a": 0.010757667012512684,
+        "squad_b": 1.8751378750021104,
+        "squad_c": 7.415050917014014,
+        "total": 9.300946459028637
+      },
+      "execution_status": "success",
+      "tool_used": "```bash"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "BLOCK_IP",
+      "model_used": "gemma2:2b",
+      "timing": {
+        "squad_a": 0.010757667012512684,
+        "squad_b": 2.0325302079727408,
+        "squad_c": 4.535604000004241,
+        "total": 6.578891874989495
+      },
+      "execution_status": "success",
+      "tool_used": "```bash"
+    }
+  ]
+}

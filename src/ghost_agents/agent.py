@@ -57,8 +57,17 @@ class GhostAgent:
                 print(f"[Ghost-{self.session_id[:8]}] AI GENERATED COMMAND: {cmd}")
                 
                 # Extract primary tool for metrics (e.g., 'aws ec2' -> 'aws')
-                # Simple heuristic: first word
-                tool = cmd.split()[0] if cmd else "unknown"
+                # Clean Markdown code blocks if present
+                clean_cmd = cmd
+                if "```" in clean_cmd:
+                    clean_lines = []
+                    for line in clean_cmd.split('\n'):
+                        if "```" not in line:
+                            clean_lines.append(line)
+                    clean_cmd = "\n".join(clean_lines).strip()
+
+                # Extract primary tool
+                tool = clean_cmd.split()[0] if clean_cmd else "unknown"
                 
                 print(f"[Ghost-{self.session_id[:8]}] SUCCESS: Action verified and completed.")
                 result["status"] = "success"

@@ -16,6 +16,7 @@ import os
 # Add project root to path for imports
 project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, project_root)
+os.chdir(project_root) # Ensure relative paths (like ai/models/...) work from anywhere
 
 import pandas as pd
 import time
@@ -24,6 +25,10 @@ import argparse
 from datetime import datetime
 from typing import Dict, List, Any
 from tqdm import tqdm
+from sentence_transformers import SentenceTransformer
+from Levenshtein import distance as levenshtein_distance
+from sklearn.metrics.pairwise import cosine_similarity
+import numpy as np
 
 # Import all squads
 from src.watchers.agent import DetectionAgent
@@ -58,6 +63,11 @@ class PipelineMetrics:
         self.total_plans = 0
         self.total_executions = 0
         
+        # Advanced Metrics (Squad C)
+        self.semantic_scores = []
+        self.levenshtein_scores = []
+        self.tool_correctness_scores = []
+        
         # Squad C specific
         self.squad_c_results = []
         self.model_usage = {}
@@ -74,10 +84,15 @@ class PipelineMetrics:
         if plan_generated:
             self.total_plans += 1
     
-    def log_squad_c(self, duration: float, result: Dict, model_used: str):
+    def log_squad_c(self, duration: float, result: Dict, model_used: str, prompt_metrics: Dict = None):
         self.processing_times["squad_c"].append(duration)
         self.squad_c_results.append(result)
         self.model_usage[model_used] = self.model_usage.get(model_used, 0) + 1
+        
+        if prompt_metrics:
+            self.semantic_scores.append(prompt_metrics.get("semantic_similarity", 0))
+            self.levenshtein_scores.append(prompt_metrics.get("levenshtein", 0))
+            self.tool_correctness_scores.append(1 if prompt_metrics.get("tool_correct") else 0)
         
         if result.get("status") in ["success", "simulated_success"]:
             self.total_executions += 1
@@ -116,6 +131,9 @@ class PipelineMetrics:
                 "anomaly_rate": self.total_anomalies / max(self.total_flows, 1),
                 "plan_rate": self.total_plans / max(self.total_anomalies, 1),
                 "execution_success_rate": self.total_executions / max(self.total_plans, 1),
+                "tool_correctness_rate": float(np.mean(self.tool_correctness_scores)) if self.tool_correctness_scores else 0.0,
+                "avg_semantic_similarity": float(np.mean(self.semantic_scores)) if self.semantic_scores else 0.0,
+                "avg_levenshtein_distance": float(np.mean(self.levenshtein_scores)) if self.levenshtein_scores else 0.0
             },
             "model_distribution": self.model_usage,
         }
@@ -131,6 +149,8 @@ def run_full_pipeline(mode: str = "lightweight", baseline: bool = False, custom_
         custom_limit: Override default row limit
     """
     # Determine row limit
+    if custom_limit:
+        limit = custom_limit
     if custom_limit:
         limit = custom_limit
     elif mode == "lightweight":
@@ -150,6 +170,14 @@ def run_full_pipeline(mode: str = "lightweight", baseline: bool = False, custom_
     print()
     
     metrics = PipelineMetrics()
+    
+    # Initialize SBERT (New)
+    print("[Init] Loading Sentence Transformer for Semantic Metrics (this may take a moment)...")
+    sbert_model = None
+    try:
+        sbert_model = SentenceTransformer('all-MiniLM-L6-v2') 
+    except Exception as e:
+        print(f"Warning: SBERT load failed ({e}), semantic metrics will be 0.")
     
     # ========== INITIALIZATION PHASE ==========
     print("[Phase 1] Initializing Squads...")
@@ -224,11 +252,31 @@ def run_full_pipeline(mode: str = "lightweight", baseline: bool = False, custom_
                         
                         # Capture model BEFORE execution (self_destruct wipes it)
                         model_used = ghost.model
+                        mutated_prompt = ghost.prompt
                         
                         exec_result = ghost.execute_remediation(plan)
                         
+                        # --- Advanced Metrics Calculation ---
+                        lev_dist = levenshtein_distance(base_instruction, mutated_prompt) if mutated_prompt else 0
+                        
+                        sem_sim = 0.0
+                        if sbert_model and mutated_prompt:
+                             emb_base = sbert_model.encode([base_instruction])
+                             emb_mutated = sbert_model.encode([mutated_prompt])
+                             sem_sim = cosine_similarity(emb_base, emb_mutated)[0][0]
+                        
+                        tool_used = exec_result.get("tool_used", "")
+                        # Simple heuristics for tool correctness
+                        is_tool_correct = "aws" in str(tool_used).lower() if tool_used else False
+                        
+                        prompt_metrics = {
+                            "levenshtein": lev_dist,
+                            "semantic_similarity": sem_sim,
+                            "tool_correct": is_tool_correct
+                        }
+                        
                         t_c_duration = time.perf_counter() - t_c_start
-                        metrics.log_squad_c(t_c_duration, exec_result, model_used)
+                        metrics.log_squad_c(t_c_duration, exec_result, model_used, prompt_metrics)
                         
                         # Record detailed result
                         detailed_results.append({
@@ -281,6 +329,10 @@ def run_full_pipeline(mode: str = "lightweight", baseline: bool = False, custom_
     print(f"  Anomaly Rate:        {summary['rates']['anomaly_rate']*100:.2f}%")
     print(f"  Plan Rate:           {summary['rates']['plan_rate']*100:.2f}%")
     print(f"  Execution Success:   {summary['rates']['execution_success_rate']*100:.2f}%")
+    print(f"\n--- Squad C Advanced Metrics ---")
+    print(f"  Tool Correctness:    {summary['rates']['tool_correctness_rate']*100:.2f}%")
+    print(f"  Avg Semantic Sim:    {summary['rates']['avg_semantic_similarity']:.4f}")
+    print(f"  Avg Levenshtein:     {summary['rates']['avg_levenshtein_distance']:.2f}")
     
     if summary['model_distribution']:
         print(f"\n--- Model Distribution ---")
