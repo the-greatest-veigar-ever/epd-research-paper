@@ -70,7 +70,10 @@ class PipelineMetrics:
         
         # Squad C specific
         self.squad_c_results = []
+        self.squad_c_results = []
         self.model_usage = {}
+        # Per-model timing: { "model_name": {"init": [], "action": []} }
+        self.model_timings = {}
         
         # Injection resistance (if injection tests included)
         self.injection_tests = {"total": 0, "safe": 0, "unsafe": 0}
@@ -84,10 +87,16 @@ class PipelineMetrics:
         if plan_generated:
             self.total_plans += 1
     
-    def log_squad_c(self, duration: float, result: Dict, model_used: str, prompt_metrics: Dict = None):
+    def log_squad_c(self, duration: float, result: Dict, model_used: str, prompt_metrics: Dict = None, init_duration: float = 0.0, action_duration: float = 0.0):
         self.processing_times["squad_c"].append(duration)
         self.squad_c_results.append(result)
         self.model_usage[model_used] = self.model_usage.get(model_used, 0) + 1
+        
+        # Per-model timing
+        if model_used not in self.model_timings:
+            self.model_timings[model_used] = {"init": [], "action": []}
+        self.model_timings[model_used]["init"].append(init_duration)
+        self.model_timings[model_used]["action"].append(action_duration)
         
         if prompt_metrics:
             self.semantic_scores.append(prompt_metrics.get("semantic_similarity", 0))
@@ -136,6 +145,14 @@ class PipelineMetrics:
                 "avg_levenshtein_distance": float(np.mean(self.levenshtein_scores)) if self.levenshtein_scores else 0.0
             },
             "model_distribution": self.model_usage,
+            "per_model_latency": {
+                model: {
+                    "avg_init": float(np.mean(times["init"])) if times["init"] else 0.0,
+                    "avg_action": float(np.mean(times["action"])) if times["action"] else 0.0,
+                    "avg_total": float(np.mean(times["init"]) + np.mean(times["action"])) if times["init"] else 0.0
+                }
+                for model, times in self.model_timings.items()
+            }
         }
 
 
@@ -244,18 +261,24 @@ def run_full_pipeline(mode: str = "lightweight", baseline: bool = False, custom_
                         # --- SQUAD C: Execution ---
                         t_c_start = time.perf_counter()
                         
+                        # 1. Initialization (Creation/Rotation)
+                        t_init_start = time.perf_counter()
                         base_instruction = f"Perform {plan['action']} on {plan['target']}"
                         ghost = GhostAgentFactory.create_agent(
                             base_instruction, 
                             rotate_model=not baseline
                         )
+                        t_init_duration = time.perf_counter() - t_init_start
                         
-                        # Capture model BEFORE execution (self_destruct wipes it)
+                        # Capture model BEFORE execution
                         model_used = ghost.model
                         mutated_prompt = ghost.prompt
                         
+                        # 2. Action Execution
+                        t_act_start = time.perf_counter()
                         exec_result = ghost.execute_remediation(plan)
-                        
+                        t_act_duration = time.perf_counter() - t_act_start
+
                         # --- Advanced Metrics Calculation ---
                         lev_dist = levenshtein_distance(base_instruction, mutated_prompt) if mutated_prompt else 0
                         
@@ -276,7 +299,7 @@ def run_full_pipeline(mode: str = "lightweight", baseline: bool = False, custom_
                         }
                         
                         t_c_duration = time.perf_counter() - t_c_start
-                        metrics.log_squad_c(t_c_duration, exec_result, model_used, prompt_metrics)
+                        metrics.log_squad_c(t_c_duration, exec_result, model_used, prompt_metrics, init_duration=t_init_duration, action_duration=t_act_duration)
                         
                         # Record detailed result
                         detailed_results.append({
@@ -335,10 +358,19 @@ def run_full_pipeline(mode: str = "lightweight", baseline: bool = False, custom_
     print(f"  Avg Levenshtein:     {summary['rates']['avg_levenshtein_distance']:.2f}")
     
     if summary['model_distribution']:
-        print(f"\n--- Model Distribution ---")
+        print(f"\n--- Model Performance (Squad C) ---")
         for model, count in summary['model_distribution'].items():
             pct = count / max(summary['executions_completed'], 1) * 100
-            print(f"  {model}: {count} ({pct:.1f}%)")
+            
+            # Get timing if available
+            timings = summary.get("per_model_latency", {}).get(model, {})
+            t_init = timings.get("avg_init", 0.0)
+            t_action = timings.get("avg_action", 0.0)
+            
+            print(f"  {model}:")
+            print(f"    Count:  {count} ({pct:.1f}%)")
+            print(f"    T_init: {t_init:.3f}s")
+            print(f"    T_act:  {t_action:.3f}s")
     
     # ========== SAVE RESULTS ==========
     os.makedirs(REPORT_OUTPUT_DIR, exist_ok=True)
