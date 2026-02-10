@@ -1,0 +1,393 @@
+{
+  "evaluation_type": "full_pipeline",
+  "mode": "lightweight",
+  "configuration": "proposed",
+  "model_rotation": true,
+  "timestamp": "2026-02-09T23:12:20.966031",
+  "row_limit": 500,
+  "summary": {
+    "flows_processed": 500,
+    "anomalies_detected": 25,
+    "plans_generated": 25,
+    "executions_completed": 25,
+    "timing": {
+      "squad_a": {
+        "init": 0.17725891699956264,
+        "avg_processing": 0.011491641402244568,
+        "total_processing": 0.05745820701122284
+      },
+      "squad_b": {
+        "init": 9.349345125010586,
+        "avg_processing": 1.5177271166793072,
+        "total_processing": 37.94317791698268
+      },
+      "squad_c": {
+        "init": 1.2499949662014842e-06,
+        "avg_processing": 3.416100749920588,
+        "total_processing": 85.4025187480147
+      },
+      "total_init": 9.526605292005115,
+      "total_processing": 123.4031548720086
+    },
+    "rates": {
+      "anomaly_rate": 0.05,
+      "plan_rate": 1.0,
+      "execution_success_rate": 1.0
+    },
+    "model_distribution": {
+      "null": 25
+    }
+  },
+  "detailed_results": [
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999438524246216,
+      "plan_action": "NOTIFY_ADMIN",
+      "model_used": null,
+      "timing": {
+        "squad_a": 0.011219166000955738,
+        "squad_b": 1.0748682499979623,
+        "squad_c": 3.632408374993247,
+        "total": 4.718495790992165
+      },
+      "execution_status": "success",
+      "tool_used": "notify-admin"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999903440475464,
+      "plan_action": "NOTIFY_ADMIN",
+      "model_used": null,
+      "timing": {
+        "squad_a": 0.011219166000955738,
+        "squad_b": 2.408601917006308,
+        "squad_c": 9.995777707998059,
+        "total": 12.415598791005323
+      },
+      "execution_status": "success",
+      "tool_used": "```bash"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999903440475464,
+      "plan_action": "NOTIFY_ADMIN",
+      "model_used": null,
+      "timing": {
+        "squad_a": 0.011219166000955738,
+        "squad_b": 2.463189333997434,
+        "squad_c": 5.4353509999928065,
+        "total": 7.909759499991196
+      },
+      "execution_status": "success",
+      "tool_used": "```bash"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "NOTIFY_ADMIN",
+      "model_used": null,
+      "timing": {
+        "squad_a": 0.011219166000955738,
+        "squad_b": 2.353546250000363,
+        "squad_c": 1.617057958006626,
+        "total": 3.981823374007945
+      },
+      "execution_status": "success",
+      "tool_used": "aws"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "NOTIFY_ADMIN",
+      "model_used": null,
+      "timing": {
+        "squad_a": 0.011219166000955738,
+        "squad_b": 0.7556953329913085,
+        "squad_c": 5.25973000000522,
+        "total": 6.026644498997484
+      },
+      "execution_status": "success",
+      "tool_used": "```bash"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "NOTIFY_ADMIN",
+      "model_used": null,
+      "timing": {
+        "squad_a": 0.01110862499626819,
+        "squad_b": 2.461695250007324,
+        "squad_c": 5.665602041990496,
+        "total": 8.138405916994088
+      },
+      "execution_status": "success",
+      "tool_used": "```bash"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "NOTIFY_ADMIN",
+      "model_used": null,
+      "timing": {
+        "squad_a": 0.01110862499626819,
+        "squad_b": 1.6096111250080867,
+        "squad_c": 1.1204711250029504,
+        "total": 2.7411908750073053
+      },
+      "execution_status": "success",
+      "tool_used": "aws"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999905824661255,
+      "plan_action": "NOTIFY_ADMIN",
+      "model_used": null,
+      "timing": {
+        "squad_a": 0.01110862499626819,
+        "squad_b": 0.7383731250010896,
+        "squad_c": 3.5443075410003075,
+        "total": 4.293789290997665
+      },
+      "execution_status": "success",
+      "tool_used": "```bash"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "NOTIFY_ADMIN",
+      "model_used": null,
+      "timing": {
+        "squad_a": 0.01110862499626819,
+        "squad_b": 2.115081583004212,
+        "squad_c": 5.637416915997164,
+        "total": 7.7636071239976445
+      },
+      "execution_status": "success",
+      "tool_used": "```bash"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999438524246216,
+      "plan_action": "NOTIFY_ADMIN",
+      "model_used": null,
+      "timing": {
+        "squad_a": 0.01110862499626819,
+        "squad_b": 1.6408115829981398,
+        "squad_c": 1.197931791000883,
+        "total": 2.849851998995291
+      },
+      "execution_status": "success",
+      "tool_used": "aws"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999905824661255,
+      "plan_action": "NOTIFY_ADMIN",
+      "model_used": null,
+      "timing": {
+        "squad_a": 0.012347833006060682,
+        "squad_b": 0.7450915829977021,
+        "squad_c": 3.5916551249974873,
+        "total": 4.34909454100125
+      },
+      "execution_status": "success",
+      "tool_used": "aws"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999905824661255,
+      "plan_action": "NOTIFY_ADMIN",
+      "model_used": null,
+      "timing": {
+        "squad_a": 0.012347833006060682,
+        "squad_b": 2.1792819169932045,
+        "squad_c": 3.88583466601267,
+        "total": 6.077464416011935
+      },
+      "execution_status": "success",
+      "tool_used": "```bash"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999905824661255,
+      "plan_action": "NOTIFY_ADMIN",
+      "model_used": null,
+      "timing": {
+        "squad_a": 0.012347833006060682,
+        "squad_b": 2.322368082997855,
+        "squad_c": 1.0984381250018487,
+        "total": 3.433154041005764
+      },
+      "execution_status": "success",
+      "tool_used": "notify_admin"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999905824661255,
+      "plan_action": "NOTIFY_ADMIN",
+      "model_used": null,
+      "timing": {
+        "squad_a": 0.012347833006060682,
+        "squad_b": 0.5553260419983417,
+        "squad_c": 4.805485542005044,
+        "total": 5.373159417009447
+      },
+      "execution_status": "success",
+      "tool_used": "```bash"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "NOTIFY_ADMIN",
+      "model_used": null,
+      "timing": {
+        "squad_a": 0.012347833006060682,
+        "squad_b": 2.339108625004883,
+        "squad_c": 4.119300791993737,
+        "total": 6.470757250004681
+      },
+      "execution_status": "success",
+      "tool_used": "```bash"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.999961256980896,
+      "plan_action": "NOTIFY_ADMIN",
+      "model_used": null,
+      "timing": {
+        "squad_a": 0.012456833006581292,
+        "squad_b": 1.7324214160034899,
+        "squad_c": 1.5233242500107735,
+        "total": 3.2682024990208447
+      },
+      "execution_status": "success",
+      "tool_used": "notify-admin"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "NOTIFY_ADMIN",
+      "model_used": null,
+      "timing": {
+        "squad_a": 0.012456833006581292,
+        "squad_b": 0.7520401249930728,
+        "squad_c": 3.712714290988515,
+        "total": 4.477211248988169
+      },
+      "execution_status": "success",
+      "tool_used": "```bash"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999905824661255,
+      "plan_action": "NOTIFY_ADMIN",
+      "model_used": null,
+      "timing": {
+        "squad_a": 0.012456833006581292,
+        "squad_b": 2.242696874993271,
+        "squad_c": 1.9507072499982314,
+        "total": 4.205860957998084
+      },
+      "execution_status": "success",
+      "tool_used": "```aws"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999905824661255,
+      "plan_action": "NOTIFY_ADMIN",
+      "model_used": null,
+      "timing": {
+        "squad_a": 0.012456833006581292,
+        "squad_b": 0.8138585839915322,
+        "squad_c": 1.2391455829929328,
+        "total": 2.0654609999910463
+      },
+      "execution_status": "success",
+      "tool_used": "aws"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999905824661255,
+      "plan_action": "NOTIFY_ADMIN",
+      "model_used": null,
+      "timing": {
+        "squad_a": 0.012456833006581292,
+        "squad_b": 0.7490117499983171,
+        "squad_c": 3.676705749996472,
+        "total": 4.4381743330013705
+      },
+      "execution_status": "success",
+      "tool_used": "aws"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "NOTIFY_ADMIN",
+      "model_used": null,
+      "timing": {
+        "squad_a": 0.010325750001356937,
+        "squad_b": 1.1337316249992,
+        "squad_c": 2.690331709003658,
+        "total": 3.834389084004215
+      },
+      "execution_status": "success",
+      "tool_used": "```bash"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "NOTIFY_ADMIN",
+      "model_used": null,
+      "timing": {
+        "squad_a": 0.010325750001356937,
+        "squad_b": 0.9750096250063507,
+        "squad_c": 1.5812319170072442,
+        "total": 2.566567292014952
+      },
+      "execution_status": "success",
+      "tool_used": "notify-admin"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "NOTIFY_ADMIN",
+      "model_used": null,
+      "timing": {
+        "squad_a": 0.010325750001356937,
+        "squad_b": 0.7772960829897784,
+        "squad_c": 4.097229999999399,
+        "total": 4.884851832990535
+      },
+      "execution_status": "success",
+      "tool_used": "```bash"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "NOTIFY_ADMIN",
+      "model_used": null,
+      "timing": {
+        "squad_a": 0.010325750001356937,
+        "squad_b": 2.1850363749981625,
+        "squad_c": 2.8474923330068123,
+        "total": 5.042854458006332
+      },
+      "execution_status": "success",
+      "tool_used": "```bash"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "NOTIFY_ADMIN",
+      "model_used": null,
+      "timing": {
+        "squad_a": 0.010325750001356937,
+        "squad_b": 0.8194254590052878,
+        "squad_c": 1.4768669590121135,
+        "total": 2.3066181680187583
+      },
+      "execution_status": "success",
+      "tool_used": "aws"
+    }
+  ]
+}

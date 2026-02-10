@@ -46,8 +46,11 @@ class DetectionAgent:
             if anomalies_indices:
                  print(f"[{self.agent_id}] BATCH: Found {len(anomalies_indices)} threats in {len(df_batch)} flows.")
                  
+                 # Configurable throttle - set to None for no limit
+                 max_alerts_per_batch = 20  # Safeguard: Limit to 20 alerts/batch by default
+                 
                  for idx in anomalies_indices:
-                     if len(alerts) < 5: # Throttling for demo console
+                     if max_alerts_per_batch is None or len(alerts) < max_alerts_per_batch:
                          row = df_batch.iloc[idx].to_dict()
                          
                          # Construct Alert for Brain
