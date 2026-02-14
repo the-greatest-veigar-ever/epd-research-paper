@@ -1,0 +1,60 @@
+{
+  "timestamp": "2026-02-14T14:38:34.605815",
+  "baseline": {
+    "averaged_metrics": {
+      "asr": 1.0,
+      "tool_correctness": 0.89,
+      "avg_semantic_similarity": 0.6808040142059326,
+      "avg_levenshtein_distance": 99.21
+    },
+    "total_scenarios": 873
+  },
+  "v2_proposed": {
+    "metrics": {
+      "anomaly_rate": 0.13,
+      "plan_rate": 1.0,
+      "execution_success_rate": 1.0,
+      "tool_correctness_rate": 1.0,
+      "avg_semantic_similarity": 0.6078782677650452,
+      "avg_levenshtein_distance": 93.73076923076923,
+      "avg_ephemerality_overhead": 2.3132013494793613
+    },
+    "total_scenarios": 0
+  },
+  "statistical_tests": {
+    "latency": {
+      "t_statistic": -3.3913281805881597,
+      "t_pvalue": 0.0007394844037335687,
+      "mann_whitney_u": 114.0,
+      "mann_whitney_pvalue": 1.6994793921627872e-17,
+      "cohens_d": 0.8691003180523633,
+      "is_significant_005": true,
+      "is_significant_001": true
+    },
+    "semantic_similarity": {
+      "t_statistic": 2.5507304116025202,
+      "t_pvalue": 0.010987358377620209,
+      "mann_whitney_u": 9870.0,
+      "mann_whitney_pvalue": 0.02189182918536564,
+      "cohens_d": -0.48389813178330515,
+      "is_significant_005": true,
+      "is_significant_001": false
+    }
+  },
+  "deltas_vs_baseline": {
+    "tool_correctness": 0.10999999999999999,
+    "semantic_similarity": -0.07292574644088745,
+    "latency": 5.998414373669822
+  },
+  "llm_comparison": {
+    "model": "llama3",
+    "metrics": {
+      "avg_latency_s": 2.284056054353714,
+      "tool_correctness": 0.975
+    },
+    "deltas_vs_v2": {
+      "latency": 5.514525575512447,
+      "tool_correctness": 0.025000000000000022
+    }
+  }
+}

@@ -1,13 +1,9 @@
 #!/usr/bin/env python3
 """
-Full Pipeline Evaluation for EPD Squad C
+Full Pipeline Evaluation for EPD Squad C - V2 IMPROVED
+Phase 2: Verifying Reduced Polymorphism + One-Shot Prompting
 
-Runs the COMPLETE pipeline: Squad A → Squad B → Squad C
-With comprehensive timing and metrics collection.
-
-Two modes:
-- Lightweight: 100-500 flows, quick validation
-- Normal: 1000-2000 flows, full evaluation
+Runs the COMPLETE pipeline: Squad A → Squad B → Squad C (Ghost Agent V2)
 """
 
 import sys
@@ -16,7 +12,7 @@ import os
 # Add project root to path for imports
 project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, project_root)
-os.chdir(project_root) # Ensure relative paths (like ai/models/...) work from anywhere
+os.chdir(project_root) # Ensure relative paths work
 
 import pandas as pd
 import time
@@ -33,18 +29,17 @@ import numpy as np
 # Import all squads
 from src.watchers.agent import DetectionAgent
 from src.brain.agent import IntelligenceAgent
-from src.ghost_agents.agent import GhostAgentFactory
+# V2 IMPORT: Use the improved factory
+from src.ghost_agents.agent_v2 import GhostAgentFactoryV2
 
 # CONFIG
 DATA_PATH = "data/watchers/cse-cic-ids2018/Processed Traffic Data for ML Algorithms/Wednesday-14-02-2018_TrafficForML_CICFlowMeter.csv"
-INJECTION_TEST_PATH = "ai/data/ghost_agents/injection_test_cases.jsonl"
-REPORT_OUTPUT_DIR = "report-output/ghost_agents/full_pipeline"
+REPORT_OUTPUT_DIR = "experiments/phase_2_improvements/results" # Separate output dir
 
-# Preset limits
 # Preset limits
 LIMIT_LIGHTWEIGHT = 500
 LIMIT_NORMAL = 2000
-LIMIT_RESEARCH = 200  # Specific limit for research plan (100-200 malicious inputs)
+LIMIT_RESEARCH = 200
 BATCH_SIZE = 100
 
 
@@ -72,17 +67,12 @@ class PipelineMetrics:
         
         # Squad C specific
         self.squad_c_results = []
-        self.squad_c_results = []
         self.model_usage = {}
-        # Per-model timing: { "model_name": {"init": [], "action": []} }
         # Per-model timing: { "model_name": {"init": [], "action": [], "ephemerality": []} }
         self.model_timings = {}
         
         # Ephemerality Overhead (Time to spin up/down vs execution)
         self.ephemerality_overhead = []
-        
-        # Injection resistance (if injection tests included)
-        self.injection_tests = {"total": 0, "safe": 0, "unsafe": 0}
     
     def log_squad_a(self, duration: float, anomaly_count: int):
         self.processing_times["squad_a"].append(duration)
@@ -104,8 +94,7 @@ class PipelineMetrics:
         self.model_timings[model_used]["init"].append(init_duration)
         self.model_timings[model_used]["action"].append(action_duration)
         
-        # Ephemerality = Init Time (creation/born) + Teardown (usually negligible but part of process)
-        # We use init_duration as the proxy for Ephemerality Overhead
+        # Ephemerality = Init Time (creation/born)
         self.ephemerality_overhead.append(init_duration)
         self.model_timings[model_used]["ephemerality"].append(init_duration)
         
@@ -168,94 +157,80 @@ class PipelineMetrics:
         }
 
 
-def run_full_pipeline(mode: str = "lightweight", baseline: bool = False, custom_limit: int = None):
-    """
-    Run full pipeline evaluation.
-    
-    Args:
-        mode: "lightweight" (500 flows) or "normal" (2000 flows)
-        baseline: If True, disable model rotation (baseline comparison)
-        custom_limit: Override default row limit
-    """
+def run_full_pipeline_v2(mode: str = "lightweight", baseline: bool = False, custom_limit: int = None):
     # Determine row limit
-    if custom_limit:
-        limit = custom_limit
     if custom_limit:
         limit = custom_limit
     elif mode == "lightweight":
         limit = LIMIT_LIGHTWEIGHT
+    elif mode == "research":
+        limit = LIMIT_RESEARCH
     else:
         limit = LIMIT_NORMAL
     
-    config_name = "baseline" if baseline else "proposed"
+    config_name = "baseline_v2" if baseline else "proposed_v2_improved"
     
     print("=" * 80)
-    print(f"EPD FULL PIPELINE EVALUATION - {mode.upper()} MODE")
+    print(f"EPD FULL PIPELINE EVALUATION (V2) - {mode.upper()} MODE")
     print("=" * 80)
     print(f"Configuration: {config_name}")
-    print(f"Model Rotation: {not baseline}")
     print(f"Row Limit: {limit}")
     print(f"Date: {datetime.now().isoformat()}")
     print()
     
     metrics = PipelineMetrics()
     
-    # Initialize SBERT (New)
-    print("[Init] Loading Sentence Transformer for Semantic Metrics (this may take a moment)...")
+    # Initialize SBERT
+    print("[Init] Loading Sentence Transformer...")
     sbert_model = None
     try:
         sbert_model = SentenceTransformer('all-MiniLM-L6-v2') 
     except Exception as e:
-        print(f"Warning: SBERT load failed ({e}), semantic metrics will be 0.")
+        print(f"Warning: SBERT load failed ({e})")
     
     # ========== INITIALIZATION PHASE ==========
     print("[Phase 1] Initializing Squads...")
     
     # Squad A
     t_start = time.perf_counter()
-    watcher = DetectionAgent("Watcher-Eval")
+    watcher = DetectionAgent("Watcher-Eval-V2")
     metrics.init_times["squad_a"] = time.perf_counter() - t_start
     print(f"  Squad A (Watcher): {metrics.init_times['squad_a']:.3f}s")
     
-    if not watcher.is_trained:
-        print("❌ Error: Watcher model not found. Cannot proceed.")
-        return None
-    
     # Squad B
     t_start = time.perf_counter()
-    brain = IntelligenceAgent("Brain-Eval")
+    brain = IntelligenceAgent("Brain-Eval-V2")
     metrics.init_times["squad_b"] = time.perf_counter() - t_start
     print(f"  Squad B (Brain): {metrics.init_times['squad_b']:.3f}s")
     
-    # Squad C (just reset rotation index)
+    # Squad C
     t_start = time.perf_counter()
-    GhostAgentFactory._current_model_idx = 0
+    GhostAgentFactoryV2._current_model_idx = 0
     metrics.init_times["squad_c"] = time.perf_counter() - t_start
-    print(f"  Squad C (Ghost Factory): {metrics.init_times['squad_c']:.3f}s")
-    
-    total_init = sum(metrics.init_times.values())
-    print(f"  TOTAL T_init: {total_init:.3f}s")
-    print()
+    print(f"  Squad C (Ghost V2 Factory): {metrics.init_times['squad_c']:.3f}s")
     
     # ========== PROCESSING PHASE ==========
     print(f"[Phase 2] Processing Traffic ({limit} flows)...")
-    print(f"  Data: {DATA_PATH}")
     
     # Load data
-    chunk_iterator = pd.read_csv(DATA_PATH, chunksize=BATCH_SIZE)
-    total_batches = limit // BATCH_SIZE
-    
+    try:
+        chunk_iterator = pd.read_csv(DATA_PATH, chunksize=BATCH_SIZE)
+        total_batches = limit // BATCH_SIZE
+    except FileNotFoundError:
+        print(f"Dataset not found: {DATA_PATH}")
+        return
+
     detailed_results = []
     
     try:
-        for batch_df in tqdm(chunk_iterator, total=total_batches, unit="batch", desc="Pipeline"):
+        for batch_df in tqdm(chunk_iterator, total=total_batches, unit="batch", desc="Pipeline V2"):
             if metrics.total_flows >= limit:
                 break
             
             batch_df.columns = batch_df.columns.str.strip()
             batch_size = len(batch_df)
             
-            # --- SQUAD A: Detection ---
+            # --- SQUAD A ---
             t_a_start = time.perf_counter()
             alerts = watcher.monitor_traffic_batch(batch_df)
             t_a_duration = time.perf_counter() - t_a_start
@@ -263,37 +238,38 @@ def run_full_pipeline(mode: str = "lightweight", baseline: bool = False, custom_
             
             if alerts:
                 for alert in alerts:
-                    # --- SQUAD B: Analysis ---
+                    # --- SQUAD B ---
                     t_b_start = time.perf_counter()
                     plan = brain.analyze_alert(alert)
                     t_b_duration = time.perf_counter() - t_b_start
                     metrics.log_squad_b(t_b_duration, plan is not None)
                     
                     if plan:
-                        # --- SQUAD C: Execution ---
+                        # --- SQUAD C (V2) ---
                         t_c_start = time.perf_counter()
                         
-                        # 1. Initialization (Creation/Rotation)
+                        # 1. Init
                         t_init_start = time.perf_counter()
                         base_instruction = f"Perform {plan['action']} on {plan['target']}"
-                        ghost = GhostAgentFactory.create_agent(
+                        
+                        # V2 Creation
+                        ghost = GhostAgentFactoryV2.create_agent(
                             base_instruction, 
                             rotate_model=not baseline
                         )
                         t_init_duration = time.perf_counter() - t_init_start
                         
-                        # Capture model BEFORE execution
+                        # Capture props BEFORE execution (Fix for V2 cleanup)
                         model_used = ghost.model
                         mutated_prompt = ghost.prompt
                         
-                        # 2. Action Execution
+                        # 2. Action
                         t_act_start = time.perf_counter()
                         exec_result = ghost.execute_remediation(plan)
                         t_act_duration = time.perf_counter() - t_act_start
 
-                        # --- Advanced Metrics Calculation ---
+                        # Metrics
                         lev_dist = levenshtein_distance(base_instruction, mutated_prompt) if mutated_prompt else 0
-                        
                         sem_sim = 0.0
                         if sbert_model and mutated_prompt:
                              emb_base = sbert_model.encode([base_instruction])
@@ -301,7 +277,6 @@ def run_full_pipeline(mode: str = "lightweight", baseline: bool = False, custom_
                              sem_sim = cosine_similarity(emb_base, emb_mutated)[0][0]
                         
                         tool_used = exec_result.get("tool_used", "")
-                        # Simple heuristics for tool correctness
                         is_tool_correct = "aws" in str(tool_used).lower() if tool_used else False
                         
                         prompt_metrics = {
@@ -313,118 +288,40 @@ def run_full_pipeline(mode: str = "lightweight", baseline: bool = False, custom_
                         t_c_duration = time.perf_counter() - t_c_start
                         metrics.log_squad_c(t_c_duration, exec_result, model_used, prompt_metrics, init_duration=t_init_duration, action_duration=t_act_duration)
                         
-                        # Record detailed result
                         detailed_results.append({
-                            "alert_type": alert.get("type"),
-                            "ai_score": alert.get("ai_score"),
                             "plan_action": plan.get("action"),
                             "model_used": model_used,
-                            "timing": {
-                                "squad_a": t_a_duration,
-                                "squad_b": t_b_duration,
-                                "squad_c": t_c_duration,
-                                "total": t_a_duration + t_b_duration + t_c_duration
-                            },
                             "execution_status": exec_result.get("status"),
-                            "tool_used": exec_result.get("tool_used")
+                            "tool_used": exec_result.get("tool_used"),
+                            "semantic_sim": float(sem_sim),
+                            "latency": float(t_c_duration)
                         })
             
             metrics.total_flows += batch_size
     
-    except KeyboardInterrupt:
-        print("\n[STOP] Evaluation interrupted.")
     except Exception as e:
         print(f"\n[ERROR] Pipeline error: {e}")
     
-    # ========== RESULTS PHASE ==========
-    print()
-    print("=" * 80)
-    print("EVALUATION RESULTS")
-    print("=" * 80)
-    
+    # ========== REPORT ==========
     summary = metrics.get_summary()
+    print(f"\n--- V2 Results ---")
+    print(f"  Executions: {summary['executions_completed']}")
+    print(f"  Tool Correctness: {summary['rates']['tool_correctness_rate']*100:.2f}%")
+    print(f"  Avg Semantic Sim: {summary['rates']['avg_semantic_similarity']:.4f}")
     
-    print(f"\n--- Pipeline Statistics ---")
-    print(f"  Flows Processed:     {summary['flows_processed']}")
-    print(f"  Anomalies Detected:  {summary['anomalies_detected']}")
-    print(f"  Plans Generated:     {summary['plans_generated']}")
-    print(f"  Executions Complete: {summary['executions_completed']}")
-    
-    print(f"\n--- Timing Metrics ---")
-    print(f"  T_init (total):      {summary['timing']['total_init']:.3f}s")
-    print(f"  T_proc (total):      {summary['timing']['total_processing']:.3f}s")
-    print(f"  T_total:             {summary['timing']['total_init'] + summary['timing']['total_processing']:.3f}s")
-    
-    print(f"\n--- Per-Squad Timing ---")
-    print(f"  Squad A avg:         {summary['timing']['squad_a']['avg_processing']:.3f}s")
-    print(f"  Squad B avg:         {summary['timing']['squad_b']['avg_processing']:.3f}s")
-    print(f"  Squad C avg:         {summary['timing']['squad_c']['avg_processing']:.3f}s")
-    
-    print(f"\n--- Success Rates ---")
-    print(f"  Anomaly Rate:        {summary['rates']['anomaly_rate']*100:.2f}%")
-    print(f"  Plan Rate:           {summary['rates']['plan_rate']*100:.2f}%")
-    print(f"  Execution Success:   {summary['rates']['execution_success_rate']*100:.2f}%")
-    print(f"\n--- Squad C Advanced Metrics ---")
-    print(f"  Tool Correctness:    {summary['rates']['tool_correctness_rate']*100:.2f}%")
-    print(f"  Avg Semantic Sim:    {summary['rates']['avg_semantic_similarity']:.4f}")
-    print(f"  Avg Levenshtein:     {summary['rates']['avg_levenshtein_distance']:.2f}")
-    
-    if summary['model_distribution']:
-        print(f"\n--- Model Performance (Squad C) ---")
-        for model, count in summary['model_distribution'].items():
-            pct = count / max(summary['executions_completed'], 1) * 100
-            
-            # Get timing if available
-            timings = summary.get("per_model_latency", {}).get(model, {})
-            t_init = timings.get("avg_init", 0.0)
-            t_action = timings.get("avg_action", 0.0)
-            
-            print(f"  {model}:")
-            print(f"    Count:  {count} ({pct:.1f}%)")
-            print(f"    T_init: {t_init:.3f}s")
-            print(f"    T_act:  {t_action:.3f}s")
-    
-    # ========== SAVE RESULTS ==========
     os.makedirs(REPORT_OUTPUT_DIR, exist_ok=True)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     output_path = os.path.join(REPORT_OUTPUT_DIR, f"{config_name}_{mode}_{timestamp}.json")
     
-    final_report = {
-        "evaluation_type": "full_pipeline",
-        "mode": mode,
-        "configuration": config_name,
-        "model_rotation": not baseline,
-        "timestamp": datetime.now().isoformat(),
-        "row_limit": limit,
-        "summary": summary,
-        "detailed_results": detailed_results
-    }
-    
     with open(output_path, 'w') as f:
-        json.dump(final_report, f, indent=2)
+        json.dump({"summary": summary, "details": detailed_results}, f, indent=2)
     
-    print(f"\n✅ Results saved to: {output_path}")
-    
-    return final_report
-
+    print(f"✅ Results saved to: {output_path}")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="EPD Full Pipeline Evaluation")
-    parser.add_argument("--mode", choices=["lightweight", "normal", "research"], default="lightweight",
-                        help="Evaluation mode: lightweight (500), normal (2000), or research (200)")
-    parser.add_argument("--baseline", action="store_true",
-                        help="Run baseline (no model rotation)")
-    parser.add_argument("--limit", type=int, default=None,
-                        help="Custom row limit (overrides mode default)")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--mode", default="lightweight")
+    parser.add_argument("--limit", type=int, default=None)
     args = parser.parse_args()
-
-    if args.limit:
-        pass # Use custom limit
-    elif args.mode == "lightweight":
-        args.limit = LIMIT_LIGHTWEIGHT
-    elif args.mode == "normal":
-        args.limit = LIMIT_NORMAL
-    elif args.mode == "research":
-        args.limit = LIMIT_RESEARCH
     
-    run_full_pipeline(mode=args.mode, baseline=args.baseline, custom_limit=args.limit)
+    run_full_pipeline_v2(mode=args.mode, custom_limit=args.limit)

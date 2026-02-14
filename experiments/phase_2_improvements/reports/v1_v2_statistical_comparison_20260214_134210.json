@@ -1,0 +1,21 @@
+{
+  "v1_metrics": {
+    "tool_correctness": 0.10194730813287514,
+    "semantic_similarity": 0.5835737586021423,
+    "latency": 1.92,
+    "levenshtein": 133.46735395189003
+  },
+  "v2_metrics": {
+    "tool_correctness": 1.0,
+    "semantic_similarity": 0.6548255085945129,
+    "latency": 6.591738440811114,
+    "levenshtein": 98.01162790697674
+  },
+  "deltas": {
+    "tool_correctness": 0.8980526918671249,
+    "semantic_similarity": 0.0712517499923706,
+    "latency": 4.671738440811114,
+    "levenshtein": -35.45572604491329
+  },
+  "note": "Statistical significance tests (p-values) skipped as V1 raw distributions were unavailable in checkpoint. Comparison based on reported means."
+}

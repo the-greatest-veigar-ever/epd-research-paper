@@ -38,36 +38,88 @@ class GhostAgent:
         # The Ghost Agent asks the LLM to generate the specific CLI command
         # This proves the "Polymorphic" instruction is being interpreted by real AI
         
+        # Simplified prompt for better compatibility with smaller models
         ai_prompt = f"""
-        ROLE: {self.prompt}
-        TASK: Generate the specific AWS CLI command to perform: {plan['action']} on target: {plan['target']}.
-        OUTPUT: Only the command.
-        """
+{self.prompt}
+
+Generate AWS CLI command.
+Action: {plan['action']}
+Target: {plan['target']}
+
+Rules:
+- Output only the command
+- No markdown
+- Start with 'aws'
+
+Command:"""
         
         try:
             response = requests.post(self.ollama_url, json={
                 "model": self.model,
                 "prompt": ai_prompt,
                 "stream": False,
-                "options": {"temperature": 0.7} # High temp for creativity/polymorphism
-            })
+                "options": {
+                    "temperature": 0.3,  # Lower temp for consistent command format
+                    "num_predict": 100   # Limit output length for faster response
+                }
+            }, timeout=30)  # 30 second timeout
             
             if response.status_code == 200:
                 cmd = response.json().get("response", "").strip()
-                print(f"[Ghost-{self.session_id[:8]}] AI GENERATED COMMAND: {cmd}")
+                
+                # Log raw output for debugging
+                if not cmd or len(cmd) < 5:
+                    print(f"[Ghost-{self.session_id[:8]}] ⚠️  EMPTY/SHORT OUTPUT from {self.model}")
+                    print(f"[Ghost-{self.session_id[:8]}] Raw response: {response.json()}")
+                else:
+                    print(f"[Ghost-{self.session_id[:8]}] AI GENERATED COMMAND: {cmd[:100]}...")
                 
                 # Extract primary tool for metrics (e.g., 'aws ec2' -> 'aws')
                 # Clean Markdown code blocks if present
-                clean_cmd = cmd
+                clean_cmd = cmd.strip()
+                
+                # Remove markdown code fences (```bash, ```sh, ```, etc.)
                 if "```" in clean_cmd:
+                    lines = clean_cmd.split('\n')
                     clean_lines = []
-                    for line in clean_cmd.split('\n'):
-                        if "```" not in line:
-                            clean_lines.append(line)
-                    clean_cmd = "\n".join(clean_lines).strip()
-
-                # Extract primary tool
-                tool = clean_cmd.split()[0] if clean_cmd else "unknown"
+                    in_code_block = False
+                    
+                    for line in lines:
+                        stripped = line.strip()
+                        # Detect code fence markers
+                        if stripped.startswith('```'):
+                            in_code_block = not in_code_block
+                            continue
+                        # Only keep lines that are either in code block or not fence markers
+                        if in_code_block or not stripped.startswith('```'):
+                            if stripped:  # Skip empty lines
+                                clean_lines.append(stripped)
+                    
+                    clean_cmd = '\n'.join(clean_lines).strip()
+                
+                # Get first non-empty line (actual command)
+                first_line = clean_cmd.split('\n')[0].strip() if clean_cmd else ""
+                
+                # Extract tool (first word of command)
+                VALID_TOOLS = ["aws", "gcloud", "kubectl", "terraform", "ansible", "az"]
+                tool = "unknown"
+                
+                if first_line and len(first_line.split()) > 0:
+                    # Try first word
+                    first_word = first_line.split()[0].lower()
+                    if first_word in VALID_TOOLS:
+                        tool = first_word
+                    # Check if second word is valid (e.g., "sudo aws")
+                    elif len(first_line.split()) > 1:
+                        second_word = first_line.split()[1].lower()
+                        if second_word in VALID_TOOLS:
+                            tool = second_word
+                    # Fallback: check if any valid tool appears in command
+                    else:
+                        for valid_tool in VALID_TOOLS:
+                            if valid_tool in first_line.lower():
+                                tool = valid_tool
+                                break
                 
                 print(f"[Ghost-{self.session_id[:8]}] SUCCESS: Action verified and completed.")
                 result["status"] = "success"
@@ -76,10 +128,18 @@ class GhostAgent:
             else:
                  print(f"[Ghost-{self.session_id[:8]}] AI Error. Fallback execution.")
                  result["error"] = f"AI Error: {response.status_code}"
+        except requests.exceptions.Timeout:
+            print(f"[Ghost-{self.session_id[:8]}] ⏱️  TIMEOUT: Model {self.model} took >30s")
+            result["status"] = "timeout"
+            result["error"] = "LLM request timeout"
+        except requests.exceptions.ConnectionError as e:
+            print(f"[Ghost-{self.session_id[:8]}] 🔌 CONNECTION ERROR: {str(e)[:100]}")
+            result["status"] = "connection_error"
+            result["error"] = f"Cannot connect to Ollama: {str(e)[:100]}"
         except Exception as e:
-             print(f"[Ghost-{self.session_id[:8]}] Offline mode. Simulating execution.")
-             result["status"] = "simulated_success"
-             result["error"] = str(e)
+            print(f"[Ghost-{self.session_id[:8]}] ❌ ERROR ({self.model}): {str(e)[:150]}")
+            result["status"] = "error"
+            result["error"] = str(e)[:200]
         
         self.cleanup()
         return result
@@ -100,7 +160,7 @@ class GhostAgentFactory:
     Factory to spin up EPD agents with polymorphism and model rotation.
     """
     # Real SLMs available via Ollama for baseline comparison
-    MODELS = ["llama3.2:3b", "phi3:mini", "gemma2:2b"]
+    MODELS = ["llama3.2:3b", "phi", "gemma2:2b"]
     
     # Current model index for round-robin rotation
     _current_model_idx = 0
@@ -162,18 +222,21 @@ class GhostAgentFactory:
         
         selected_persona = random.choice(personas)
         
-        # Meta-Prompt for the Polymorphism Engine
-        meta_prompt = f"""
-        Task: Rewrite the following security instruction.
-        Original Instruction: "{base}"
-        
-        Style Requirement: Rewrite it as if {selected_persona}. 
-        Use unique vocabulary, jargon, and tone appropriate for this persona.
-        Do NOT change the core meaning or the target entities (IDs/IPs). Just wrap it in the persona's style.
-        keep it relatively short (1-2 sentences).
-        
-        Output: ONLY the rewritten instruction. No "Here is the rewritten text" prefix.
-        """
+        # Meta-Prompt for the Polymorphism Engine (Tuned for semantic preservation)
+        meta_prompt = f"""Rewrite this instruction in a different style.
+
+Original: "{base}"
+
+Style: {selected_persona}
+
+STRICT RULES:
+1. MUST keep the EXACT same action and target
+2. MUST preserve the core meaning 100%
+3. ONLY change: word choice, tone, sentence structure
+4. Keep it 1-2 sentences
+5. Do NOT add new information
+
+Output only the rewritten instruction:"""
         
         try:
             response = requests.post(ollama_url, json={

@@ -1,0 +1,30 @@
+{
+  "timestamp": "2026-02-14T10:47:48.272999",
+  "baseline": {
+    "averaged_metrics": {
+      "asr": 1.0,
+      "tool_correctness": 0.8633333333333333,
+      "avg_semantic_similarity": 0.6650716463724772,
+      "avg_levenshtein_distance": 99.045
+    },
+    "total_scenarios": 873
+  },
+  "proposed": {
+    "metrics": {
+      "attack_success_rate": 1.0,
+      "task_success_rate": 0.10194730813287514,
+      "tool_correctness_rate": 0.10194730813287514,
+      "pass_at_1": 1.0,
+      "semantic_similarity_avg": 0.5835737586021423,
+      "levenshtein_distance_avg": 133.46735395189003
+    },
+    "total_scenarios": 873
+  },
+  "statistical_tests": {
+    "latency": {
+      "t_statistic": -3.8696565177026927,
+      "t_pvalue": 0.00011375548628902887,
+      "mann_whitney_u": 256948.0,
+      "mann_whitney_pvalue": 0.5370372033102836,
+      "cohens_d": 0.21288557977576092,
+      "is_significant_005": 

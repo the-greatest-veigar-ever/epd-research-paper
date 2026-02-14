@@ -1,0 +1,268 @@
+{
+  "summary": {
+    "flows_processed": 200,
+    "anomalies_detected": 26,
+    "plans_generated": 26,
+    "executions_completed": 26,
+    "timing": {
+      "squad_a": {
+        "init": 0.0829765829257667,
+        "avg_processing": 0.04489316663239151,
+        "total_processing": 0.08978633326478302
+      },
+      "squad_b": {
+        "init": 10.263569792034104,
+        "avg_processing": 4.750696533878979,
+        "total_processing": 123.51810988085344
+      },
+      "squad_c": {
+        "init": 1.125037670135498e-06,
+        "avg_processing": 7.798581629866161,
+        "total_processing": 202.7631223765202
+      },
+      "total_init": 10.346547499997541,
+      "total_processing": 326.3710185906384
+    },
+    "rates": {
+      "anomaly_rate": 0.13,
+      "plan_rate": 1.0,
+      "execution_success_rate": 1.0,
+      "tool_correctness_rate": 1.0,
+      "avg_semantic_similarity": 0.6078782677650452,
+      "avg_levenshtein_distance": 93.73076923076923,
+      "avg_ephemerality_overhead": 2.3132013494793613
+    },
+    "model_distribution": {
+      "llama3.2:3b": 9,
+      "phi": 9,
+      "gemma2:2b": 8
+    },
+    "per_model_latency": {
+      "llama3.2:3b": {
+        "avg_init": 2.4961993796492203,
+        "avg_action": 2.0745135276940547,
+        "avg_total": 4.570712907343275
+      },
+      "phi": {
+        "avg_init": 1.9669750324812614,
+        "avg_action": 5.321859036908588,
+        "avg_total": 7.28883406938985
+      },
+      "gemma2:2b": {
+        "avg_init": 2.496833172161132,
+        "avg_action": 7.029479843651643,
+        "avg_total": 9.526313015812775
+      }
+    }
+  },
+  "details": [
+    {
+      "plan_action": "BLOCK_IP",
+      "model_used": "llama3.2:3b",
+      "execution_status": "success",
+      "tool_used": "aws",
+      "semantic_sim": 0.4646831750869751,
+      "latency": 7.927546541905031
+    },
+    {
+      "plan_action": "BLOCK_IP",
+      "model_used": "phi",
+      "execution_status": "success",
+      "tool_used": "aws",
+      "semantic_sim": 0.697856068611145,
+      "latency": 6.779539708048105
+    },
+    {
+      "plan_action": "BLOCK_IP",
+      "model_used": "gemma2:2b",
+      "execution_status": "success",
+      "tool_used": "aws",
+      "semantic_sim": 0.4529520571231842,
+      "latency": 10.78792841709219
+    },
+    {
+      "plan_action": "BLOCK_IP",
+      "model_used": "llama3.2:3b",
+      "execution_status": "success",
+      "tool_used": "aws",
+      "semantic_sim": 0.24369360506534576,
+      "latency": 4.309520541923121
+    },
+    {
+      "plan_action": "BLOCK_IP",
+      "model_used": "phi",
+      "execution_status": "success",
+      "tool_used": "aws",
+      "semantic_sim": 0.8081865310668945,
+      "latency": 19.834667708026245
+    },
+    {
+      "plan_action": "BLOCK_IP",
+      "model_used": "gemma2:2b",
+      "execution_status": "success",
+      "tool_used": "aws",
+      "semantic_sim": 0.6279481649398804,
+      "latency": 14.220738624921069
+    },
+    {
+      "plan_action": "BLOCK_IP",
+      "model_used": "llama3.2:3b",
+      "execution_status": "success",
+      "tool_used": "aws",
+      "semantic_sim": 0.6550960540771484,
+      "latency": 9.008738291915506
+    },
+    {
+      "plan_action": "BLOCK_IP",
+      "model_used": "phi",
+      "execution_status": "success",
+      "tool_used": "aws",
+      "semantic_sim": 0.5969536304473877,
+      "latency": 9.928560792002827
+    },
+    {
+      "plan_action": "BLOCK_IP",
+      "model_used": "gemma2:2b",
+      "execution_status": "success",
+      "tool_used": "aws",
+      "semantic_sim": 0.6192178726196289,
+      "latency": 14.657752291997895
+    },
+    {
+      "plan_action": "BLOCK_IP",
+      "model_used": "llama3.2:3b",
+      "execution_status": "success",
+      "tool_used": "aws",
+      "semantic_sim": 0.791917085647583,
+      "latency": 4.555682000005618
+    },
+    {
+      "plan_action": "BLOCK_IP",
+      "model_used": "phi",
+      "execution_status": "success",
+      "tool_used": "aws",
+      "semantic_sim": 0.5538942813873291,
+      "latency": 5.86091879196465
+    },
+    {
+      "plan_action": "BLOCK_IP",
+      "model_used": "gemma2:2b",
+      "execution_status": "success",
+      "tool_used": "aws",
+      "semantic_sim": 0.6855537295341492,
+      "latency": 11.1606067919638
+    },
+    {
+      "plan_action": "BLOCK_IP",
+      "model_used": "llama3.2:3b",
+      "execution_status": "success",
+      "tool_used": "aws",
+      "semantic_sim": 0.7349535822868347,
+      "latency": 4.05226937495172
+    },
+    {
+      "plan_action": "BLOCK_IP",
+      "model_used": "phi",
+      "execution_status": "success",
+      "tool_used": "aws",
+      "semantic_sim": 0.5961249470710754,
+      "latency": 6.520540999947116
+    },
+    {
+      "plan_action": "BLOCK_IP",
+      "model_used": "gemma2:2b",
+      "execution_status": "success",
+      "tool_used": "aws",
+      "semantic_sim": 0.5808358192443848,
+      "latency": 8.750531291821972
+    },
+    {
+      "plan_action": "BLOCK_IP",
+      "model_used": "llama3.2:3b",
+      "execution_status": "success",
+      "tool_used": "aws",
+      "semantic_sim": 0.2939644455909729,
+      "latency": 4.1398646668531
+    },
+    {
+      "plan_action": "BLOCK_IP",
+      "model_used": "phi",
+      "execution_status": "success",
+      "tool_used": "aws",
+      "semantic_sim": 0.7351495027542114,
+      "latency": 5.402438792167231
+    },
+    {
+      "plan_action": "BLOCK_IP",
+      "model_used": "gemma2:2b",
+      "execution_status": "success",
+      "tool_used": "aws",
+      "semantic_sim": 0.8354650735855103,
+      "latency": 5.825837749987841
+    },
+    {
+      "plan_action": "BLOCK_IP",
+      "model_used": "llama3.2:3b",
+      "execution_status": "success",
+      "tool_used": "aws",
+      "semantic_sim": 0.3854387104511261,
+      "latency": 3.962822000030428
+    },
+    {
+      "plan_action": "BLOCK_IP",
+      "model_used": "phi",
+      "execution_status": "success",
+      "tool_used": "aws",
+      "semantic_sim": 0.7894001007080078,
+      "latency": 4.84105391590856
+    },
+    {
+      "plan_action": "BLOCK_IP",
+      "model_used": "gemma2:2b",
+      "execution_status": "success",
+      "tool_used": "aws",
+      "semantic_sim": 0.6749104857444763,
+      "latency": 9.371535625075921
+    },
+    {
+      "plan_action": "BLOCK_IP",
+      "model_used": "llama3.2:3b",
+      "execution_status": "success",
+      "tool_used": "aws",
+      "semantic_sim": 0.7093522548675537,
+      "latency": 4.462243499932811
+    },
+    {
+      "plan_action": "BLOCK_IP",
+      "model_used": "phi",
+      "execution_status": "success",
+      "tool_used": "aws",
+      "semantic_sim": 0.2980455756187439,
+      "latency": 5.507855125004426
+    },
+    {
+      "plan_action": "BLOCK_IP",
+      "model_used": "gemma2:2b",
+      "execution_status": "success",
+      "tool_used": "aws",
+      "semantic_sim": 0.6815073490142822,
+      "latency": 9.50110145797953
+    },
+    {
+      "plan_action": "BLOCK_IP",
+      "model_used": "llama3.2:3b",
+      "execution_status": "success",
+      "tool_used": "aws",
+      "semantic_sim": 0.6821941137313843,
+      "latency": 4.094301083125174
+    },
+    {
+      "plan_action": "BLOCK_IP",
+      "model_used": "phi",
+      "execution_status": "success",
+      "tool_used": "aws",
+      "semantic_sim": 0.6095417737960815,
+      "latency": 7.298526291968301
+    }
+  ]
+}

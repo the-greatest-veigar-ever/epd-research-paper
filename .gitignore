@@ -27,5 +27,6 @@ ai/models/
 
 # Legacy/Old
 old-data/
-reports/
+data/
+
 src/qlora-hugging-face/output/
