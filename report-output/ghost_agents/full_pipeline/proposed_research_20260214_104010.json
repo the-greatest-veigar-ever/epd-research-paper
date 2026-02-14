@@ -1,0 +1,430 @@
+{
+  "evaluation_type": "full_pipeline",
+  "mode": "research",
+  "configuration": "proposed",
+  "model_rotation": true,
+  "timestamp": "2026-02-14T10:40:10.143458",
+  "row_limit": 200,
+  "summary": {
+    "flows_processed": 200,
+    "anomalies_detected": 26,
+    "plans_generated": 26,
+    "executions_completed": 26,
+    "timing": {
+      "squad_a": {
+        "init": 0.11162741691805422,
+        "avg_processing": 0.04420862498227507,
+        "total_processing": 0.08841724996455014
+      },
+      "squad_b": {
+        "init": 10.110567667055875,
+        "avg_processing": 3.9107278525793494,
+        "total_processing": 101.67892416706309
+      },
+      "squad_c": {
+        "init": 1.0828953236341476e-06,
+        "avg_processing": 6.100934952058686,
+        "total_processing": 158.62430875352584
+      },
+      "total_init": 10.222196166869253,
+      "total_processing": 260.3916501705535
+    },
+    "rates": {
+      "anomaly_rate": 0.13,
+      "plan_rate": 1.0,
+      "execution_success_rate": 1.0,
+      "tool_correctness_rate": 1.0,
+      "avg_semantic_similarity": 0.6581907868385315,
+      "avg_levenshtein_distance": 84.26923076923077,
+      "avg_ephemerality_overhead": 2.0581666154589935
+    },
+    "model_distribution": {
+      "llama3.2:3b": 9,
+      "phi": 9,
+      "gemma2:2b": 8
+    },
+    "per_model_latency": {
+      "llama3.2:3b": {
+        "avg_init": 2.3031723056402473,
+        "avg_action": 1.1171290602328048,
+        "avg_total": 3.420301365873052
+      },
+      "phi": {
+        "avg_init": 1.6926175000973873,
+        "avg_action": 2.874705004816254,
+        "avg_total": 4.5673225049136414
+      },
+      "gemma2:2b": {
+        "avg_init": 2.1937779687868897,
+        "avg_action": 6.152119437319925,
+        "avg_total": 8.345897406106815
+      }
+    }
+  },
+  "detailed_results": [
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999438524246216,
+      "plan_action": "BLOCK_IP",
+      "model_used": "llama3.2:3b",
+      "timing": {
+        "squad_a": 0.021085333079099655,
+        "squad_b": 2.3146672500297427,
+        "squad_c": 4.711519750067964,
+        "total": 7.047272333176807
+      },
+      "execution_status": "success",
+      "tool_used": "aws"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999903440475464,
+      "plan_action": "BLOCK_IP",
+      "model_used": "phi",
+      "timing": {
+        "squad_a": 0.021085333079099655,
+        "squad_b": 2.949130875058472,
+        "squad_c": 6.552840041927993,
+        "total": 9.523056250065565
+      },
+      "execution_status": "success",
+      "tool_used": "aws"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999903440475464,
+      "plan_action": "BLOCK_IP",
+      "model_used": "gemma2:2b",
+      "timing": {
+        "squad_a": 0.021085333079099655,
+        "squad_b": 4.6306370419915766,
+        "squad_c": 9.677858916809782,
+        "total": 14.329581291880459
+      },
+      "execution_status": "success",
+      "tool_used": "aws"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "BLOCK_IP",
+      "model_used": "llama3.2:3b",
+      "timing": {
+        "squad_a": 0.021085333079099655,
+        "squad_b": 5.342547209002078,
+        "squad_c": 3.4351420840248466,
+        "total": 8.798774626106024
+      },
+      "execution_status": "success",
+      "tool_used": "aws"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "BLOCK_IP",
+      "model_used": "phi",
+      "timing": {
+        "squad_a": 0.021085333079099655,
+        "squad_b": 3.179856416070834,
+        "squad_c": 5.8958233329467475,
+        "total": 9.096765082096681
+      },
+      "execution_status": "success",
+      "tool_used": "aws"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "BLOCK_IP",
+      "model_used": "gemma2:2b",
+      "timing": {
+        "squad_a": 0.021085333079099655,
+        "squad_b": 4.116369625087827,
+        "squad_c": 10.745762957958505,
+        "total": 14.883217916125432
+      },
+      "execution_status": "success",
+      "tool_used": "aws"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "BLOCK_IP",
+      "model_used": "llama3.2:3b",
+      "timing": {
+        "squad_a": 0.06733191688545048,
+        "squad_b": 4.782992375083268,
+        "squad_c": 4.007912500062957,
+        "total": 8.858236792031676
+      },
+      "execution_status": "success",
+      "tool_used": "aws"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "BLOCK_IP",
+      "model_used": "phi",
+      "timing": {
+        "squad_a": 0.06733191688545048,
+        "squad_b": 4.049040332902223,
+        "squad_c": 5.331828125054017,
+        "total": 9.44820037484169
+      },
+      "execution_status": "success",
+      "tool_used": "aws"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999905824661255,
+      "plan_action": "BLOCK_IP",
+      "model_used": "gemma2:2b",
+      "timing": {
+        "squad_a": 0.06733191688545048,
+        "squad_b": 4.068903875071555,
+        "squad_c": 10.250230667181313,
+        "total": 14.386466459138319
+      },
+      "execution_status": "success",
+      "tool_used": "aws"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "BLOCK_IP",
+      "model_used": "llama3.2:3b",
+      "timing": {
+        "squad_a": 0.06733191688545048,
+        "squad_b": 4.642752416199073,
+        "squad_c": 3.451761417090893,
+        "total": 8.161845750175416
+      },
+      "execution_status": "success",
+      "tool_used": "aws"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999438524246216,
+      "plan_action": "BLOCK_IP",
+      "model_used": "phi",
+      "timing": {
+        "squad_a": 0.06733191688545048,
+        "squad_b": 3.845495500136167,
+        "squad_c": 4.940075916936621,
+        "total": 8.852903333958238
+      },
+      "execution_status": "success",
+      "tool_used": "aws"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999885559082031,
+      "plan_action": "BLOCK_IP",
+      "model_used": "gemma2:2b",
+      "timing": {
+        "squad_a": 0.06733191688545048,
+        "squad_b": 4.102533708093688,
+        "squad_c": 9.320556583115831,
+        "total": 13.49042220809497
+      },
+      "execution_status": "success",
+      "tool_used": "aws"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999905824661255,
+      "plan_action": "BLOCK_IP",
+      "model_used": "llama3.2:3b",
+      "timing": {
+        "squad_a": 0.06733191688545048,
+        "squad_b": 3.740582749946043,
+        "squad_c": 3.8566053328104317,
+        "total": 7.664519999641925
+      },
+      "execution_status": "success",
+      "tool_used": "aws"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999905824661255,
+      "plan_action": "BLOCK_IP",
+      "model_used": "phi",
+      "timing": {
+        "squad_a": 0.06733191688545048,
+        "squad_b": 3.657308334019035,
+        "squad_c": 4.242277042008936,
+        "total": 7.966917292913422
+      },
+      "execution_status": "success",
+      "tool_used": "aws"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "BLOCK_IP",
+      "model_used": "gemma2:2b",
+      "timing": {
+        "squad_a": 0.06733191688545048,
+        "squad_b": 3.394480084069073,
+        "squad_c": 9.848072292050347,
+        "total": 13.30988429300487
+      },
+      "execution_status": "success",
+      "tool_used": "aws"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "BLOCK_IP",
+      "model_used": "llama3.2:3b",
+      "timing": {
+        "squad_a": 0.06733191688545048,
+        "squad_b": 5.450039416085929,
+        "squad_c": 4.157967833103612,
+        "total": 9.675339166074991
+      },
+      "execution_status": "success",
+      "tool_used": "aws"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999905824661255,
+      "plan_action": "BLOCK_IP",
+      "model_used": "phi",
+      "timing": {
+        "squad_a": 0.06733191688545048,
+        "squad_b": 2.9999665410723537,
+        "squad_c": 6.562214333098382,
+        "total": 9.629512791056186
+      },
+      "execution_status": "success",
+      "tool_used": "aws"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999905824661255,
+      "plan_action": "BLOCK_IP",
+      "model_used": "gemma2:2b",
+      "timing": {
+        "squad_a": 0.06733191688545048,
+        "squad_b": 3.5962119169998914,
+        "squad_c": 7.790073374984786,
+        "total": 11.453617208870128
+      },
+      "execution_status": "success",
+      "tool_used": "aws"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "BLOCK_IP",
+      "model_used": "llama3.2:3b",
+      "timing": {
+        "squad_a": 0.06733191688545048,
+        "squad_b": 4.171322375070304,
+        "squad_c": 3.656142499996349,
+        "total": 7.894796791952103
+      },
+      "execution_status": "success",
+      "tool_used": "aws"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "BLOCK_IP",
+      "model_used": "phi",
+      "timing": {
+        "squad_a": 0.06733191688545048,
+        "squad_b": 3.9616137088742107,
+        "squad_c": 6.277327750110999,
+        "total": 10.30627337587066
+      },
+      "execution_status": "success",
+      "tool_used": "aws"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.999942421913147,
+      "plan_action": "BLOCK_IP",
+      "model_used": "gemma2:2b",
+      "timing": {
+        "squad_a": 0.06733191688545048,
+        "squad_b": 3.972064791014418,
+        "squad_c": 8.431954834144562,
+        "total": 12.471351542044431
+      },
+      "execution_status": "success",
+      "tool_used": "aws"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999885559082031,
+      "plan_action": "BLOCK_IP",
+      "model_used": "llama3.2:3b",
+      "timing": {
+        "squad_a": 0.06733191688545048,
+        "squad_b": 3.9906327920034528,
+        "squad_c": 3.531264082994312,
+        "total": 7.589228791883215
+      },
+      "execution_status": "success",
+      "tool_used": "aws"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "BLOCK_IP",
+      "model_used": "phi",
+      "timing": {
+        "squad_a": 0.06733191688545048,
+        "squad_b": 2.0129360831342638,
+        "squad_c": 4.641576708992943,
+        "total": 6.721844709012657
+      },
+      "execution_status": "success",
+      "tool_used": "aws"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999905824661255,
+      "plan_action": "BLOCK_IP",
+      "model_used": "gemma2:2b",
+      "timing": {
+        "squad_a": 0.06733191688545048,
+        "squad_b": 3.7004849589429796,
+        "squad_c": 7.408184166997671,
+        "total": 11.176001042826101
+      },
+      "execution_status": "success",
+      "tool_used": "aws"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999905824661255,
+      "plan_action": "BLOCK_IP",
+      "model_used": "llama3.2:3b",
+      "timing": {
+        "squad_a": 0.06733191688545048,
+        "squad_b": 4.673840291099623,
+        "squad_c": 3.852809750009328,
+        "total": 8.593981957994401
+      },
+      "execution_status": "success",
+      "tool_used": "aws"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "BLOCK_IP",
+      "model_used": "phi",
+      "timing": {
+        "squad_a": 0.06733191688545048,
+        "squad_b": 4.332513500005007,
+        "squad_c": 6.046526459045708,
+        "total": 10.446371875936165
+      },
+      "execution_status": "success",
+      "tool_used": "aws"
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "model": "llama3.2:3b",
+  "total_requests": 5,
+  "success_rate": 1.0,
+  "avg_latency_s": 2.1232227325439452,
+  "p95_latency_s": 4.819044113159179,
+  "tool_correctness": 1.0,
+  "detailed_results": [],
+  "errors": [
+    "name 'plan' is not defined",
+    "name 'plan' is not defined",
+    "name 'plan' is not defined",
+    "name 'plan' is not defined",
+    "name 'plan' is not defined"
+  ]
+}

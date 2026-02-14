@@ -1,0 +1,1269 @@
+{
+  "evaluation_type": "full_pipeline",
+  "mode": "lightweight",
+  "configuration": "proposed",
+  "model_rotation": true,
+  "timestamp": "2026-02-11T22:57:07.471346",
+  "row_limit": 500,
+  "summary": {
+    "flows_processed": 500,
+    "anomalies_detected": 86,
+    "plans_generated": 86,
+    "executions_completed": 29,
+    "timing": {
+      "squad_a": {
+        "init": 0.0733359579462558,
+        "avg_processing": 0.032786975428462026,
+        "total_processing": 0.16393487714231014
+      },
+      "squad_b": {
+        "init": 10.647085416829214,
+        "avg_processing": 1.6318118138791085,
+        "total_processing": 140.33581599360332
+      },
+      "squad_c": {
+        "init": 9.171199053525925e-07,
+        "avg_processing": 1.7360418435473124,
+        "total_processing": 149.29959854506887
+      },
+      "total_init": 10.720422291895375,
+      "total_processing": 289.7993494158145
+    },
+    "rates": {
+      "anomaly_rate": 0.172,
+      "plan_rate": 1.0,
+      "execution_success_rate": 0.3372093023255814,
+      "tool_correctness_rate": 0.3372093023255814,
+      "avg_semantic_similarity": 0.4780403971672058,
+      "avg_levenshtein_distance": 91.0
+    },
+    "model_distribution": {
+      "llama3.2:3b": 29,
+      "phi3:mini": 29,
+      "gemma2:2b": 28
+    },
+    "per_model_latency": {
+      "llama3.2:3b": {
+        "avg_init": 1.2963921637996902,
+        "avg_action": 1.2686377585833442,
+        "avg_total": 2.5650299223830344
+      },
+      "phi3:mini": {
+        "avg_init": 1.1476306120046125,
+        "avg_action": 0.00371595260944089,
+        "avg_total": 1.1513465646140533
+      },
+      "gemma2:2b": {
+        "avg_init": 1.042342840735468,
+        "avg_action": 0.004157127854081669,
+        "avg_total": 1.0464999685895497
+      }
+    }
+  },
+  "detailed_results": [
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999438524246216,
+      "plan_action": "BLOCK_IP",
+      "model_used": "llama3.2:3b",
+      "timing": {
+        "squad_a": 0.025897583924233913,
+        "squad_b": 2.38010025001131,
+        "squad_c": 9.047246542060748,
+        "total": 11.453244375996292
+      },
+      "execution_status": "success",
+      "tool_used": "aws"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999903440475464,
+      "plan_action": "BLOCK_IP",
+      "model_used": "phi3:mini",
+      "timing": {
+        "squad_a": 0.025897583924233913,
+        "squad_b": 4.831165957963094,
+        "squad_c": 2.052588500082493,
+        "total": 6.909652041969821
+      },
+      "execution_status": "failed",
+      "tool_used": null
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999903440475464,
+      "plan_action": "BLOCK_IP",
+      "model_used": "gemma2:2b",
+      "timing": {
+        "squad_a": 0.025897583924233913,
+        "squad_b": 2.1770245409570634,
+        "squad_c": 0.9647804158739746,
+        "total": 3.167702540755272
+      },
+      "execution_status": "failed",
+      "tool_used": null
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "BLOCK_IP",
+      "model_used": "llama3.2:3b",
+      "timing": {
+        "squad_a": 0.025897583924233913,
+        "squad_b": 1.4004243749659508,
+        "squad_c": 2.388007458066568,
+        "total": 3.8143294169567525
+      },
+      "execution_status": "success",
+      "tool_used": "aws"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "BLOCK_IP",
+      "model_used": "phi3:mini",
+      "timing": {
+        "squad_a": 0.025897583924233913,
+        "squad_b": 1.6229245830327272,
+        "squad_c": 1.2003052909858525,
+        "total": 2.8491274579428136
+      },
+      "execution_status": "failed",
+      "tool_used": null
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "BLOCK_IP",
+      "model_used": "gemma2:2b",
+      "timing": {
+        "squad_a": 0.025897583924233913,
+        "squad_b": 1.470664625056088,
+        "squad_c": 0.8701057089492679,
+        "total": 2.3666679179295897
+      },
+      "execution_status": "failed",
+      "tool_used": null
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "BLOCK_IP",
+      "model_used": "llama3.2:3b",
+      "timing": {
+        "squad_a": 0.04138679220341146,
+        "squad_b": 1.4301873750519007,
+        "squad_c": 2.1044917090330273,
+        "total": 3.5760658762883395
+      },
+      "execution_status": "success",
+      "tool_used": "aws"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "BLOCK_IP",
+      "model_used": "phi3:mini",
+      "timing": {
+        "squad_a": 0.04138679220341146,
+        "squad_b": 1.6075415830127895,
+        "squad_c": 1.3027573330327868,
+        "total": 2.951685708248988
+      },
+      "execution_status": "failed",
+      "tool_used": null
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999905824661255,
+      "plan_action": "BLOCK_IP",
+      "model_used": "gemma2:2b",
+      "timing": {
+        "squad_a": 0.04138679220341146,
+        "squad_b": 1.4307114169932902,
+        "squad_c": 1.1119675000663847,
+        "total": 2.5840657092630863
+      },
+      "execution_status": "failed",
+      "tool_used": null
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "BLOCK_IP",
+      "model_used": "llama3.2:3b",
+      "timing": {
+        "squad_a": 0.04138679220341146,
+        "squad_b": 1.429927415912971,
+        "squad_c": 2.056467416929081,
+        "total": 3.5277816250454634
+      },
+      "execution_status": "success",
+      "tool_used": "aws"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999438524246216,
+      "plan_action": "BLOCK_IP",
+      "model_used": "phi3:mini",
+      "timing": {
+        "squad_a": 0.04138679220341146,
+        "squad_b": 1.6633311659097672,
+        "squad_c": 2.022134124999866,
+        "total": 3.7268520831130445
+      },
+      "execution_status": "failed",
+      "tool_used": null
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999885559082031,
+      "plan_action": "BLOCK_IP",
+      "model_used": "gemma2:2b",
+      "timing": {
+        "squad_a": 0.04138679220341146,
+        "squad_b": 2.1151172081008554,
+        "squad_c": 2.4387342499103397,
+        "total": 4.5952382502146065
+      },
+      "execution_status": "failed",
+      "tool_used": null
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999905824661255,
+      "plan_action": "BLOCK_IP",
+      "model_used": "llama3.2:3b",
+      "timing": {
+        "squad_a": 0.04138679220341146,
+        "squad_b": 1.8067505420185626,
+        "squad_c": 3.662966749863699,
+        "total": 5.511104084085673
+      },
+      "execution_status": "success",
+      "tool_used": "aws"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999905824661255,
+      "plan_action": "BLOCK_IP",
+      "model_used": "phi3:mini",
+      "timing": {
+        "squad_a": 0.04138679220341146,
+        "squad_b": 1.7166284581180662,
+        "squad_c": 1.1090757921338081,
+        "total": 2.867091042455286
+      },
+      "execution_status": "failed",
+      "tool_used": null
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "BLOCK_IP",
+      "model_used": "gemma2:2b",
+      "timing": {
+        "squad_a": 0.04138679220341146,
+        "squad_b": 1.6792082081083208,
+        "squad_c": 1.1903791250661016,
+        "total": 2.910974125377834
+      },
+      "execution_status": "failed",
+      "tool_used": null
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "BLOCK_IP",
+      "model_used": "llama3.2:3b",
+      "timing": {
+        "squad_a": 0.04138679220341146,
+        "squad_b": 1.6819473328068852,
+        "squad_c": 1.994748166995123,
+        "total": 3.7180822920054197
+      },
+      "execution_status": "success",
+      "tool_used": "aws"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999905824661255,
+      "plan_action": "BLOCK_IP",
+      "model_used": "phi3:mini",
+      "timing": {
+        "squad_a": 0.04138679220341146,
+        "squad_b": 1.642877042060718,
+        "squad_c": 1.1355342499446124,
+        "total": 2.819798084208742
+      },
+      "execution_status": "failed",
+      "tool_used": null
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999905824661255,
+      "plan_action": "BLOCK_IP",
+      "model_used": "gemma2:2b",
+      "timing": {
+        "squad_a": 0.04138679220341146,
+        "squad_b": 1.3242618329823017,
+        "squad_c": 1.088977999985218,
+        "total": 2.454626625170931
+      },
+      "execution_status": "failed",
+      "tool_used": null
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "BLOCK_IP",
+      "model_used": "llama3.2:3b",
+      "timing": {
+        "squad_a": 0.04138679220341146,
+        "squad_b": 1.4447258338332176,
+        "squad_c": 3.043227457907051,
+        "total": 4.52934008394368
+      },
+      "execution_status": "success",
+      "tool_used": "aws"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "BLOCK_IP",
+      "model_used": "phi3:mini",
+      "timing": {
+        "squad_a": 0.04138679220341146,
+        "squad_b": 1.659158917143941,
+        "squad_c": 1.470157542033121,
+        "total": 3.1707032513804734
+      },
+      "execution_status": "failed",
+      "tool_used": null
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.999942421913147,
+      "plan_action": "BLOCK_IP",
+      "model_used": "gemma2:2b",
+      "timing": {
+        "squad_a": 0.04138679220341146,
+        "squad_b": 1.6707242080010474,
+        "squad_c": 1.082975500030443,
+        "total": 2.795086500234902
+      },
+      "execution_status": "failed",
+      "tool_used": null
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999885559082031,
+      "plan_action": "BLOCK_IP",
+      "model_used": "llama3.2:3b",
+      "timing": {
+        "squad_a": 0.04138679220341146,
+        "squad_b": 1.3093011248856783,
+        "squad_c": 2.2760842500720173,
+        "total": 3.626772167161107
+      },
+      "execution_status": "success",
+      "tool_used": "aws"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "BLOCK_IP",
+      "model_used": "phi3:mini",
+      "timing": {
+        "squad_a": 0.04138679220341146,
+        "squad_b": 1.464408041909337,
+        "squad_c": 1.095219667069614,
+        "total": 2.6010145011823624
+      },
+      "execution_status": "failed",
+      "tool_used": null
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999905824661255,
+      "plan_action": "BLOCK_IP",
+      "model_used": "gemma2:2b",
+      "timing": {
+        "squad_a": 0.04138679220341146,
+        "squad_b": 1.3039575419388711,
+        "squad_c": 1.3299084999598563,
+        "total": 2.675252834102139
+      },
+      "execution_status": "failed",
+      "tool_used": null
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999905824661255,
+      "plan_action": "BLOCK_IP",
+      "model_used": "llama3.2:3b",
+      "timing": {
+        "squad_a": 0.04138679220341146,
+        "squad_b": 1.4607192080002278,
+        "squad_c": 2.439480333123356,
+        "total": 3.9415863333269954
+      },
+      "execution_status": "success",
+      "tool_used": "aws"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "BLOCK_IP",
+      "model_used": "phi3:mini",
+      "timing": {
+        "squad_a": 0.04138679220341146,
+        "squad_b": 1.8845677920617163,
+        "squad_c": 1.282513374928385,
+        "total": 3.208467959193513
+      },
+      "execution_status": "failed",
+      "tool_used": null
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999905824661255,
+      "plan_action": "BLOCK_IP",
+      "model_used": "gemma2:2b",
+      "timing": {
+        "squad_a": 0.03509720880538225,
+        "squad_b": 1.7421410831157118,
+        "squad_c": 0.7650110409595072,
+        "total": 2.5422493328806013
+      },
+      "execution_status": "failed",
+      "tool_used": null
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999905824661255,
+      "plan_action": "BLOCK_IP",
+      "model_used": "llama3.2:3b",
+      "timing": {
+        "squad_a": 0.03509720880538225,
+        "squad_b": 1.3051065828185529,
+        "squad_c": 3.243276375113055,
+        "total": 4.58348016673699
+      },
+      "execution_status": "success",
+      "tool_used": "aws"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999905824661255,
+      "plan_action": "BLOCK_IP",
+      "model_used": "phi3:mini",
+      "timing": {
+        "squad_a": 0.03509720880538225,
+        "squad_b": 2.3071727498900145,
+        "squad_c": 2.403615000192076,
+        "total": 4.745884958887473
+      },
+      "execution_status": "failed",
+      "tool_used": null
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999905824661255,
+      "plan_action": "BLOCK_IP",
+      "model_used": "gemma2:2b",
+      "timing": {
+        "squad_a": 0.03509720880538225,
+        "squad_b": 1.9483664999715984,
+        "squad_c": 1.1319099171087146,
+        "total": 3.115373625885695
+      },
+      "execution_status": "failed",
+      "tool_used": null
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "BLOCK_IP",
+      "model_used": "llama3.2:3b",
+      "timing": {
+        "squad_a": 0.03509720880538225,
+        "squad_b": 1.4303067501168698,
+        "squad_c": 3.2714151251129806,
+        "total": 4.736819084035233
+      },
+      "execution_status": "success",
+      "tool_used": "aws"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999024868011475,
+      "plan_action": "BLOCK_IP",
+      "model_used": "phi3:mini",
+      "timing": {
+        "squad_a": 0.03509720880538225,
+        "squad_b": 1.8292394580785185,
+        "squad_c": 1.3618373749777675,
+        "total": 3.2261740418616682
+      },
+      "execution_status": "failed",
+      "tool_used": null
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999903440475464,
+      "plan_action": "BLOCK_IP",
+      "model_used": "gemma2:2b",
+      "timing": {
+        "squad_a": 0.03509720880538225,
+        "squad_b": 1.422099833143875,
+        "squad_c": 1.0613154999446124,
+        "total": 2.5185125418938696
+      },
+      "execution_status": "failed",
+      "tool_used": null
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999885559082031,
+      "plan_action": "BLOCK_IP",
+      "model_used": "llama3.2:3b",
+      "timing": {
+        "squad_a": 0.03509720880538225,
+        "squad_b": 1.3992806251626462,
+        "squad_c": 2.7970336661674082,
+        "total": 4.231411500135437
+      },
+      "execution_status": "success",
+      "tool_used": "aws"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "BLOCK_IP",
+      "model_used": "phi3:mini",
+      "timing": {
+        "squad_a": 0.03509720880538225,
+        "squad_b": 1.6767234159633517,
+        "squad_c": 0.8691967912018299,
+        "total": 2.581017415970564
+      },
+      "execution_status": "failed",
+      "tool_used": null
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999903440475464,
+      "plan_action": "BLOCK_IP",
+      "model_used": "gemma2:2b",
+      "timing": {
+        "squad_a": 0.03509720880538225,
+        "squad_b": 1.460166750010103,
+        "squad_c": 0.7637041669804603,
+        "total": 2.2589681257959455
+      },
+      "execution_status": "failed",
+      "tool_used": null
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999903440475464,
+      "plan_action": "BLOCK_IP",
+      "model_used": "llama3.2:3b",
+      "timing": {
+        "squad_a": 0.03509720880538225,
+        "squad_b": 1.5433188339229673,
+        "squad_c": 2.872671291930601,
+        "total": 4.451087334658951
+      },
+      "execution_status": "success",
+      "tool_used": "aws"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999903440475464,
+      "plan_action": "BLOCK_IP",
+      "model_used": "phi3:mini",
+      "timing": {
+        "squad_a": 0.03509720880538225,
+        "squad_b": 1.6414119170513004,
+        "squad_c": 1.011240208055824,
+        "total": 2.6877493339125067
+      },
+      "execution_status": "failed",
+      "tool_used": null
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999498128890991,
+      "plan_action": "BLOCK_IP",
+      "model_used": "gemma2:2b",
+      "timing": {
+        "squad_a": 0.03509720880538225,
+        "squad_b": 1.3263760830741376,
+        "squad_c": 1.357437458122149,
+        "total": 2.718910750001669
+      },
+      "execution_status": "failed",
+      "tool_used": null
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "BLOCK_IP",
+      "model_used": "llama3.2:3b",
+      "timing": {
+        "squad_a": 0.03509720880538225,
+        "squad_b": 1.60607995884493,
+        "squad_c": 1.9905832500662655,
+        "total": 3.6317604177165776
+      },
+      "execution_status": "success",
+      "tool_used": "aws"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "BLOCK_IP",
+      "model_used": "phi3:mini",
+      "timing": {
+        "squad_a": 0.03509720880538225,
+        "squad_b": 1.5735720000229776,
+        "squad_c": 1.2426824169233441,
+        "total": 2.851351625751704
+      },
+      "execution_status": "failed",
+      "tool_used": null
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.999942421913147,
+      "plan_action": "BLOCK_IP",
+      "model_used": "gemma2:2b",
+      "timing": {
+        "squad_a": 0.03509720880538225,
+        "squad_b": 1.8967884581070393,
+        "squad_c": 1.2533995420672,
+        "total": 3.1852852089796215
+      },
+      "execution_status": "failed",
+      "tool_used": null
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "BLOCK_IP",
+      "model_used": "llama3.2:3b",
+      "timing": {
+        "squad_a": 0.03509720880538225,
+        "squad_b": 1.6004969170317054,
+        "squad_c": 2.5232347501441836,
+        "total": 4.158828875981271
+      },
+      "execution_status": "success",
+      "tool_used": "aws"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "BLOCK_IP",
+      "model_used": "phi3:mini",
+      "timing": {
+        "squad_a": 0.03509720880538225,
+        "squad_b": 1.6292491247877479,
+        "squad_c": 1.089947166852653,
+        "total": 2.754293500445783
+      },
+      "execution_status": "failed",
+      "tool_used": null
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999600648880005,
+      "plan_action": "BLOCK_IP",
+      "model_used": "gemma2:2b",
+      "timing": {
+        "squad_a": 0.03509720880538225,
+        "squad_b": 1.4056742079555988,
+        "squad_c": 0.9367677920963615,
+        "total": 2.3775392088573426
+      },
+      "execution_status": "failed",
+      "tool_used": null
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "BLOCK_IP",
+      "model_used": "llama3.2:3b",
+      "timing": {
+        "squad_a": 0.03509720880538225,
+        "squad_b": 1.46698237513192,
+        "squad_c": 2.89364575012587,
+        "total": 4.395725334063172
+      },
+      "execution_status": "success",
+      "tool_used": "aws"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.999961256980896,
+      "plan_action": "BLOCK_IP",
+      "model_used": "phi3:mini",
+      "timing": {
+        "squad_a": 0.03157712519168854,
+        "squad_b": 1.8549095408525318,
+        "squad_c": 1.517058291938156,
+        "total": 3.403544957982376
+      },
+      "execution_status": "failed",
+      "tool_used": null
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "BLOCK_IP",
+      "model_used": "gemma2:2b",
+      "timing": {
+        "squad_a": 0.03157712519168854,
+        "squad_b": 1.7980683750938624,
+        "squad_c": 1.0512822498567402,
+        "total": 2.880927750142291
+      },
+      "execution_status": "failed",
+      "tool_used": null
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999905824661255,
+      "plan_action": "BLOCK_IP",
+      "model_used": "llama3.2:3b",
+      "timing": {
+        "squad_a": 0.03157712519168854,
+        "squad_b": 1.4744300418533385,
+        "squad_c": 3.1553193328436464,
+        "total": 4.661326499888673
+      },
+      "execution_status": "success",
+      "tool_used": "aws"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999905824661255,
+      "plan_action": "BLOCK_IP",
+      "model_used": "phi3:mini",
+      "timing": {
+        "squad_a": 0.03157712519168854,
+        "squad_b": 1.5828496250323951,
+        "squad_c": 1.2451825831085443,
+        "total": 2.859609333332628
+      },
+      "execution_status": "failed",
+      "tool_used": null
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999905824661255,
+      "plan_action": "BLOCK_IP",
+      "model_used": "gemma2:2b",
+      "timing": {
+        "squad_a": 0.03157712519168854,
+        "squad_b": 1.71693425020203,
+        "squad_c": 1.4972050830256194,
+        "total": 3.245716458419338
+      },
+      "execution_status": "failed",
+      "tool_used": null
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999438524246216,
+      "plan_action": "BLOCK_IP",
+      "model_used": "llama3.2:3b",
+      "timing": {
+        "squad_a": 0.03157712519168854,
+        "squad_b": 1.6462166660930961,
+        "squad_c": 2.4536472090985626,
+        "total": 4.131441000383347
+      },
+      "execution_status": "success",
+      "tool_used": "aws"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "BLOCK_IP",
+      "model_used": "phi3:mini",
+      "timing": {
+        "squad_a": 0.03157712519168854,
+        "squad_b": 1.703467208193615,
+        "squad_c": 1.0228799160104245,
+        "total": 2.757924249395728
+      },
+      "execution_status": "failed",
+      "tool_used": null
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "BLOCK_IP",
+      "model_used": "gemma2:2b",
+      "timing": {
+        "squad_a": 0.03157712519168854,
+        "squad_b": 1.5334804998710752,
+        "squad_c": 0.937644291203469,
+        "total": 2.5027019162662327
+      },
+      "execution_status": "failed",
+      "tool_used": null
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999905824661255,
+      "plan_action": "BLOCK_IP",
+      "model_used": "llama3.2:3b",
+      "timing": {
+        "squad_a": 0.03157712519168854,
+        "squad_b": 1.4353978750295937,
+        "squad_c": 3.310493583092466,
+        "total": 4.777468583313748
+      },
+      "execution_status": "success",
+      "tool_used": "aws"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999903440475464,
+      "plan_action": "BLOCK_IP",
+      "model_used": "phi3:mini",
+      "timing": {
+        "squad_a": 0.03157712519168854,
+        "squad_b": 1.5644560412038118,
+        "squad_c": 0.8655582501087338,
+        "total": 2.461591416504234
+      },
+      "execution_status": "failed",
+      "tool_used": null
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "BLOCK_IP",
+      "model_used": "gemma2:2b",
+      "timing": {
+        "squad_a": 0.03157712519168854,
+        "squad_b": 1.4034555829130113,
+        "squad_c": 1.2721948749385774,
+        "total": 2.7072275830432773
+      },
+      "execution_status": "failed",
+      "tool_used": null
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "BLOCK_IP",
+      "model_used": "llama3.2:3b",
+      "timing": {
+        "squad_a": 0.03157712519168854,
+        "squad_b": 1.6219825420994312,
+        "squad_c": 2.050140584120527,
+        "total": 3.7037002514116466
+      },
+      "execution_status": "success",
+      "tool_used": "aws"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "BLOCK_IP",
+      "model_used": "phi3:mini",
+      "timing": {
+        "squad_a": 0.03157712519168854,
+        "squad_b": 1.6856512501835823,
+        "squad_c": 0.891609292011708,
+        "total": 2.608837667386979
+      },
+      "execution_status": "failed",
+      "tool_used": null
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999905824661255,
+      "plan_action": "BLOCK_IP",
+      "model_used": "gemma2:2b",
+      "timing": {
+        "squad_a": 0.03157712519168854,
+        "squad_b": 1.3007336251903325,
+        "squad_c": 0.9914010830689222,
+        "total": 2.3237118334509432
+      },
+      "execution_status": "failed",
+      "tool_used": null
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999905824661255,
+      "plan_action": "BLOCK_IP",
+      "model_used": "llama3.2:3b",
+      "timing": {
+        "squad_a": 0.03157712519168854,
+        "squad_b": 1.5586043749935925,
+        "squad_c": 3.140932457987219,
+        "total": 4.7311139581725
+      },
+      "execution_status": "success",
+      "tool_used": "aws"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.999942421913147,
+      "plan_action": "BLOCK_IP",
+      "model_used": "phi3:mini",
+      "timing": {
+        "squad_a": 0.03157712519168854,
+        "squad_b": 1.6117441670503467,
+        "squad_c": 1.1695360839366913,
+        "total": 2.8128573761787266
+      },
+      "execution_status": "failed",
+      "tool_used": null
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "BLOCK_IP",
+      "model_used": "gemma2:2b",
+      "timing": {
+        "squad_a": 0.03157712519168854,
+        "squad_b": 1.6435570830944926,
+        "squad_c": 0.9894401670899242,
+        "total": 2.6645743753761053
+      },
+      "execution_status": "failed",
+      "tool_used": null
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999905824661255,
+      "plan_action": "BLOCK_IP",
+      "model_used": "llama3.2:3b",
+      "timing": {
+        "squad_a": 0.03157712519168854,
+        "squad_b": 1.321313749998808,
+        "squad_c": 1.7626886670477688,
+        "total": 3.1155795422382653
+      },
+      "execution_status": "success",
+      "tool_used": "aws"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999903440475464,
+      "plan_action": "BLOCK_IP",
+      "model_used": "phi3:mini",
+      "timing": {
+        "squad_a": 0.03157712519168854,
+        "squad_b": 1.5876567498780787,
+        "squad_c": 1.1089430409483612,
+        "total": 2.7281769160181284
+      },
+      "execution_status": "failed",
+      "tool_used": null
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "BLOCK_IP",
+      "model_used": "gemma2:2b",
+      "timing": {
+        "squad_a": 0.03157712519168854,
+        "squad_b": 1.5268791250418872,
+        "squad_c": 1.4384669167920947,
+        "total": 2.9969231670256704
+      },
+      "execution_status": "failed",
+      "tool_used": null
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "BLOCK_IP",
+      "model_used": "llama3.2:3b",
+      "timing": {
+        "squad_a": 0.02997616701759398,
+        "squad_b": 1.7734891248401254,
+        "squad_c": 2.5394644998013973,
+        "total": 4.342929791659117
+      },
+      "execution_status": "success",
+      "tool_used": "aws"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "BLOCK_IP",
+      "model_used": "phi3:mini",
+      "timing": {
+        "squad_a": 0.02997616701759398,
+        "squad_b": 1.6137853749096394,
+        "squad_c": 0.797707709018141,
+        "total": 2.4414692509453744
+      },
+      "execution_status": "failed",
+      "tool_used": null
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "BLOCK_IP",
+      "model_used": "gemma2:2b",
+      "timing": {
+        "squad_a": 0.02997616701759398,
+        "squad_b": 1.3953366661444306,
+        "squad_c": 1.3827392500825226,
+        "total": 2.8080520832445472
+      },
+      "execution_status": "failed",
+      "tool_used": null
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "BLOCK_IP",
+      "model_used": "llama3.2:3b",
+      "timing": {
+        "squad_a": 0.02997616701759398,
+        "squad_b": 1.653791791992262,
+        "squad_c": 2.490563999861479,
+        "total": 4.174331958871335
+      },
+      "execution_status": "success",
+      "tool_used": "aws"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "BLOCK_IP",
+      "model_used": "phi3:mini",
+      "timing": {
+        "squad_a": 0.02997616701759398,
+        "squad_b": 1.6999714579433203,
+        "squad_c": 1.3865553750656545,
+        "total": 3.1165030000265688
+      },
+      "execution_status": "failed",
+      "tool_used": null
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999436140060425,
+      "plan_action": "BLOCK_IP",
+      "model_used": "gemma2:2b",
+      "timing": {
+        "squad_a": 0.02997616701759398,
+        "squad_b": 1.680772416992113,
+        "squad_c": 0.7199715408496559,
+        "total": 2.430720124859363
+      },
+      "execution_status": "failed",
+      "tool_used": null
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "BLOCK_IP",
+      "model_used": "llama3.2:3b",
+      "timing": {
+        "squad_a": 0.02997616701759398,
+        "squad_b": 1.309594291029498,
+        "squad_c": 1.7609939998947084,
+        "total": 3.1005644579418004
+      },
+      "execution_status": "success",
+      "tool_used": "aws"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "BLOCK_IP",
+      "model_used": "phi3:mini",
+      "timing": {
+        "squad_a": 0.02997616701759398,
+        "squad_b": 1.4132270831614733,
+        "squad_c": 0.9082540420349687,
+        "total": 2.351457292214036
+      },
+      "execution_status": "failed",
+      "tool_used": null
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999905824661255,
+      "plan_action": "BLOCK_IP",
+      "model_used": "gemma2:2b",
+      "timing": {
+        "squad_a": 0.02997616701759398,
+        "squad_b": 1.34879529196769,
+        "squad_c": 1.2617110840510577,
+        "total": 2.6404825430363417
+      },
+      "execution_status": "failed",
+      "tool_used": null
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "BLOCK_IP",
+      "model_used": "llama3.2:3b",
+      "timing": {
+        "squad_a": 0.02997616701759398,
+        "squad_b": 1.6376646659336984,
+        "squad_c": 2.033315708162263,
+        "total": 3.7009565411135554
+      },
+      "execution_status": "success",
+      "tool_used": "aws"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "BLOCK_IP",
+      "model_used": "phi3:mini",
+      "timing": {
+        "squad_a": 0.02997616701759398,
+        "squad_b": 1.636047416832298,
+        "squad_c": 1.1927492918912321,
+        "total": 2.858772875741124
+      },
+      "execution_status": "failed",
+      "tool_used": null
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999905824661255,
+      "plan_action": "BLOCK_IP",
+      "model_used": "gemma2:2b",
+      "timing": {
+        "squad_a": 0.02997616701759398,
+        "squad_b": 1.425200458150357,
+        "squad_c": 1.2588464168366045,
+        "total": 2.7140230420045555
+      },
+      "execution_status": "failed",
+      "tool_used": null
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999905824661255,
+      "plan_action": "BLOCK_IP",
+      "model_used": "llama3.2:3b",
+      "timing": {
+        "squad_a": 0.02997616701759398,
+        "squad_b": 1.4370825828518718,
+        "squad_c": 2.5186904589645565,
+        "total": 3.9857492088340223
+      },
+      "execution_status": "success",
+      "tool_used": "aws"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999462366104126,
+      "plan_action": "BLOCK_IP",
+      "model_used": "phi3:mini",
+      "timing": {
+        "squad_a": 0.02997616701759398,
+        "squad_b": 1.676513458834961,
+        "squad_c": 1.1517924170475453,
+        "total": 2.8582820429001004
+      },
+      "execution_status": "failed",
+      "tool_used": null
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "BLOCK_IP",
+      "model_used": "gemma2:2b",
+      "timing": {
+        "squad_a": 0.02997616701759398,
+        "squad_b": 1.3081731249112636,
+        "squad_c": 0.9442020000424236,
+        "total": 2.282351291971281
+      },
+      "execution_status": "failed",
+      "tool_used": null
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999432563781738,
+      "plan_action": "BLOCK_IP",
+      "model_used": "llama3.2:3b",
+      "timing": {
+        "squad_a": 0.02997616701759398,
+        "squad_b": 1.557267792057246,
+        "squad_c": 2.1166024999693036,
+        "total": 3.7038464590441436
+      },
+      "execution_status": "success",
+      "tool_used": "aws"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "BLOCK_IP",
+      "model_used": "phi3:mini",
+      "timing": {
+        "squad_a": 0.02997616701759398,
+        "squad_b": 1.6632622501347214,
+        "squad_c": 1.3077102089300752,
+        "total": 3.0009486260823905
+      },
+      "execution_status": "failed",
+      "tool_used": null
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "BLOCK_IP",
+      "model_used": "gemma2:2b",
+      "timing": {
+        "squad_a": 0.02997616701759398,
+        "squad_b": 1.407601665938273,
+        "squad_c": 0.8921365409623832,
+        "total": 2.32971437391825
+      },
+      "execution_status": "failed",
+      "tool_used": null
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999915361404419,
+      "plan_action": "BLOCK_IP",
+      "model_used": "llama3.2:3b",
+      "timing": {
+        "squad_a": 0.02997616701759398,
+        "squad_b": 1.4713461250066757,
+        "squad_c": 3.049332042224705,
+        "total": 4.550654334248975
+      },
+      "execution_status": "success",
+      "tool_used": "aws"
+    },
+    {
+      "alert_type": "NET_FLOW_ANOMALY",
+      "ai_score": 0.9999905824661255,
+      "plan_action": "BLOCK_IP",
+      "model_used": "phi3:mini",
+      "timing": {
+        "squad_a": 0.02997616701759398,
+        "squad_b": 1.836194375064224,
+        "squad_c": 1.1138759579043835,
+        "total": 2.9800464999862015
+      },
+      "execution_status": "failed",
+      "tool_used": null
+    }
+  ]
+}
