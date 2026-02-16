@@ -47,7 +47,7 @@ class DetectionAgent:
                  print(f"[{self.agent_id}] BATCH: Found {len(anomalies_indices)} threats in {len(df_batch)} flows.")
                  
                  # Configurable throttle - set to None for no limit
-                 max_alerts_per_batch = 20  # Safeguard: Limit to 20 alerts/batch by default
+                 max_alerts_per_batch = 5000  # Allow up to 5000 alerts/batch for huge scale test
                  
                  for idx in anomalies_indices:
                      if max_alerts_per_batch is None or len(alerts) < max_alerts_per_batch:
@@ -56,7 +56,13 @@ class DetectionAgent:
                          # Construct Alert for Brain
                          label = row.get("Label", "Network Anomaly")
                          row["event_name"] = label
-                         row["target"] = "NetworkInterface"
+                         
+                         # Dynamic target from real flow data (Fix #1)
+                         dst_port = row.get("Dst Port", "unknown")
+                         protocol = row.get("Protocol", "unknown")
+                         src_internal = "internal" if row.get("src_is_internal", 0) == 1 else "external"
+                         dst_internal = "internal" if row.get("dst_is_internal", 0) == 1 else "external"
+                         row["target"] = f"{src_internal}:{protocol}/port-{dst_port}->{dst_internal}"
                          
                          alert = {
                             "source": self.agent_id,
