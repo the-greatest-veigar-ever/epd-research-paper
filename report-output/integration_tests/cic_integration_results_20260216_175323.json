@@ -1,0 +1,628 @@
+{
+  "run_timestamp": "2026-02-16T17:57:22.206174",
+  "summary": {
+    "total_flows": 14,
+    "total_alerts": 12,
+    "total_plans": 12
+  },
+  "stix_objects": [
+    {
+      "type": "course-of-action",
+      "spec_version": "2.1",
+      "id": "course-of-action--b89f9bd6-31e2-4160-9575-9c7be158856e",
+      "created": "2026-02-16T10:53:40.491649+00:00",
+      "modified": "2026-02-16T10:53:40.491649+00:00",
+      "name": "OpenC2 Remediation: contain",
+      "description": "Automated OpenC2 command triggered by Infilteration on internal:6.0/port-389.0->internal. Reason: AI selected OpenC2 Action: contain",
+      "x_epd_action": "contain",
+      "x_epd_target": "internal:6.0/port-389.0->internal",
+      "x_epd_openc2": {
+        "action": "contain",
+        "target": {
+          "device": {
+            "hostname": "internal:6.0/port-389.0->internal"
+          }
+        }
+      },
+      "x_epd_score": 0.9967526197433472,
+      "x_epd_reason": "AI selected OpenC2 Action: contain",
+      "x_epd_ai_raw_output": "### Instruction:\nYou are an advanced Security Orchestration AI.\nA threat has been detected:\n- Threat Type: Infilteration\n- Target: internal:6.0/port-389.0->internal\n\nGenerate an OpenC2 (Open Command and Control) command to remediate this threat.\nThe output must be a VALID JSON object with:\n- \"action\": The action verb (e.g., deny, allow, query, scan, contain).\n- \"target\": The target object (e.g., ipv4_connection, file, process).\n- \"args\": Optional arguments (e.g., duration, response_requested).\n\nExample:\n{\n  \"action\": \"deny\",\n  \"target\": { \"ipv4_connection\": { \"src_addr\": \"1.2.3.4\" } },\n  \"args\": { \"duration\": \"24h\" }\n}\n\n### Response:\n{\n  \"action\": \"deny\",\n  \"target\": { \"file\": { \"path\": \"/etc/passwd\" } },\n  \"args\": { \"duration\": \"1d\" }\n}",
+      "x_epd_input_alert_id": "unknown",
+      "x_epd_agent_id": "Brain-Phi2-QLoRA",
+      "x_epd_consensus": {
+        "alert_index": 1,
+        "round": 1,
+        "agent_votes": [
+          {
+            "agent": "Brain-Phi2-QLoRA",
+            "action": "contain",
+            "credit": 1.0
+          },
+          {
+            "agent": "Brain-Phi3-Mini",
+            "action": "contain",
+            "credit": 1.0
+          },
+          {
+            "agent": "Brain-Llama3.2",
+            "action": "contain",
+            "credit": 1.0
+          }
+        ],
+        "method": "majority_vote",
+        "agreement": "3/3",
+        "final_action": "contain"
+      }
+    },
+    {
+      "type": "course-of-action",
+      "spec_version": "2.1",
+      "id": "course-of-action--be927415-9457-4844-9408-51733a990945",
+      "created": "2026-02-16T10:53:59.666333+00:00",
+      "modified": "2026-02-16T10:53:59.666333+00:00",
+      "name": "OpenC2 Remediation: deny",
+      "description": "Automated OpenC2 command triggered by Bot on internal:6.0/port-8080.0->internal. Reason: AI selected OpenC2 Action: deny",
+      "x_epd_action": "deny",
+      "x_epd_target": "internal:6.0/port-8080.0->internal",
+      "x_epd_openc2": {
+        "action": "deny",
+        "target": {
+          "ipv4_connection": {
+            "src_addr": "internal:6.0/port-8080.0->internal"
+          }
+        },
+        "args": {
+          "duration": "1h"
+        }
+      },
+      "x_epd_score": 0.9999825954437256,
+      "x_epd_reason": "AI selected OpenC2 Action: deny",
+      "x_epd_ai_raw_output": "### Instruction:\nYou are an advanced Security Orchestration AI.\nA threat has been detected:\n- Threat Type: Bot\n- Target: internal:6.0/port-8080.0->internal\n\nGenerate an OpenC2 (Open Command and Control) command to remediate this threat.\nThe output must be a VALID JSON object with:\n- \"action\": The action verb (e.g., deny, allow, query, scan, contain).\n- \"target\": The target object (e.g., ipv4_connection, file, process).\n- \"args\": Optional arguments (e.g., duration, response_requested).\n\nExample:\n{\n  \"action\": \"deny\",\n  \"target\": { \"ipv4_connection\": { \"src_addr\": \"1.2.3.4\" } },\n  \"args\": { \"duration\": \"24h\" }\n}\n\n### Response:\n{\n  \"action\": \"deny\",\n  \"target\": { \"file\": { \"path\": \"/etc/passwd\" } },\n  \"args\": { \"duration\": \"1d\" }\n}",
+      "x_epd_input_alert_id": "unknown",
+      "x_epd_agent_id": "Brain-Phi2-QLoRA",
+      "x_epd_consensus": {
+        "alert_index": 2,
+        "round": 1,
+        "agent_votes": [
+          {
+            "agent": "Brain-Phi2-QLoRA",
+            "action": "deny",
+            "credit": 1.1
+          },
+          {
+            "agent": "Brain-Phi3-Mini",
+            "action": "deny",
+            "credit": 1.1
+          },
+          {
+            "agent": "Brain-Llama3.2",
+            "action": "deny",
+            "credit": 1.1
+          }
+        ],
+        "method": "majority_vote",
+        "agreement": "3/3",
+        "final_action": "deny"
+      }
+    },
+    {
+      "type": "course-of-action",
+      "spec_version": "2.1",
+      "id": "course-of-action--9ecf375a-3aa1-402c-ba0c-218de055c2d3",
+      "created": "2026-02-16T10:54:17.858400+00:00",
+      "modified": "2026-02-16T10:54:17.858400+00:00",
+      "name": "OpenC2 Remediation: deny",
+      "description": "Automated OpenC2 command triggered by Brute Force -Web on internal:6.0/port-80.0->internal. Reason: AI selected OpenC2 Action: deny",
+      "x_epd_action": "deny",
+      "x_epd_target": "internal:6.0/port-80.0->internal",
+      "x_epd_openc2": {
+        "action": "deny",
+        "target": {
+          "ipv4_connection": {
+            "src_addr": "internal:6.0/port-80.0->internal"
+          }
+        },
+        "args": {
+          "duration": "1h"
+        }
+      },
+      "x_epd_score": 0.8087043166160583,
+      "x_epd_reason": "AI selected OpenC2 Action: deny",
+      "x_epd_ai_raw_output": "### Instruction:\nYou are an advanced Security Orchestration AI.\nA threat has been detected:\n- Threat Type: Brute Force -Web\n- Target: internal:6.0/port-80.0->internal\n\nGenerate an OpenC2 (Open Command and Control) command to remediate this threat.\nThe output must be a VALID JSON object with:\n- \"action\": The action verb (e.g., deny, allow, query, scan, contain).\n- \"target\": The target object (e.g., ipv4_connection, file, process).\n- \"args\": Optional arguments (e.g., duration, response_requested).\n\nExample:\n{\n  \"action\": \"deny\",\n  \"target\": { \"ipv4_connection\": { \"src_addr\": \"1.2.3.4\" } },\n  \"args\": { \"duration\": \"24h\" }\n}\n\n### Response:\n{\n  \"action\": \"deny\",\n  \"target\": { \"file\": { \"path\": \"/etc/passwd\" } },\n  \"args\": { \"response_requested\": true }\n}",
+      "x_epd_input_alert_id": "unknown",
+      "x_epd_agent_id": "Brain-Phi2-QLoRA",
+      "x_epd_consensus": {
+        "alert_index": 3,
+        "round": 1,
+        "agent_votes": [
+          {
+            "agent": "Brain-Phi2-QLoRA",
+            "action": "deny",
+            "credit": 1.2000000000000002
+          },
+          {
+            "agent": "Brain-Phi3-Mini",
+            "action": "deny",
+            "credit": 1.2000000000000002
+          },
+          {
+            "agent": "Brain-Llama3.2",
+            "action": "deny",
+            "credit": 1.2000000000000002
+          }
+        ],
+        "method": "majority_vote",
+        "agreement": "3/3",
+        "final_action": "deny"
+      }
+    },
+    {
+      "type": "course-of-action",
+      "spec_version": "2.1",
+      "id": "course-of-action--900fe6c5-e1af-427b-b98e-a2d9ef452771",
+      "created": "2026-02-16T10:54:38.027857+00:00",
+      "modified": "2026-02-16T10:54:38.027857+00:00",
+      "name": "OpenC2 Remediation: deny",
+      "description": "Automated OpenC2 command triggered by Brute Force -XSS on internal:6.0/port-80.0->internal. Reason: AI selected OpenC2 Action: deny",
+      "x_epd_action": "deny",
+      "x_epd_target": "internal:6.0/port-80.0->internal",
+      "x_epd_openc2": {
+        "action": "deny",
+        "target": {
+          "ipv4_connection": {
+            "src_addr": "internal:6.0/port-80.0->internal"
+          }
+        },
+        "args": {
+          "duration": "1h"
+        }
+      },
+      "x_epd_score": 0.8604233264923096,
+      "x_epd_reason": "AI selected OpenC2 Action: deny",
+      "x_epd_ai_raw_output": "### Instruction:\nYou are an advanced Security Orchestration AI.\nA threat has been detected:\n- Threat Type: Brute Force -XSS\n- Target: internal:6.0/port-80.0->internal\n\nGenerate an OpenC2 (Open Command and Control) command to remediate this threat.\nThe output must be a VALID JSON object with:\n- \"action\": The action verb (e.g., deny, allow, query, scan, contain).\n- \"target\": The target object (e.g., ipv4_connection, file, process).\n- \"args\": Optional arguments (e.g., duration, response_requested).\n\nExample:\n{\n  \"action\": \"deny\",\n  \"target\": { \"ipv4_connection\": { \"src_addr\": \"1.2.3.4\" } },\n  \"args\": { \"duration\": \"24h\" }\n}\n\n### Response:\n{\n  \"action\": \"deny\",\n  \"target\": { \"file\": { \"path\": \"/path/to/file\" } },\n  \"args\": { \"response_requested\": true }\n}",
+      "x_epd_input_alert_id": "unknown",
+      "x_epd_agent_id": "Brain-Phi2-QLoRA",
+      "x_epd_consensus": {
+        "alert_index": 4,
+        "round": 1,
+        "agent_votes": [
+          {
+            "agent": "Brain-Phi2-QLoRA",
+            "action": "deny",
+            "credit": 1.3000000000000003
+          },
+          {
+            "agent": "Brain-Phi3-Mini",
+            "action": "deny",
+            "credit": 1.3000000000000003
+          },
+          {
+            "agent": "Brain-Llama3.2",
+            "action": "deny",
+            "credit": 1.3000000000000003
+          }
+        ],
+        "method": "majority_vote",
+        "agreement": "3/3",
+        "final_action": "deny"
+      }
+    },
+    {
+      "type": "course-of-action",
+      "spec_version": "2.1",
+      "id": "course-of-action--d71964da-bc77-4e34-a272-1062a01bc371",
+      "created": "2026-02-16T10:54:55.377587+00:00",
+      "modified": "2026-02-16T10:54:55.377587+00:00",
+      "name": "OpenC2 Remediation: contain",
+      "description": "Automated OpenC2 command triggered by SQL Injection on internal:6.0/port-80.0->internal. Reason: AI selected OpenC2 Action: contain",
+      "x_epd_action": "contain",
+      "x_epd_target": "internal:6.0/port-80.0->internal",
+      "x_epd_openc2": {
+        "action": "contain",
+        "target": {
+          "device": {
+            "hostname": "internal:6.0/port-80.0->internal"
+          }
+        }
+      },
+      "x_epd_score": 0.9611932039260864,
+      "x_epd_reason": "AI selected OpenC2 Action: contain",
+      "x_epd_ai_raw_output": "### Instruction:\nYou are an advanced Security Orchestration AI.\nA threat has been detected:\n- Threat Type: SQL Injection\n- Target: internal:6.0/port-80.0->internal\n\nGenerate an OpenC2 (Open Command and Control) command to remediate this threat.\nThe output must be a VALID JSON object with:\n- \"action\": The action verb (e.g., deny, allow, query, scan, contain).\n- \"target\": The target object (e.g., ipv4_connection, file, process).\n- \"args\": Optional arguments (e.g., duration, response_requested).\n\nExample:\n{\n  \"action\": \"deny\",\n  \"target\": { \"ipv4_connection\": { \"src_addr\": \"1.2.3.4\" } },\n  \"args\": { \"duration\": \"24h\" }\n}\n\n### Response:\n{\n  \"action\": \"deny\",\n  \"target\": { \"file\": { \"path\": \"/etc/passwd\" } },\n  \"args\": { \"duration\": \"1d\" }\n}",
+      "x_epd_input_alert_id": "unknown",
+      "x_epd_agent_id": "Brain-Phi2-QLoRA",
+      "x_epd_consensus": {
+        "alert_index": 5,
+        "round": 1,
+        "agent_votes": [
+          {
+            "agent": "Brain-Phi2-QLoRA",
+            "action": "contain",
+            "credit": 1.4000000000000004
+          },
+          {
+            "agent": "Brain-Phi3-Mini",
+            "action": "contain",
+            "credit": 1.4000000000000004
+          },
+          {
+            "agent": "Brain-Llama3.2",
+            "action": "contain",
+            "credit": 1.4000000000000004
+          }
+        ],
+        "method": "majority_vote",
+        "agreement": "3/3",
+        "final_action": "contain"
+      }
+    },
+    {
+      "type": "course-of-action",
+      "spec_version": "2.1",
+      "id": "course-of-action--6a687fa4-957f-48da-bc1b-6daeaa25f226",
+      "created": "2026-02-16T10:55:15.461077+00:00",
+      "modified": "2026-02-16T10:55:15.461077+00:00",
+      "name": "OpenC2 Remediation: deny",
+      "description": "Automated OpenC2 command triggered by DoS attacks-GoldenEye on internal:6.0/port-80.0->internal. Reason: AI selected OpenC2 Action: deny",
+      "x_epd_action": "deny",
+      "x_epd_target": "internal:6.0/port-80.0->internal",
+      "x_epd_openc2": {
+        "action": "deny",
+        "target": {
+          "ipv4_connection": {
+            "src_addr": "internal:6.0/port-80.0->internal"
+          }
+        },
+        "args": {
+          "duration": "1h"
+        }
+      },
+      "x_epd_score": 0.9996154308319092,
+      "x_epd_reason": "AI selected OpenC2 Action: deny",
+      "x_epd_ai_raw_output": "### Instruction:\nYou are an advanced Security Orchestration AI.\nA threat has been detected:\n- Threat Type: DoS attacks-GoldenEye\n- Target: internal:6.0/port-80.0->internal\n\nGenerate an OpenC2 (Open Command and Control) command to remediate this threat.\nThe output must be a VALID JSON object with:\n- \"action\": The action verb (e.g., deny, allow, query, scan, contain).\n- \"target\": The target object (e.g., ipv4_connection, file, process).\n- \"args\": Optional arguments (e.g., duration, response_requested).\n\nExample:\n{\n  \"action\": \"deny\",\n  \"target\": { \"ipv4_connection\": { \"src_addr\": \"1.2.3.4\" } },\n  \"args\": { \"duration\": \"24h\" }\n}\n\n### Response:\n{\n  \"action\": \"deny\",\n  \"target\": { \"file\": { \"path\": \"/etc/passwd\" } },\n  \"args\": { \"response_requested\": true }\n}",
+      "x_epd_input_alert_id": "unknown",
+      "x_epd_agent_id": "Brain-Phi2-QLoRA",
+      "x_epd_consensus": {
+        "alert_index": 6,
+        "round": 1,
+        "agent_votes": [
+          {
+            "agent": "Brain-Phi2-QLoRA",
+            "action": "deny",
+            "credit": 1.5000000000000004
+          },
+          {
+            "agent": "Brain-Phi3-Mini",
+            "action": "deny",
+            "credit": 1.5000000000000004
+          },
+          {
+            "agent": "Brain-Llama3.2",
+            "action": "deny",
+            "credit": 1.5000000000000004
+          }
+        ],
+        "method": "majority_vote",
+        "agreement": "3/3",
+        "final_action": "deny"
+      }
+    },
+    {
+      "type": "course-of-action",
+      "spec_version": "2.1",
+      "id": "course-of-action--6e42b2d7-7494-408b-9b44-ded65a6906b9",
+      "created": "2026-02-16T10:55:37.060677+00:00",
+      "modified": "2026-02-16T10:55:37.060677+00:00",
+      "name": "OpenC2 Remediation: deny",
+      "description": "Automated OpenC2 command triggered by DoS attacks-Slowloris on internal:6.0/port-80.0->internal. Reason: AI selected OpenC2 Action: deny",
+      "x_epd_action": "deny",
+      "x_epd_target": "internal:6.0/port-80.0->internal",
+      "x_epd_openc2": {
+        "action": "deny",
+        "target": {
+          "ipv4_connection": {
+            "src_addr": "internal:6.0/port-80.0->internal"
+          }
+        },
+        "args": {
+          "duration": "1h"
+        }
+      },
+      "x_epd_score": 0.9998791217803955,
+      "x_epd_reason": "AI selected OpenC2 Action: deny",
+      "x_epd_ai_raw_output": "### Instruction:\nYou are an advanced Security Orchestration AI.\nA threat has been detected:\n- Threat Type: DoS attacks-Slowloris\n- Target: internal:6.0/port-80.0->internal\n\nGenerate an OpenC2 (Open Command and Control) command to remediate this threat.\nThe output must be a VALID JSON object with:\n- \"action\": The action verb (e.g., deny, allow, query, scan, contain).\n- \"target\": The target object (e.g., ipv4_connection, file, process).\n- \"args\": Optional arguments (e.g., duration, response_requested).\n\nExample:\n{\n  \"action\": \"deny\",\n  \"target\": { \"ipv4_connection\": { \"src_addr\": \"1.2.3.4\" } },\n  \"args\": { \"duration\": \"24h\" }\n}\n\n### Response:\n{\n  \"action\": \"deny\",\n  \"target\": { \"ipv4_connection\": { \"src_addr\": \"1.2.3.4\" } },\n  \"args\": { \"duration\": \"24h\" }\n}",
+      "x_epd_input_alert_id": "unknown",
+      "x_epd_agent_id": "Brain-Phi2-QLoRA",
+      "x_epd_consensus": {
+        "alert_index": 7,
+        "round": 1,
+        "agent_votes": [
+          {
+            "agent": "Brain-Phi2-QLoRA",
+            "action": "deny",
+            "credit": 1.6000000000000005
+          },
+          {
+            "agent": "Brain-Phi3-Mini",
+            "action": "deny",
+            "credit": 1.6000000000000005
+          },
+          {
+            "agent": "Brain-Llama3.2",
+            "action": "deny",
+            "credit": 1.6000000000000005
+          }
+        ],
+        "method": "majority_vote",
+        "agreement": "3/3",
+        "final_action": "deny"
+      }
+    },
+    {
+      "type": "course-of-action",
+      "spec_version": "2.1",
+      "id": "course-of-action--cb8e28ea-c23e-4e5e-8204-5f12036a249b",
+      "created": "2026-02-16T10:55:56.696109+00:00",
+      "modified": "2026-02-16T10:55:56.696109+00:00",
+      "name": "OpenC2 Remediation: deny",
+      "description": "Automated OpenC2 command triggered by DDoS attacks-LOIC-HTTP on internal:6.0/port-80.0->internal. Reason: AI selected OpenC2 Action: deny",
+      "x_epd_action": "deny",
+      "x_epd_target": "internal:6.0/port-80.0->internal",
+      "x_epd_openc2": {
+        "action": "deny",
+        "target": {
+          "ipv4_connection": {
+            "src_addr": "internal:6.0/port-80.0->internal"
+          }
+        },
+        "args": {
+          "duration": "1h"
+        }
+      },
+      "x_epd_score": 0.999983549118042,
+      "x_epd_reason": "AI selected OpenC2 Action: deny",
+      "x_epd_ai_raw_output": "### Instruction:\nYou are an advanced Security Orchestration AI.\nA threat has been detected:\n- Threat Type: DDoS attacks-LOIC-HTTP\n- Target: internal:6.0/port-80.0->internal\n\nGenerate an OpenC2 (Open Command and Control) command to remediate this threat.\nThe output must be a VALID JSON object with:\n- \"action\": The action verb (e.g., deny, allow, query, scan, contain).\n- \"target\": The target object (e.g., ipv4_connection, file, process).\n- \"args\": Optional arguments (e.g., duration, response_requested).\n\nExample:\n{\n  \"action\": \"deny\",\n  \"target\": { \"ipv4_connection\": { \"src_addr\": \"1.2.3.4\" } },\n  \"args\": { \"duration\": \"24h\" }\n}\n\n### Response:\n{\n  \"action\": \"deny\",\n  \"target\": { \"file\": { \"path\": \"/etc/passwd\" } },\n  \"args\": { \"response_requested\": true }\n}",
+      "x_epd_input_alert_id": "unknown",
+      "x_epd_agent_id": "Brain-Phi2-QLoRA",
+      "x_epd_consensus": {
+        "alert_index": 8,
+        "round": 1,
+        "agent_votes": [
+          {
+            "agent": "Brain-Phi2-QLoRA",
+            "action": "deny",
+            "credit": 1.7000000000000006
+          },
+          {
+            "agent": "Brain-Phi3-Mini",
+            "action": "deny",
+            "credit": 1.7000000000000006
+          },
+          {
+            "agent": "Brain-Llama3.2",
+            "action": "deny",
+            "credit": 1.7000000000000006
+          }
+        ],
+        "method": "majority_vote",
+        "agreement": "3/3",
+        "final_action": "deny"
+      }
+    },
+    {
+      "type": "course-of-action",
+      "spec_version": "2.1",
+      "id": "course-of-action--a783edf8-43fd-4d86-a159-d497d0c9161f",
+      "created": "2026-02-16T10:56:17.715757+00:00",
+      "modified": "2026-02-16T10:56:17.715757+00:00",
+      "name": "OpenC2 Remediation: deny",
+      "description": "Automated OpenC2 command triggered by DDOS attack-LOIC-UDP on internal:17.0/port-80.0->internal. Reason: AI selected OpenC2 Action: deny",
+      "x_epd_action": "deny",
+      "x_epd_target": "internal:17.0/port-80.0->internal",
+      "x_epd_openc2": {
+        "action": "deny",
+        "target": {
+          "ipv4_connection": {
+            "src_addr": "internal:17.0/port-80.0->internal"
+          }
+        },
+        "args": {
+          "duration": "1h"
+        }
+      },
+      "x_epd_score": 0.9998623132705688,
+      "x_epd_reason": "AI selected OpenC2 Action: deny",
+      "x_epd_ai_raw_output": "### Instruction:\nYou are an advanced Security Orchestration AI.\nA threat has been detected:\n- Threat Type: DDOS attack-LOIC-UDP\n- Target: internal:17.0/port-80.0->internal\n\nGenerate an OpenC2 (Open Command and Control) command to remediate this threat.\nThe output must be a VALID JSON object with:\n- \"action\": The action verb (e.g., deny, allow, query, scan, contain).\n- \"target\": The target object (e.g., ipv4_connection, file, process).\n- \"args\": Optional arguments (e.g., duration, response_requested).\n\nExample:\n{\n  \"action\": \"deny\",\n  \"target\": { \"ipv4_connection\": { \"src_addr\": \"1.2.3.4\" } },\n  \"args\": { \"duration\": \"24h\" }\n}\n\n### Response:\n{\n  \"action\": \"deny\",\n  \"target\": { \"file\": { \"path\": \"/etc/passwd\" } },\n  \"args\": { \"duration\": \"1d\" }\n}",
+      "x_epd_input_alert_id": "unknown",
+      "x_epd_agent_id": "Brain-Phi2-QLoRA",
+      "x_epd_consensus": {
+        "alert_index": 9,
+        "round": 1,
+        "agent_votes": [
+          {
+            "agent": "Brain-Phi2-QLoRA",
+            "action": "deny",
+            "credit": 1.8000000000000007
+          },
+          {
+            "agent": "Brain-Phi3-Mini",
+            "action": "deny",
+            "credit": 1.8000000000000007
+          },
+          {
+            "agent": "Brain-Llama3.2",
+            "action": "deny",
+            "credit": 1.8000000000000007
+          }
+        ],
+        "method": "majority_vote",
+        "agreement": "3/3",
+        "final_action": "deny"
+      }
+    },
+    {
+      "type": "course-of-action",
+      "spec_version": "2.1",
+      "id": "course-of-action--f178b076-18f6-4faa-9ab5-8e7b8b16fc1f",
+      "created": "2026-02-16T10:56:39.413796+00:00",
+      "modified": "2026-02-16T10:56:39.413796+00:00",
+      "name": "OpenC2 Remediation: deny",
+      "description": "Automated OpenC2 command triggered by DDOS attack-HOIC on internal:6.0/port-80.0->internal. Reason: AI selected OpenC2 Action: deny",
+      "x_epd_action": "deny",
+      "x_epd_target": "internal:6.0/port-80.0->internal",
+      "x_epd_openc2": {
+        "action": "deny",
+        "target": {
+          "ipv4_connection": {
+            "src_addr": "internal:6.0/port-80.0->internal"
+          }
+        },
+        "args": {
+          "duration": "1h"
+        }
+      },
+      "x_epd_score": 0.9999961853027344,
+      "x_epd_reason": "AI selected OpenC2 Action: deny",
+      "x_epd_ai_raw_output": "### Instruction:\nYou are an advanced Security Orchestration AI.\nA threat has been detected:\n- Threat Type: DDOS attack-HOIC\n- Target: internal:6.0/port-80.0->internal\n\nGenerate an OpenC2 (Open Command and Control) command to remediate this threat.\nThe output must be a VALID JSON object with:\n- \"action\": The action verb (e.g., deny, allow, query, scan, contain).\n- \"target\": The target object (e.g., ipv4_connection, file, process).\n- \"args\": Optional arguments (e.g., duration, response_requested).\n\nExample:\n{\n  \"action\": \"deny\",\n  \"target\": { \"ipv4_connection\": { \"src_addr\": \"1.2.3.4\" } },\n  \"args\": { \"duration\": \"24h\" }\n}\n\n### Response:\n{\n  \"action\": \"deny\",\n  \"target\": { \"file\": { \"path\": \"/etc/passwd\" } },\n  \"args\": { \"response_requested\": true }\n}",
+      "x_epd_input_alert_id": "unknown",
+      "x_epd_agent_id": "Brain-Phi2-QLoRA",
+      "x_epd_consensus": {
+        "alert_index": 10,
+        "round": 1,
+        "agent_votes": [
+          {
+            "agent": "Brain-Phi2-QLoRA",
+            "action": "deny",
+            "credit": 1.9000000000000008
+          },
+          {
+            "agent": "Brain-Phi3-Mini",
+            "action": "deny",
+            "credit": 1.9000000000000008
+          },
+          {
+            "agent": "Brain-Llama3.2",
+            "action": "deny",
+            "credit": 1.9000000000000008
+          }
+        ],
+        "method": "majority_vote",
+        "agreement": "3/3",
+        "final_action": "deny"
+      }
+    },
+    {
+      "type": "course-of-action",
+      "spec_version": "2.1",
+      "id": "course-of-action--ef11b9f1-47dc-4026-ae20-c099f9790e0c",
+      "created": "2026-02-16T10:56:58.042135+00:00",
+      "modified": "2026-02-16T10:56:58.042135+00:00",
+      "name": "OpenC2 Remediation: deny",
+      "description": "Automated OpenC2 command triggered by FTP-BruteForce on internal:6.0/port-21.0->internal. Reason: AI selected OpenC2 Action: deny",
+      "x_epd_action": "deny",
+      "x_epd_target": "internal:6.0/port-21.0->internal",
+      "x_epd_openc2": {
+        "action": "deny",
+        "target": {
+          "ipv4_connection": {
+            "src_addr": "internal:6.0/port-21.0->internal"
+          }
+        },
+        "args": {
+          "duration": "1h"
+        }
+      },
+      "x_epd_score": 0.9999935626983643,
+      "x_epd_reason": "AI selected OpenC2 Action: deny",
+      "x_epd_ai_raw_output": "### Instruction:\nYou are an advanced Security Orchestration AI.\nA threat has been detected:\n- Threat Type: FTP-BruteForce\n- Target: internal:6.0/port-21.0->internal\n\nGenerate an OpenC2 (Open Command and Control) command to remediate this threat.\nThe output must be a VALID JSON object with:\n- \"action\": The action verb (e.g., deny, allow, query, scan, contain).\n- \"target\": The target object (e.g., ipv4_connection, file, process).\n- \"args\": Optional arguments (e.g., duration, response_requested).\n\nExample:\n{\n  \"action\": \"deny\",\n  \"target\": { \"ipv4_connection\": { \"src_addr\": \"1.2.3.4\" } },\n  \"args\": { \"duration\": \"24h\" }\n}\n\n### Response:\n{\n  \"action\": \"deny\",\n  \"target\": { \"file\": { \"path\": \"/etc/passwd\" } },\n  \"args\": { \"duration\": \"1d\" }\n}",
+      "x_epd_input_alert_id": "unknown",
+      "x_epd_agent_id": "Brain-Phi2-QLoRA",
+      "x_epd_consensus": {
+        "alert_index": 11,
+        "round": 1,
+        "agent_votes": [
+          {
+            "agent": "Brain-Phi2-QLoRA",
+            "action": "deny",
+            "credit": 2.0
+          },
+          {
+            "agent": "Brain-Phi3-Mini",
+            "action": "deny",
+            "credit": 2.0
+          },
+          {
+            "agent": "Brain-Llama3.2",
+            "action": "deny",
+            "credit": 2.0
+          }
+        ],
+        "method": "majority_vote",
+        "agreement": "3/3",
+        "final_action": "deny"
+      }
+    },
+    {
+      "type": "course-of-action",
+      "spec_version": "2.1",
+      "id": "course-of-action--60dc2a6d-08ac-4c80-b3b6-21f611bfbe4a",
+      "created": "2026-02-16T10:57:16.904524+00:00",
+      "modified": "2026-02-16T10:57:16.904524+00:00",
+      "name": "OpenC2 Remediation: deny",
+      "description": "Automated OpenC2 command triggered by SSH-Bruteforce on internal:6.0/port-22.0->internal. Reason: AI selected OpenC2 Action: deny",
+      "x_epd_action": "deny",
+      "x_epd_target": "internal:6.0/port-22.0->internal",
+      "x_epd_openc2": {
+        "action": "deny",
+        "target": {
+          "ipv4_connection": {
+            "src_addr": "internal:6.0/port-22.0->internal"
+          }
+        },
+        "args": {
+          "duration": "1h"
+        }
+      },
+      "x_epd_score": 0.999995231628418,
+      "x_epd_reason": "AI selected OpenC2 Action: deny",
+      "x_epd_ai_raw_output": "### Instruction:\nYou are an advanced Security Orchestration AI.\nA threat has been detected:\n- Threat Type: SSH-Bruteforce\n- Target: internal:6.0/port-22.0->internal\n\nGenerate an OpenC2 (Open Command and Control) command to remediate this threat.\nThe output must be a VALID JSON object with:\n- \"action\": The action verb (e.g., deny, allow, query, scan, contain).\n- \"target\": The target object (e.g., ipv4_connection, file, process).\n- \"args\": Optional arguments (e.g., duration, response_requested).\n\nExample:\n{\n  \"action\": \"deny\",\n  \"target\": { \"ipv4_connection\": { \"src_addr\": \"1.2.3.4\" } },\n  \"args\": { \"duration\": \"24h\" }\n}\n\n### Response:\n{\n  \"action\": \"deny\",\n  \"target\": { \"file\": { \"path\": \"/etc/passwd\" } },\n  \"args\": { \"duration\": \"1d\" }\n}",
+      "x_epd_input_alert_id": "unknown",
+      "x_epd_agent_id": "Brain-Phi2-QLoRA",
+      "x_epd_consensus": {
+        "alert_index": 12,
+        "round": 1,
+        "agent_votes": [
+          {
+            "agent": "Brain-Phi2-QLoRA",
+            "action": "deny",
+            "credit": 2.0
+          },
+          {
+            "agent": "Brain-Phi3-Mini",
+            "action": "deny",
+            "credit": 2.0
+          },
+          {
+            "agent": "Brain-Llama3.2",
+            "action": "deny",
+            "credit": 2.0
+          }
+        ],
+        "method": "majority_vote",
+        "agreement": "3/3",
+        "final_action": "deny"
+      }
+    }
+  ],
+  "consensus_stats": {
+    "total_alerts": 12,
+    "total_decisions": 12,
+    "decision_methods": {
+      "majority_vote": 12
+    },
+    "final_credits": {
+      "Brain-Phi2-QLoRA": 2.0,
+      "Brain-Phi3-Mini": 2.0,
+      "Brain-Llama3.2": 2.0
+    }
+  }
+}
