@@ -61,7 +61,7 @@ class ApproachEvaluator:
             # Load ALL .json files from the directory
             print(f"[Evaluator] Loading all JSON files from directory: {self.dataset_path}")
             for fname in sorted(os.listdir(self.dataset_path)):
-                if fname.endswith(".json"):
+                if fname.endswith(".json") and not fname.startswith("._"):
                     json_files.append(os.path.join(self.dataset_path, fname))
             print(f"[Evaluator] Found {len(json_files)} JSON files.")
         elif os.path.isfile(self.dataset_path):

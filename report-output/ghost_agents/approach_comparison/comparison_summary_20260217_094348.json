@@ -1,0 +1,89 @@
+{
+  "evaluation_type": "approach_comparison_summary",
+  "timestamp": "2026-02-17T09:43:48.769467",
+  "dataset": "report-output/integration_tests",
+  "total_plans_in_dataset": 4026,
+  "interrupted": false,
+  "comparison": {
+    "phi_baseline": {
+      "models": [
+        "phi3:mini"
+      ],
+      "suicide_mode": false,
+      "plans_processed": 4026,
+      "initialization_time_s": 1.973,
+      "total_init_overhead_s": 1.973,
+      "avg_processing_time_s": 2.177,
+      "total_processing_time_s": 8763.632,
+      "asr_pct": 100.0,
+      "tsr_pct": 99.58,
+      "pass_at_1_pct": 100.0,
+      "tool_correctness_pct": 99.58,
+      "model_distribution": {
+        "phi3:mini": 4026
+      }
+    },
+    "phi_suicide": {
+      "models": [
+        "phi3:mini"
+      ],
+      "suicide_mode": true,
+      "plans_processed": 4026,
+      "initialization_time_s": 0.0,
+      "total_init_overhead_s": 1729.835,
+      "avg_processing_time_s": 2.301,
+      "total_processing_time_s": 9264.539,
+      "asr_pct": 100.0,
+      "tsr_pct": 99.65,
+      "pass_at_1_pct": 100.0,
+      "tool_correctness_pct": 99.65,
+      "model_distribution": {
+        "phi3:mini": 4026
+      }
+    },
+    "multimodal_static": {
+      "models": [
+        "phi3:mini",
+        "llama3.2:3b",
+        "gemma2:2b"
+      ],
+      "suicide_mode": false,
+      "plans_processed": 4026,
+      "initialization_time_s": 13.684,
+      "total_init_overhead_s": 13.684,
+      "avg_processing_time_s": 1.328,
+      "total_processing_time_s": 5344.862,
+      "asr_pct": 100.0,
+      "tsr_pct": 98.26,
+      "pass_at_1_pct": 100.0,
+      "tool_correctness_pct": 98.26,
+      "model_distribution": {
+        "phi3:mini": 1303,
+        "gemma2:2b": 1410,
+        "llama3.2:3b": 1313
+      }
+    },
+    "multimodal_suicide": {
+      "models": [
+        "phi3:mini",
+        "llama3.2:3b",
+        "gemma2:2b"
+      ],
+      "suicide_mode": true,
+      "plans_processed": 4026,
+      "initialization_time_s": 0.0,
+      "total_init_overhead_s": 3779.98,
+      "avg_processing_time_s": 1.531,
+      "total_processing_time_s": 6162.814,
+      "asr_pct": 100.0,
+      "tsr_pct": 98.09,
+      "pass_at_1_pct": 100.0,
+      "tool_correctness_pct": 98.09,
+      "model_distribution": {
+        "gemma2:2b": 1352,
+        "llama3.2:3b": 1340,
+        "phi3:mini": 1334
+      }
+    }
+  }
+}
