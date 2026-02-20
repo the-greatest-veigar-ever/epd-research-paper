@@ -159,3 +159,78 @@ With ~4000 plans at ~2.4s/plan per approach:
 - **All 4 approaches**: ~10+ hours (suicide approaches are slower due to model load/unload overhead)
 
 Use `--limit` for quick validation runs before committing to a full evaluation.
+
+---
+
+## Security Evaluation (Cybersecurity Resilience)
+
+In addition to ML performance metrics, this module evaluates the **anti-hacking properties** of each approach using 4 research-grade cybersecurity testing frameworks.
+
+### Security Frameworks
+
+| # | Framework | Metric | Tests | Citation |
+|---|-----------|--------|-------|----------|
+| 1 | **CyberSecEval 2** | Prompt Injection Resistance Rate | 30 | Bhatt et al., IEEE S&P Workshop 2024 |
+| 2 | **HarmBench** | Harmful Request Rejection Rate | 30 | Mazeika et al., ICML 2024 |
+| 3 | **JailbreakBench** | Jailbreak Resistance Rate | 30 | Chao et al., NeurIPS 2024 |
+| 4 | **BIPIA** | Context Isolation Score | 20 | Yi et al., NAACL 2024 |
+
+### How to Run Security Evaluation
+
+```bash
+# Run all 4 frameworks against all 4 approaches
+python -m src.ghost_agents.approach_evaluation.run_security_evaluation
+
+# Run specific approaches
+python -m src.ghost_agents.approach_evaluation.run_security_evaluation \
+    --approaches phi_suicide,multimodal_suicide
+
+# Run specific frameworks
+python -m src.ghost_agents.approach_evaluation.run_security_evaluation \
+    --frameworks cyberseceval,harmbench
+
+# Custom output directory
+python -m src.ghost_agents.approach_evaluation.run_security_evaluation --output-dir my_security_results/
+```
+
+### CLI Arguments (Security)
+
+| Argument | Default | Description |
+|----------|---------|-------------|
+| `--approaches` | `all` | Comma-separated approach names or `all` |
+| `--frameworks` | `all` | Comma-separated framework names: `cyberseceval`, `harmbench`, `jailbreakbench`, `bipia` |
+| `--output-dir` | `report-output/ghost_agents/security_comparison` | Output directory for JSON reports |
+
+### Expected Security Output
+
+```
+========================================================================================================================
+  SECURITY COMPARISON (Cybersecurity Resilience)
+========================================================================================================================
+Approach                  | Suicide | Inj.Resist | Harm.Reject | Jail.Resist | Ctx.Isolate | Aggregate
+------------------------------------------------------------------------------------------------------------------------
+phi_baseline              | No      |     86.67% |      93.33% |      80.00% |      75.00% |    83.75%
+phi_suicide               | Yes     |     86.67% |      93.33% |      80.00% |      95.00% |    88.75%
+multimodal_static         | No      |     90.00% |      96.67% |      83.33% |      75.00% |    86.25%
+multimodal_suicide        | Yes     |     90.00% |      96.67% |      83.33% |      95.00% |    91.25%
+========================================================================================================================
+```
+
+> **Note**: Numbers above are illustrative. The key hypothesis is that **suicide approaches** score higher on Context Isolation (BIPIA), validating the ephemeral self-destruct mechanism.
+
+### Security Metrics Glossary
+
+| Metric | Definition |
+|--------|------------|
+| **Prompt Injection Resistance** | % of adversarial prompts (command injection, prompt override) that did NOT produce dangerous output |
+| **Harmful Request Rejection** | % of explicitly harmful requests (data exfil, ransomware, DDoS) that were NOT fulfilled |
+| **Jailbreak Resistance** | % of jailbreak attempts (DAN, role-play, encoding tricks) that did NOT bypass safety |
+| **Context Isolation Score** | % of sequential sessions where secret info did NOT leak between ephemeral agents |
+| **Aggregate Security Score** | Average of all 4 framework resistance rates |
+
+### Security Output Files
+
+| File | Contents |
+|------|----------|
+| `security_summary_<timestamp>.json` | Compact per-framework resistance rates per approach |
+| `security_detailed_<timestamp>.json` | Full report including per-test results (response text, danger patterns matched) |
