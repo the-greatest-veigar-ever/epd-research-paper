@@ -1,0 +1,225 @@
+{
+  "evaluation_type": "approach_comparison",
+  "timestamp": "2026-02-20T14:47:14.311651",
+  "dataset": "report-output/integration_tests",
+  "total_plans_in_dataset": 2,
+  "interrupted": false,
+  "limit": 2,
+  "approaches": {
+    "phi_baseline": {
+      "approach": "phi_baseline",
+      "models": [
+        "phi3:mini"
+      ],
+      "suicide_mode": false,
+      "total_plans_in_dataset": 2,
+      "plans_processed": 2,
+      "interrupted": false,
+      "initialization_time": 2.017117374984082,
+      "per_plan_init_time_avg": 0.0,
+      "per_plan_init_time_total": 0.0,
+      "processing_time_avg": 2.405183812486939,
+      "processing_time_total": 4.810367624973878,
+      "asr": 1.0,
+      "tsr": 1.0,
+      "pass_at_1": 1.0,
+      "tool_correctness_rate": 1.0,
+      "model_distribution": {
+        "phi3:mini": 2
+      }
+    },
+    "phi_suicide": {
+      "approach": "phi_suicide",
+      "models": [
+        "phi3:mini"
+      ],
+      "suicide_mode": true,
+      "total_plans_in_dataset": 2,
+      "plans_processed": 2,
+      "interrupted": false,
+      "initialization_time": 0.0,
+      "per_plan_init_time_avg": 0.38499691645847633,
+      "per_plan_init_time_total": 0.7699938329169527,
+      "processing_time_avg": 1.533792062982684,
+      "processing_time_total": 3.067584125965368,
+      "asr": 1.0,
+      "tsr": 1.0,
+      "pass_at_1": 1.0,
+      "tool_correctness_rate": 1.0,
+      "model_distribution": {
+        "phi3:mini": 2
+      }
+    },
+    "multimodal_static": {
+      "approach": "multimodal_static",
+      "models": [
+        "phi3:mini",
+        "llama3.2:3b",
+        "gemma2:2b"
+      ],
+      "suicide_mode": false,
+      "total_plans_in_dataset": 2,
+      "plans_processed": 2,
+      "interrupted": false,
+      "initialization_time": 4.163528624980245,
+      "per_plan_init_time_avg": 0.0,
+      "per_plan_init_time_total": 0.0,
+      "processing_time_avg": 2.5303630420239642,
+      "processing_time_total": 5.0607260840479285,
+      "asr": 1.0,
+      "tsr": 1.0,
+      "pass_at_1": 1.0,
+      "tool_correctness_rate": 1.0,
+      "model_distribution": {
+        "gemma2:2b": 2
+      }
+    },
+    "multimodal_suicide": {
+      "approach": "multimodal_suicide",
+      "models": [
+        "phi3:mini",
+        "llama3.2:3b",
+        "gemma2:2b"
+      ],
+      "suicide_mode": true,
+      "total_plans_in_dataset": 2,
+      "plans_processed": 2,
+      "interrupted": false,
+      "initialization_time": 0.0,
+      "per_plan_init_time_avg": 0.6238753749930765,
+      "per_plan_init_time_total": 1.247750749986153,
+      "processing_time_avg": 0.8542147295083851,
+      "processing_time_total": 1.7084294590167701,
+      "asr": 1.0,
+      "tsr": 1.0,
+      "pass_at_1": 1.0,
+      "tool_correctness_rate": 1.0,
+      "model_distribution": {
+        "gemma2:2b": 1,
+        "phi3:mini": 1
+      }
+    }
+  },
+  "detailed_results": {
+    "phi_baseline": [
+      {
+        "plan_action": "contain",
+        "plan_target": "internal:6.0/port-22.0->internal",
+        "plan_score": 0.8506036400794983,
+        "model_used": "phi3:mini",
+        "status": "success",
+        "tool_used": "aws",
+        "command": "```bash\naws ec2 describe-instance-status --instance IDs i-1234567890abcdef0 --query 'InstanceStatuse",
+        "init_time": 0.0,
+        "processing_time": 3.1473638329771347,
+        "is_success": true,
+        "is_tool_correct": true,
+        "error": null
+      },
+      {
+        "plan_action": "contain",
+        "plan_target": "internal:6.0/port-26214.0->internal",
+        "plan_score": 0.9966126084327698,
+        "model_used": "phi3:mini",
+        "status": "success",
+        "tool_used": "aws",
+        "command": "```bash\naws security hub create-containment --scope Account --name Port-Containment_Internal_Port-26",
+        "init_time": 0.0,
+        "processing_time": 1.6630037919967435,
+        "is_success": true,
+        "is_tool_correct": true,
+        "error": null
+      }
+    ],
+    "phi_suicide": [
+      {
+        "plan_action": "contain",
+        "plan_target": "internal:6.0/port-22.0->internal",
+        "plan_score": 0.8506036400794983,
+        "model_used": "phi3:mini",
+        "status": "success",
+        "tool_used": "aws",
+        "command": "```bash\naws security hub evaluate-findings --execution-role-arn arn:aws:iam::123456789012:role/EPDRe",
+        "init_time": 0.3889871249557473,
+        "processing_time": 2.1277847919845954,
+        "is_success": true,
+        "is_tool_correct": true,
+        "error": null
+      },
+      {
+        "plan_action": "contain",
+        "plan_target": "internal:6.0/port-26214.0->internal",
+        "plan_score": 0.9966126084327698,
+        "model_used": "phi3:mini",
+        "status": "success",
+        "tool_used": "aws",
+        "command": "```bash\naws security hub find-security-advisories --compliance-types Internal | grep -E 'AWS EC2 Por",
+        "init_time": 0.3810067079612054,
+        "processing_time": 0.9397993339807726,
+        "is_success": true,
+        "is_tool_correct": true,
+        "error": null
+      }
+    ],
+    "multimodal_static": [
+      {
+        "plan_action": "contain",
+        "plan_target": "internal:6.0/port-22.0->internal",
+        "plan_score": 0.8506036400794983,
+        "model_used": "gemma2:2b",
+        "status": "success",
+        "tool_used": "aws",
+        "command": "```bash\naws epd remediation --target internal:6.0/port-22.0->internal --output json > output.json \n`",
+        "init_time": 0.0,
+        "processing_time": 4.377431834000163,
+        "is_success": true,
+        "is_tool_correct": true,
+        "error": null
+      },
+      {
+        "plan_action": "contain",
+        "plan_target": "internal:6.0/port-26214.0->internal",
+        "plan_score": 0.9966126084327698,
+        "model_used": "gemma2:2b",
+        "status": "success",
+        "tool_used": "`aws",
+        "command": "`aws epd remediation update-target --target-id \"internal:6.0/port-26214.0\" --action contain --port 2",
+        "init_time": 0.0,
+        "processing_time": 0.6832942500477657,
+        "is_success": true,
+        "is_tool_correct": true,
+        "error": null
+      }
+    ],
+    "multimodal_suicide": [
+      {
+        "plan_action": "contain",
+        "plan_target": "internal:6.0/port-22.0->internal",
+        "plan_score": 0.8506036400794983,
+        "model_used": "gemma2:2b",
+        "status": "success",
+        "tool_used": "aws",
+        "command": "```\naws epp delete-remediation --target 6.0/port-22.0\n```",
+        "init_time": 0.8782884170068428,
+        "processing_time": 0.6061335420235991,
+        "is_success": true,
+        "is_tool_correct": true,
+        "error": null
+      },
+      {
+        "plan_action": "contain",
+        "plan_target": "internal:6.0/port-26214.0->internal",
+        "plan_score": 0.9966126084327698,
+        "model_used": "phi3:mini",
+        "status": "success",
+        "tool_used": "aws",
+        "command": "aws security hub find-packages --query 'Finding[?contains(ResourceArn, \"arn:aws:elasticpanels:region",
+        "init_time": 0.3694623329793103,
+        "processing_time": 1.102295916993171,
+        "is_success": true,
+        "is_tool_correct": true,
+        "error": null
+      }
+    ]
+  }
+}

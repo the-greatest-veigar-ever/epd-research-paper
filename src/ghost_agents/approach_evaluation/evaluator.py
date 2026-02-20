@@ -348,6 +348,7 @@ class ApproachEvaluator:
                 "suicide_mode": s["suicide_mode"],
                 "plans_processed": s["plans_processed"],
                 "initialization_time_s": round(s["initialization_time"], 3),
+                "per_plan_init_time_avg_s": round(s["per_plan_init_time_avg"], 3),
                 "total_init_overhead_s": round(total_init_display, 3),
                 "avg_processing_time_s": round(s["processing_time_avg"], 3),
                 "total_processing_time_s": round(s["processing_time_total"], 3),
@@ -381,30 +382,29 @@ class ApproachEvaluator:
         header = (
             f"{'Approach':<25} | "
             f"{'Plans':>6} | "
-            f"{'Init Time':>10} | "
+            f"{'One-time Init':>14} | "
+            f"{'Avg Plan Init':>14} | "
             f"{'Avg Proc':>10} | "
-            f"{'Total Proc':>11} | "
             f"{'ASR':>7} | "
             f"{'TSR':>7} | "
             f"{'PASS@1':>7}"
         )
         print(header)
-        print("-" * 100)
+        print("-" * 120)
 
         for name, res in results.items():
             s = res["summary"]
-            total_init_display = s["initialization_time"] + s["per_plan_init_time_total"]
             row = (
                 f"{s['approach']:<25} | "
                 f"{s['plans_processed']:>6} | "
-                f"{total_init_display:>9.3f}s | "
+                f"{s['initialization_time']:>13.3f}s | "
+                f"{s['per_plan_init_time_avg']:>13.3f}s | "
                 f"{s['processing_time_avg']:>9.3f}s | "
-                f"{s['processing_time_total']:>10.3f}s | "
                 f"{s['asr'] * 100:>6.2f}% | "
                 f"{s['tsr'] * 100:>6.2f}% | "
                 f"{s['pass_at_1'] * 100:>6.2f}%"
             )
             print(row)
 
-        print("=" * 100)
+        print("=" * 120)
         print()

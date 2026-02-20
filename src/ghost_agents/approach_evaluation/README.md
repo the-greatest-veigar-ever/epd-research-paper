@@ -88,16 +88,16 @@ phi_baseline:  100%|████████████████████
 After all approaches complete, a comparison table is printed:
 
 ```
-====================================================================================================
+=============================================================================================================
   APPROACH COMPARISON
-====================================================================================================
-Approach                  | Plans  |  Init Time |   Avg Proc |  Total Proc |     ASR |     TSR |  PASS@1
-----------------------------------------------------------------------------------------------------
-phi_baseline              |   4026 |     5.485s |     2.400s |   9662.400s |  95.00% |  90.00% |  95.00%
-phi_suicide               |   4026 |   120.000s |     2.500s |  10065.000s |  94.00% |  89.00% |  94.00%
-multimodal_static         |   4026 |    15.000s |     2.200s |   8857.200s |  96.00% |  91.00% |  96.00%
-multimodal_suicide        |   4026 |   360.000s |     2.300s |   9259.800s |  95.00% |  90.00% |  95.00%
-====================================================================================================
+=============================================================================================================
+Approach                  |  Plans |  One-time Init |  Avg Plan Init |   Avg Proc |     ASR |     TSR |  PASS@1
+-------------------------------------------------------------------------------------------------------------
+phi_baseline              |   4026 |         5.485s |         0.000s |     2.400s |  95.00% |  90.00% |  95.00%
+phi_suicide               |   4026 |         0.000s |         0.430s |     2.500s |  94.00% |  89.00% |  94.00%
+multimodal_static         |   4026 |        15.000s |         0.000s |     2.200s |  96.00% |  91.00% |  96.00%
+multimodal_suicide        |   4026 |         0.000s |         0.940s |     2.300s |  95.00% |  90.00% |  95.00%
+=============================================================================================================
 ```
 
 > **Note**: The numbers above are illustrative examples. Actual values depend on your hardware and Ollama performance.
@@ -127,6 +127,7 @@ If the run is interrupted with **Ctrl+C**, partial results are still saved with 
       "suicide_mode": false,
       "plans_processed": 4026,
       "initialization_time_s": 5.485,
+      "per_plan_init_time_avg_s": 0.0,
       "total_init_overhead_s": 5.485,
       "avg_processing_time_s": 2.4,
       "total_processing_time_s": 9662.4,
@@ -144,7 +145,8 @@ If the run is interrupted with **Ctrl+C**, partial results are still saved with 
 
 | Metric | Definition |
 |--------|------------|
-| **Initialization Time** | Time to preload models (static) or cumulative cold-start time (suicide) |
+| **One-time Init** | Single upfront cost to load models (high for static, 0 for suicide) |
+| **Avg Plan Init** | Average time to load models per plan (0 for static, >0 for suicide) |
 | **Processing Time** | Inference time per plan (excluding model load/unload) |
 | **ASR** (Attack Success Rate) | Successful executions / total plans |
 | **TSR** (Task Success Rate) | Successful executions with correct tool / total plans |

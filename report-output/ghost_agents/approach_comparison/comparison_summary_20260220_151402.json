@@ -1,0 +1,93 @@
+{
+  "evaluation_type": "approach_comparison_summary",
+  "timestamp": "2026-02-20T15:14:03.004927",
+  "dataset": "report-output/integration_tests",
+  "total_plans_in_dataset": 100,
+  "interrupted": false,
+  "comparison": {
+    "phi_baseline": {
+      "models": [
+        "phi3:mini"
+      ],
+      "suicide_mode": false,
+      "plans_processed": 100,
+      "initialization_time_s": 1.429,
+      "per_plan_init_time_avg_s": 0.0,
+      "total_init_overhead_s": 1.429,
+      "avg_processing_time_s": 2.48,
+      "total_processing_time_s": 248.008,
+      "asr_pct": 100.0,
+      "tsr_pct": 100.0,
+      "pass_at_1_pct": 100.0,
+      "tool_correctness_pct": 100.0,
+      "model_distribution": {
+        "phi3:mini": 100
+      }
+    },
+    "phi_suicide": {
+      "models": [
+        "phi3:mini"
+      ],
+      "suicide_mode": true,
+      "plans_processed": 100,
+      "initialization_time_s": 0.0,
+      "per_plan_init_time_avg_s": 0.393,
+      "total_init_overhead_s": 39.29,
+      "avg_processing_time_s": 2.219,
+      "total_processing_time_s": 221.875,
+      "asr_pct": 100.0,
+      "tsr_pct": 100.0,
+      "pass_at_1_pct": 100.0,
+      "tool_correctness_pct": 100.0,
+      "model_distribution": {
+        "phi3:mini": 100
+      }
+    },
+    "multimodal_static": {
+      "models": [
+        "phi3:mini",
+        "llama3.2:3b",
+        "gemma2:2b"
+      ],
+      "suicide_mode": false,
+      "plans_processed": 100,
+      "initialization_time_s": 3.914,
+      "per_plan_init_time_avg_s": 0.0,
+      "total_init_overhead_s": 3.914,
+      "avg_processing_time_s": 1.177,
+      "total_processing_time_s": 117.735,
+      "asr_pct": 100.0,
+      "tsr_pct": 98.0,
+      "pass_at_1_pct": 100.0,
+      "tool_correctness_pct": 98.0,
+      "model_distribution": {
+        "gemma2:2b": 38,
+        "phi3:mini": 27,
+        "llama3.2:3b": 35
+      }
+    },
+    "multimodal_suicide": {
+      "models": [
+        "phi3:mini",
+        "llama3.2:3b",
+        "gemma2:2b"
+      ],
+      "suicide_mode": true,
+      "plans_processed": 100,
+      "initialization_time_s": 0.0,
+      "per_plan_init_time_avg_s": 0.722,
+      "total_init_overhead_s": 72.158,
+      "avg_processing_time_s": 1.911,
+      "total_processing_time_s": 191.103,
+      "asr_pct": 100.0,
+      "tsr_pct": 99.0,
+      "pass_at_1_pct": 100.0,
+      "tool_correctness_pct": 99.0,
+      "model_distribution": {
+        "gemma2:2b": 34,
+        "llama3.2:3b": 35,
+        "phi3:mini": 31
+      }
+    }
+  }
+}
