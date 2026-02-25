@@ -1,0 +1,226 @@
+{
+  "evaluation_type": "approach_comparison",
+  "timestamp": "2026-02-24T23:51:07.877260",
+  "dataset": "ai/data/ghost_agents/squad_c_mixed_dataset_15pct.json",
+  "total_plans_in_dataset": 2,
+  "interrupted": false,
+  "limit": 2,
+  "approaches": {
+    "phi_baseline": {
+      "approach": "phi_baseline",
+      "models": [
+        "phi3:mini"
+      ],
+      "suicide_mode": false,
+      "total_plans_in_dataset": 2,
+      "plans_processed": 2,
+      "interrupted": false,
+      "initialization_time": 0.3943995840381831,
+      "per_plan_init_time_avg": 0.0,
+      "per_plan_init_time_total": 0.0,
+      "processing_time_avg": 3.0260094169934746,
+      "processing_time_total": 6.052018833986949,
+      "asr": 1.0,
+      "tsr": 1.0,
+      "pass_at_1": 1.0,
+      "tool_correctness_rate": 1.0,
+      "model_distribution": {
+        "phi3:mini": 2
+      }
+    },
+    "phi_suicide": {
+      "approach": "phi_suicide",
+      "models": [
+        "phi3:mini"
+      ],
+      "suicide_mode": true,
+      "total_plans_in_dataset": 2,
+      "plans_processed": 2,
+      "interrupted": false,
+      "initialization_time": 0.0,
+      "per_plan_init_time_avg": 0.38426583347609267,
+      "per_plan_init_time_total": 0.7685316669521853,
+      "processing_time_avg": 1.2969918329908978,
+      "processing_time_total": 2.5939836659817956,
+      "asr": 1.0,
+      "tsr": 1.0,
+      "pass_at_1": 1.0,
+      "tool_correctness_rate": 1.0,
+      "model_distribution": {
+        "phi3:mini": 2
+      }
+    },
+    "multimodal_static": {
+      "approach": "multimodal_static",
+      "models": [
+        "phi3:mini",
+        "llama3.2:3b",
+        "gemma2:2b"
+      ],
+      "suicide_mode": false,
+      "total_plans_in_dataset": 2,
+      "plans_processed": 2,
+      "interrupted": false,
+      "initialization_time": 2.1577725829556584,
+      "per_plan_init_time_avg": 0.0,
+      "per_plan_init_time_total": 0.0,
+      "processing_time_avg": 0.8959423330088612,
+      "processing_time_total": 1.7918846660177223,
+      "asr": 1.0,
+      "tsr": 1.0,
+      "pass_at_1": 1.0,
+      "tool_correctness_rate": 1.0,
+      "model_distribution": {
+        "phi3:mini": 1,
+        "gemma2:2b": 1
+      }
+    },
+    "multimodal_suicide": {
+      "approach": "multimodal_suicide",
+      "models": [
+        "phi3:mini",
+        "llama3.2:3b",
+        "gemma2:2b"
+      ],
+      "suicide_mode": true,
+      "total_plans_in_dataset": 2,
+      "plans_processed": 2,
+      "interrupted": false,
+      "initialization_time": 0.0,
+      "per_plan_init_time_avg": 0.6270696039719041,
+      "per_plan_init_time_total": 1.2541392079438083,
+      "processing_time_avg": 1.0216426874976605,
+      "processing_time_total": 2.043285374995321,
+      "asr": 1.0,
+      "tsr": 1.0,
+      "pass_at_1": 1.0,
+      "tool_correctness_rate": 1.0,
+      "model_distribution": {
+        "phi3:mini": 1,
+        "llama3.2:3b": 1
+      }
+    }
+  },
+  "detailed_results": {
+    "phi_baseline": [
+      {
+        "plan_action": "deny",
+        "plan_target": "internal:6.0/port-80.0->internal",
+        "plan_score": 0.9999710321426392,
+        "model_used": "phi3:mini",
+        "status": "success",
+        "tool_used": "aws",
+        "command": "```sh\naws security hub evaluate-findings --execution-role-arn <your_iam_exec_role> \\\n--query 'remedi",
+        "init_time": 0.0,
+        "processing_time": 3.598346750019118,
+        "is_success": true,
+        "is_tool_correct": true,
+        "error": null
+      },
+      {
+        "plan_action": "deny",
+        "plan_target": "internal:6.0/port-8080.0->internal",
+        "plan_score": 0.9999970197677612,
+        "model_used": "phi3:mini",
+        "status": "success",
+        "tool_used": "aws",
+        "command": "aws security group create --vpc-id vpc-1234abcd --group-name EpdInternalBlock -s subnet-abcdefgh --d",
+        "init_time": 0.0,
+        "processing_time": 2.453672083967831,
+        "is_success": true,
+        "is_tool_correct": true,
+        "error": null
+      }
+    ],
+    "phi_suicide": [
+      {
+        "plan_action": "deny",
+        "plan_target": "internal:6.0/port-80.0->internal",
+        "plan_score": 0.9999710321426392,
+        "model_used": "phi3:mini",
+        "status": "success",
+        "tool_used": "aws",
+        "command": "```bash\naws ec2 create-egress-filter --vpc-id <your_vpc_id> --filters \"Name=cidr-block,Values=172.31",
+        "init_time": 0.38726716698147357,
+        "processing_time": 1.3784689159947447,
+        "is_success": true,
+        "is_tool_correct": true,
+        "error": null
+      },
+      {
+        "plan_action": "deny",
+        "plan_target": "internal:6.0/port-8080.0->internal",
+        "plan_score": 0.9999970197677612,
+        "model_used": "phi3:mini",
+        "status": "success",
+        "tool_used": "aws",
+        "command": "```shell\naws security hub describe-findings --query 'FindingResults[?SourceIdentifier==`insightprism",
+        "init_time": 0.38126449997071177,
+        "processing_time": 1.215514749987051,
+        "is_success": true,
+        "is_tool_correct": true,
+        "error": null
+      }
+    ],
+    "multimodal_static": [
+      {
+        "plan_action": "deny",
+        "plan_target": "internal:6.0/port-80.0->internal",
+        "plan_score": 0.9999710321426392,
+        "model_used": "phi3:mini",
+        "status": "success",
+        "tool_used": "aws",
+        "command": "```bash\naws wafv2 block * --scope / */* --text 'MATCHES \"/\"' --region us-west-2\n```",
+        "init_time": 0.0,
+        "processing_time": 0.8195339160156436,
+        "is_success": true,
+        "is_tool_correct": true,
+        "error": null
+      },
+      {
+        "plan_action": "deny",
+        "plan_target": "internal:6.0/port-8080.0->internal",
+        "plan_score": 0.9999970197677612,
+        "model_used": "gemma2:2b",
+        "status": "success",
+        "tool_used": "aws",
+        "command": "```bash\naws epd allow-deny \\\n  --target-name internal:6.0/port-8080.0 \\\n  --allow-traffic deny \\\n  -",
+        "init_time": 0.0,
+        "processing_time": 0.9723507500020787,
+        "is_success": true,
+        "is_tool_correct": true,
+        "error": null
+      }
+    ],
+    "multimodal_suicide": [
+      {
+        "plan_action": "deny",
+        "plan_target": "internal:6.0/port-80.0->internal",
+        "plan_score": 0.9999710321426392,
+        "model_used": "phi3:mini",
+        "status": "success",
+        "tool_used": "aws",
+        "command": "aws ec2 create-egress-filter --resource-id i-1234567890abcdefghijklmnopqrstuvwxyz --priority 10 --se",
+        "init_time": 0.4024910829612054,
+        "processing_time": 1.1901813749573193,
+        "is_success": true,
+        "is_tool_correct": true,
+        "error": null
+      },
+      {
+        "plan_action": "deny",
+        "plan_target": "internal:6.0/port-8080.0->internal",
+        "plan_score": 0.9999970197677612,
+        "model_used": "llama3.2:3b",
+        "status": "success",
+        "tool_used": "aws",
+        "command": "aws ec2 authorize-security-group-ingress --group-id <group_id> --protocol tcp --port 8080 --cidr-blo",
+        "init_time": 0.8516481249826029,
+        "processing_time": 0.8531040000380017,
+        "is_success": true,
+        "is_tool_correct": true,
+        "error": null
+      }
+    ]
+  }
+}

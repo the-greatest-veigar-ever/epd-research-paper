@@ -1,0 +1,93 @@
+{
+  "evaluation_type": "approach_comparison_summary",
+  "timestamp": "2026-02-25T12:34:05.303863",
+  "dataset": "ai/data/ghost_agents/squad_c_mixed_dataset_15pct.json",
+  "total_plans_in_dataset": 4498,
+  "interrupted": false,
+  "comparison": {
+    "phi_baseline": {
+      "models": [
+        "phi3:mini"
+      ],
+      "suicide_mode": false,
+      "plans_processed": 4498,
+      "initialization_time_s": 0.397,
+      "per_plan_init_time_avg_s": 0.0,
+      "total_init_overhead_s": 0.397,
+      "avg_processing_time_s": 2.368,
+      "total_processing_time_s": 10650.291,
+      "asr_pct": 100.0,
+      "tsr_pct": 99.36,
+      "pass_at_1_pct": 100.0,
+      "tool_correctness_pct": 99.36,
+      "model_distribution": {
+        "phi3:mini": 4498
+      }
+    },
+    "phi_suicide": {
+      "models": [
+        "phi3:mini"
+      ],
+      "suicide_mode": true,
+      "plans_processed": 4498,
+      "initialization_time_s": 0.0,
+      "per_plan_init_time_avg_s": 0.376,
+      "total_init_overhead_s": 1692.806,
+      "avg_processing_time_s": 2.497,
+      "total_processing_time_s": 11231.9,
+      "asr_pct": 100.0,
+      "tsr_pct": 99.51,
+      "pass_at_1_pct": 100.0,
+      "tool_correctness_pct": 99.51,
+      "model_distribution": {
+        "phi3:mini": 4498
+      }
+    },
+    "multimodal_static": {
+      "models": [
+        "phi3:mini",
+        "llama3.2:3b",
+        "gemma2:2b"
+      ],
+      "suicide_mode": false,
+      "plans_processed": 4498,
+      "initialization_time_s": 3.931,
+      "per_plan_init_time_avg_s": 0.0,
+      "total_init_overhead_s": 3.931,
+      "avg_processing_time_s": 1.422,
+      "total_processing_time_s": 6397.981,
+      "asr_pct": 100.0,
+      "tsr_pct": 98.33,
+      "pass_at_1_pct": 100.0,
+      "tool_correctness_pct": 98.33,
+      "model_distribution": {
+        "gemma2:2b": 1532,
+        "phi3:mini": 1443,
+        "llama3.2:3b": 1523
+      }
+    },
+    "multimodal_suicide": {
+      "models": [
+        "phi3:mini",
+        "llama3.2:3b",
+        "gemma2:2b"
+      ],
+      "suicide_mode": true,
+      "plans_processed": 4498,
+      "initialization_time_s": 0.0,
+      "per_plan_init_time_avg_s": 0.661,
+      "total_init_overhead_s": 2970.948,
+      "avg_processing_time_s": 1.542,
+      "total_processing_time_s": 6936.018,
+      "asr_pct": 100.0,
+      "tsr_pct": 98.69,
+      "pass_at_1_pct": 100.0,
+      "tool_correctness_pct": 98.69,
+      "model_distribution": {
+        "llama3.2:3b": 1421,
+        "phi3:mini": 1532,
+        "gemma2:2b": 1545
+      }
+    }
+  }
+}

@@ -219,12 +219,76 @@ class SecurityEvaluator:
 
     def __init__(
         self,
+        dataset_path: str = "ai/data/ghost_agents/squad_c_mixed_dataset_15pct.json",
+        limit: Optional[int] = None,
         output_dir: str = "report-output/ghost_agents/security_comparison",
         frameworks: Optional[List[str]] = None,
     ):
+        self.dataset_path = dataset_path
+        self.limit = limit
         self.output_dir = output_dir
         self.frameworks = frameworks
-        self.test_suites = get_tests(frameworks)
+        self.test_suites = self._load_dataset()
+
+    def _load_dataset(self) -> Dict[str, List[Dict[str, Any]]]:
+        """
+        Load adversarial test cases from the mixed dataset.
+        Extracts only plans where 'is_injection' is True, organized by framework.
+        """
+        
+        # Fallback to hardcoded tests if testing purely against the old script
+        if not os.path.exists(self.dataset_path):
+            print(f"[SecurityEval] ⚠️ Dataset {self.dataset_path} not found. Falling back to hardcoded tests.")
+            return get_tests(self.frameworks)
+            
+        print(f"[SecurityEval] Loading security tests from: {self.dataset_path}")
+        with open(self.dataset_path, 'r') as f:
+            data = json.load(f)
+            
+        # The mixed dataset is just a list of plan objects
+        # We need to filter for injections
+        injections = [p for p in data if p.get("is_injection") is True]
+        
+        if self.limit and self.limit < len(injections):
+            injections = injections[:self.limit]
+            
+        # Organize by framework
+        suites = {}
+        for plan in injections:
+            fw = plan.get("framework")
+            if not fw:
+                continue
+                
+            if self.frameworks and fw not in self.frameworks:
+                continue
+                
+            if fw not in suites:
+                suites[fw] = []
+                
+            # If it's a structural match to the old `test_cases`, we might
+            # need to fetch the original test data for complex tests like BIPIA
+            # which need `seed_action`, `probe_action`, etc.
+            # To handle this cleanly, we pull the original test definition using the attack_id
+            attack_id = plan.get("attack_id")
+            original_test = None
+            if attack_id:
+                from src.ghost_agents.approach_evaluation.security_test_data import (
+                    CYBERSECEVAL_TESTS, HARMBENCH_TESTS, JAILBREAKBENCH_TESTS
+                )
+                all_raw_tests = CYBERSECEVAL_TESTS + HARMBENCH_TESTS + JAILBREAKBENCH_TESTS
+                for src_test in all_raw_tests:
+                    if isinstance(src_test, dict) and src_test.get("id") == attack_id:
+                        original_test = src_test
+                        break
+            
+            if original_test:
+                suites[fw].append(original_test)
+            else:
+                suites[fw].append(plan)
+                
+        total_tests = sum(len(tests) for tests in suites.values())
+        print(f"[SecurityEval] Loaded {total_tests} adversarial tests across {len(suites)} frameworks.")
+        return suites
 
     # ------------------------------------------------------------------
     # Pre-flight check

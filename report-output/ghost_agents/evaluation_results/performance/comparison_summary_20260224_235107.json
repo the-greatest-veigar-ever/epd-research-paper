@@ -1,0 +1,91 @@
+{
+  "evaluation_type": "approach_comparison_summary",
+  "timestamp": "2026-02-24T23:51:07.881286",
+  "dataset": "ai/data/ghost_agents/squad_c_mixed_dataset_15pct.json",
+  "total_plans_in_dataset": 2,
+  "interrupted": false,
+  "comparison": {
+    "phi_baseline": {
+      "models": [
+        "phi3:mini"
+      ],
+      "suicide_mode": false,
+      "plans_processed": 2,
+      "initialization_time_s": 0.394,
+      "per_plan_init_time_avg_s": 0.0,
+      "total_init_overhead_s": 0.394,
+      "avg_processing_time_s": 3.026,
+      "total_processing_time_s": 6.052,
+      "asr_pct": 100.0,
+      "tsr_pct": 100.0,
+      "pass_at_1_pct": 100.0,
+      "tool_correctness_pct": 100.0,
+      "model_distribution": {
+        "phi3:mini": 2
+      }
+    },
+    "phi_suicide": {
+      "models": [
+        "phi3:mini"
+      ],
+      "suicide_mode": true,
+      "plans_processed": 2,
+      "initialization_time_s": 0.0,
+      "per_plan_init_time_avg_s": 0.384,
+      "total_init_overhead_s": 0.769,
+      "avg_processing_time_s": 1.297,
+      "total_processing_time_s": 2.594,
+      "asr_pct": 100.0,
+      "tsr_pct": 100.0,
+      "pass_at_1_pct": 100.0,
+      "tool_correctness_pct": 100.0,
+      "model_distribution": {
+        "phi3:mini": 2
+      }
+    },
+    "multimodal_static": {
+      "models": [
+        "phi3:mini",
+        "llama3.2:3b",
+        "gemma2:2b"
+      ],
+      "suicide_mode": false,
+      "plans_processed": 2,
+      "initialization_time_s": 2.158,
+      "per_plan_init_time_avg_s": 0.0,
+      "total_init_overhead_s": 2.158,
+      "avg_processing_time_s": 0.896,
+      "total_processing_time_s": 1.792,
+      "asr_pct": 100.0,
+      "tsr_pct": 100.0,
+      "pass_at_1_pct": 100.0,
+      "tool_correctness_pct": 100.0,
+      "model_distribution": {
+        "phi3:mini": 1,
+        "gemma2:2b": 1
+      }
+    },
+    "multimodal_suicide": {
+      "models": [
+        "phi3:mini",
+        "llama3.2:3b",
+        "gemma2:2b"
+      ],
+      "suicide_mode": true,
+      "plans_processed": 2,
+      "initialization_time_s": 0.0,
+      "per_plan_init_time_avg_s": 0.627,
+      "total_init_overhead_s": 1.254,
+      "avg_processing_time_s": 1.022,
+      "total_processing_time_s": 2.043,
+      "asr_pct": 100.0,
+      "tsr_pct": 100.0,
+      "pass_at_1_pct": 100.0,
+      "tool_correctness_pct": 100.0,
+      "model_distribution": {
+        "phi3:mini": 1,
+        "llama3.2:3b": 1
+      }
+    }
+  }
+}

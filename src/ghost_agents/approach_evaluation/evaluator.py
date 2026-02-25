@@ -77,12 +77,22 @@ class ApproachEvaluator:
             with open(fpath, "r") as f:
                 data = json.load(f)
 
-            stix_objects = data.get("stix_objects", [])
+            # Support both the raw CIC output (dict with 'stix_objects') 
+            # and our extracted clean/mixed datasets (flat list)
+            if isinstance(data, dict):
+                stix_objects = data.get("stix_objects", [])
+            elif isinstance(data, list):
+                stix_objects = data
+            else:
+                stix_objects = []
+                
             added = 0
             for obj in stix_objects:
-                action = obj.get("x_epd_action")
-                target = obj.get("x_epd_target")
+                # Handle both raw stix format (x_epd_action) and our cleaned format (action)
+                action = obj.get("action") or obj.get("x_epd_action")
+                target = obj.get("target") or obj.get("x_epd_target")
                 stix_id = obj.get("id", "")
+                score = obj.get("score") or obj.get("x_epd_score", 0.0)
 
                 if not (action and target):
                     continue
@@ -96,7 +106,7 @@ class ApproachEvaluator:
                 self.plans.append({
                     "action": action,
                     "target": target,
-                    "score": obj.get("x_epd_score", 0.0),
+                    "score": score,
                     "stix_id": stix_id,
                     "source_file": os.path.basename(fpath),
                 })
