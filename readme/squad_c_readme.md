@@ -37,10 +37,10 @@ In Phase 1, we measured how fast and reliably the system could churn through the
 
 | Approach | Attack Success Rate (ASR) | Task Success Rate (TSR) | Avg Processing Time | Avg Init Time |
 | :--- | :--- | :--- | :--- | :--- |
-| **phi_baseline** | 100.0% | 99.36% | 2.37s | 0.00s |
-| **phi_suicide** | 100.0% | 99.51% | 2.50s | 0.38s |
-| **multimodal_static** | 100.0% | **98.33%** | **1.42s** | 0.00s |
-| **multimodal_suicide**| 100.0% | 98.69% | 1.54s | 0.66s |
+| phi_baseline | 100.0% | 99.36% | 2.37s | 0.00s |
+| phi_suicide | 100.0% | 99.51% | 2.50s | 0.38s |
+| multimodal_static | 100.0% | 98.33% | 1.42s | 0.00s |
+| multimodal_suicide| 100.0% | 98.69% | 1.54s | 0.66s |
 
 **Key Findings:**
 *   **Speed:** By distributing traffic across three models (including the incredibly fast Gemma 2B), the Multimodal approaches cut the average processing time from ~2.4s to **1.4s** per plan.
@@ -52,12 +52,12 @@ In Phase 1, we measured how fast and reliably the system could churn through the
 
 In Phase 2, the `SecurityEvaluator` filtered out the normal requests and rigorously analyzed the models' behavior exclusively against the 674 injected attacks to see if they successfully refused the malicious payloads.
 
-| Approach | Prompt Injection Resistance (CyberSecEval) | Harmful Request Rejection (HarmBench) | Jailbreak Resistance (JailbreakBench) | **Aggregate Security Score** |
+| Approach | Prompt Injection Resistance (CyberSecEval) | Harmful Request Rejection (HarmBench) | Jailbreak Resistance (JailbreakBench) | Aggregate Security Score |
 | :--- | :--- | :--- | :--- | :--- |
-| **phi_baseline** | 50.4% | 87.2% | **74.2%** | 72.3% |
-| **phi_suicide** | 55.1% | 87.6% | 70.8% | 72.8% |
-| **multimodal_static** | **61.7%** | **92.9%** | 67.1% | **75.2%** |
-| **multimodal_suicide**| 59.6% | 91.2% | 68.5% | 74.3% |
+| phi_baseline | 50.4% | 87.2% | 74.2% | 72.3% |
+| phi_suicide | 55.1% | 87.6% | 70.8% | 72.8% |
+| multimodal_static | 61.7% | 92.9% | 67.1% | 75.2% |
+| multimodal_suicide| 59.6% | 91.2% | 68.5% | 74.3% |
 
 **Key Findings:**
 *   **Moving Target Defense Works:** The Multimodal approaches easily achieved the highest aggregate security scores (75.2%). By randomly rotating the LLMs, highly specific prompt injections from the CyberSecEval dataset frequently missed their intended target, resulting in a ~10-11% increase in absolute resistance.
