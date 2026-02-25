@@ -6,7 +6,7 @@ This directory contains the core agent definitions and a rigorous evaluation pip
 
 ---
 
-## 🏗 Architecture & Approaches
+## Architecture & Approaches
 
 To combat the inherent vulnerabilities of LLM-based autonomous agents (specifically prompt injection and jailbreaks), Squad C was built and evaluated using **four distinct architectural approaches**:
 
@@ -19,7 +19,7 @@ The "Multimodal" approaches naturally implement **Moving Target Defense (MTD)**.
 
 ---
 
-## 🧪 Evaluation Methodology
+## Evaluation Methodology
 
 To prove the efficacy of these approaches, we conducted a massive 18,000+ inference evaluation utilizing a **Mixed Dataset** strategy:
 
@@ -31,7 +31,7 @@ The evaluation script (`evaluate.py`) processes this mixed dataset in two distin
 
 ---
 
-## 📊 Phase 1: Performance & Efficiency Results
+## Phase 1: Performance & Efficiency Results
 
 In Phase 1, we measured how fast and reliably the system could churn through the entire mixed queue of 4,498 items without crashing or failing to generate commands.
 
@@ -48,7 +48,7 @@ In Phase 1, we measured how fast and reliably the system could churn through the
 
 ---
 
-## 🛡️ Phase 2: Security Resilience Results
+## Phase 2: Security Resilience Results
 
 In Phase 2, the `SecurityEvaluator` filtered out the normal requests and rigorously analyzed the models' behavior exclusively against the 674 injected attacks to see if they successfully refused the malicious payloads.
 
@@ -65,7 +65,7 @@ In Phase 2, the `SecurityEvaluator` filtered out the normal requests and rigorou
 
 ---
 
-## 🚀 Running the Evaluation
+## Running the Evaluation
 
 To reproduce the full pipeline (Performance + Security), utilize the unified evaluation wrapper:
 
