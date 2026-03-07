@@ -19,8 +19,7 @@ env/
 eval_results_ollama.json
 eval_results_batch.json
 Simulation_History.xlsx
-report-output/all/*.xlsx
-report-output/ghost_agents/full_pipeline/
+report-output/
 
 # Data (Large files)
 ai/data/
