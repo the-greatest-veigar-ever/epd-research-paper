@@ -520,13 +520,11 @@ def _send_to_model(
     approach: Approach,
     prompt: str,
     strategy: str,
-) -> Tuple[str, float]:
+) -> Tuple[str, float, float, str]:
     """
     Send a test prompt to a model via the approach pipeline.
-    Returns (response_text, latency_seconds).
+    Returns (response_text, init_time, processing_time, persona_used).
     """
-    start = time.time()
-
     # Build a remediation-style plan item for the approach pipeline
     if strategy in ("REFUSAL", "GENERATION", "SAFETY"):
         # Wrap as a remediation task so _build_prompt formats it properly
@@ -538,14 +536,17 @@ def _send_to_model(
         plan_item = {"action": prompt, "target": "benchmark-evaluation"}
 
     try:
-        model = approach.get_model()
-        full_prompt = _build_prompt(plan_item["action"], plan_item["target"])
-        response = _call_ollama(model, full_prompt)
-        latency = time.time() - start
-        return response or "", latency
+        # Use the approach's execution pipeline which handles timing
+        result = approach.execute_plan(plan_item)
+        return (
+            result.get("command") or "",
+            result.get("init_time", 0.0),
+            result.get("processing_time", 0.0),
+            result.get("persona_used", "default"),
+        )
     except Exception as e:
-        latency = time.time() - start
-        return f"[ERROR] {e}", latency
+        print(f"[ERROR] Model execution failed: {e}")
+        return f"[ERROR] {e}", 0.0, 0.0, "default"
 
 
 def evaluate_benchmark(
@@ -581,11 +582,12 @@ def evaluate_benchmark(
 
         scores = []
         safe_count = 0
-        latencies = []
+        init_latencies = []
+        inf_latencies = []
 
         desc = f"  [{approach.name}] {benchmark_name}"
         for tc in tqdm(test_cases, desc=desc, leave=False):
-            response, latency = _send_to_model(approach, tc["prompt"], strategy)
+            response, init_lat, inf_lat, persona_used = _send_to_model(approach, tc["prompt"], strategy)
             classification = classifier(response, tc)
 
             test_result = {
@@ -595,7 +597,9 @@ def evaluate_benchmark(
                 "safe": classification["safe"],
                 "score": classification["score"],
                 "detail": classification["detail"],
-                "latency_s": round(latency, 3),
+                "init_latency_s": round(init_lat, 3),
+                "inference_latency_s": round(inf_lat, 3),
+                "persona_used": persona_used,
                 "response_length": len(response),
             }
 
@@ -607,16 +611,20 @@ def evaluate_benchmark(
             scores.append(classification["score"])
             if classification["safe"]:
                 safe_count += 1
-            latencies.append(latency)
+            init_latencies.append(init_lat)
+            inf_latencies.append(inf_lat)
 
         n = len(test_cases) if test_cases else 1
+        safety_rate = safe_count / n if n else 0
         approach_results["metrics"] = {
-            "safety_rate": round(safe_count / n, 4) if n else 0,
-            "mean_score": round(float(np.mean(scores)), 4) if scores else 0,
+            "safety_rate": round(safety_rate, 4),
+            "asr": round(1.0 - safety_rate, 4),
+            "tsr": round(float(np.mean(scores)), 4) if scores else 0,
+            "avg_init_latency": round(float(np.mean(init_latencies)), 4) if init_latencies else 0,
+            "avg_inference_latency": round(float(np.mean(inf_latencies)), 4) if inf_latencies else 0,
             "median_score": round(float(np.median(scores)), 4) if scores else 0,
             "min_score": round(float(np.min(scores)), 4) if scores else 0,
             "max_score": round(float(np.max(scores)), 4) if scores else 0,
-            "mean_latency_s": round(float(np.mean(latencies)), 3) if latencies else 0,
             "total_tests": n,
             "safe_count": safe_count,
             "unsafe_count": n - safe_count,
@@ -625,9 +633,10 @@ def evaluate_benchmark(
         results["approaches"][approach.name] = approach_results
 
         if verbose:
-            rate = approach_results["metrics"]["safety_rate"] * 100
-            mean = approach_results["metrics"]["mean_score"] * 100
-            print(f"    {approach.name}: safety={rate:.1f}% mean_score={mean:.1f}%")
+            s_rate = approach_results["metrics"]["safety_rate"] * 100
+            asr_rate = approach_results["metrics"]["asr"] * 100
+            tsr_rate = approach_results["metrics"]["tsr"] * 100
+            print(f"    {approach.name}: safety={s_rate:.1f}% asr={asr_rate:.1f}% tsr={tsr_rate:.1f}%")
 
     return results
 
@@ -675,8 +684,12 @@ def run_full_evaluation(
 
     # Resolve approaches
     approaches = []
+    
+    # If approach_names is None or contains 'all', evaluate every approach
+    use_all = (approach_names is None or "all" in approach_names)
+    
     for a_class in ALL_APPROACHES.values():
-        if approach_names is None or a_class.name in approach_names:
+        if use_all or a_class.name in approach_names:
             approaches.append(a_class())
 
     if not approaches:
@@ -708,6 +721,18 @@ def run_full_evaluation(
 
         result = evaluate_benchmark(bench_name, test_cases, approaches, verbose=verbose)
         full_results["benchmark_results"][bench_name] = result
+
+        # Save intermediate checkpoint
+        os.makedirs(output_dir, exist_ok=True)
+        checkpoint_file = os.path.join(
+            output_dir,
+            f"checkpoint_{full_results['evaluation_id']}.json",
+        )
+        with open(checkpoint_file, "w") as f:
+            # We compute summary for the partial results too
+            partial_summary = _compute_summary(full_results)
+            full_results["summary"] = partial_summary
+            json.dump(full_results, f, indent=2, default=str)
 
     # Compute summary
     summary = _compute_summary(full_results)
@@ -763,18 +788,26 @@ def _compute_summary(full_results: Dict) -> Dict[str, Any]:
             metrics = approach_data.get("metrics", {})
             bench_summary["approaches"][approach_name] = {
                 "safety_rate": metrics.get("safety_rate", 0),
-                "mean_score": metrics.get("mean_score", 0),
-                "mean_latency_s": metrics.get("mean_latency_s", 0),
+                "asr": metrics.get("asr", 0),
+                "tsr": metrics.get("tsr", 0),
+                "avg_init_latency": metrics.get("avg_init_latency", 0),
+                "avg_inference_latency": metrics.get("avg_inference_latency", 0),
             }
 
             if approach_name not in approach_scores:
                 approach_scores[approach_name] = {
                     "safety_rates": [],
-                    "mean_scores": [],
+                    "asr_rates": [],
+                    "tsr_scores": [],
+                    "init_latencies": [],
+                    "inf_latencies": [],
                     "benchmarks_tested": 0,
                 }
             approach_scores[approach_name]["safety_rates"].append(metrics.get("safety_rate", 0))
-            approach_scores[approach_name]["mean_scores"].append(metrics.get("mean_score", 0))
+            approach_scores[approach_name]["asr_rates"].append(metrics.get("asr", 0))
+            approach_scores[approach_name]["tsr_scores"].append(metrics.get("tsr", 0))
+            approach_scores[approach_name]["init_latencies"].append(metrics.get("avg_init_latency", 0))
+            approach_scores[approach_name]["inf_latencies"].append(metrics.get("avg_inference_latency", 0))
             approach_scores[approach_name]["benchmarks_tested"] += 1
 
         summary["per_benchmark"][bench_name] = bench_summary
@@ -783,50 +816,77 @@ def _compute_summary(full_results: Dict) -> Dict[str, Any]:
     for approach_name, data in approach_scores.items():
         summary["per_approach"][approach_name] = {
             "avg_safety_rate": round(float(np.mean(data["safety_rates"])), 4),
-            "avg_mean_score": round(float(np.mean(data["mean_scores"])), 4),
+            "avg_asr": round(float(np.mean(data["asr_rates"])), 4),
+            "avg_tsr": round(float(np.mean(data["tsr_scores"])), 4),
+            "avg_init_latency": round(float(np.mean(data["init_latencies"])), 4),
+            "avg_inference_latency": round(float(np.mean(data["inf_latencies"])), 4),
             "benchmarks_tested": data["benchmarks_tested"],
         }
 
     # Overall
     all_safety = [v["avg_safety_rate"] for v in summary["per_approach"].values()]
-    all_scores = [v["avg_mean_score"] for v in summary["per_approach"].values()]
+    all_asr = [v["avg_asr"] for v in summary["per_approach"].values()]
+    all_tsr = [v["avg_tsr"] for v in summary["per_approach"].values()]
     summary["overall"] = {
         "total_benchmarks_run": len(full_results.get("benchmark_results", {})),
         "total_approaches": len(approach_scores),
         "avg_safety_rate": round(float(np.mean(all_safety)), 4) if all_safety else 0,
-        "avg_score": round(float(np.mean(all_scores)), 4) if all_scores else 0,
+        "avg_asr": round(float(np.mean(all_asr)), 4) if all_asr else 0,
+        "avg_tsr": round(float(np.mean(all_tsr)), 4) if all_tsr else 0,
     }
 
     return summary
 
 
 def _print_summary(summary: Dict):
-    """Print a formatted summary table."""
-    print(f"\n{'Benchmark':<20} {'Strategy':<12} {'Tests':<8}", end="")
-    if summary.get("per_benchmark"):
-        first_bench = list(summary["per_benchmark"].values())[0]
-        for approach in first_bench.get("approaches", {}):
-            print(f" {approach:<18}", end="")
-    print()
-    print("-" * 90)
+    """Print a formatted summary table with Approaches as rows and Benchmarks as columns."""
+    benchmarks = list(summary.get("per_benchmark", {}).keys())
+    if not benchmarks:
+        print("No benchmark results to display.")
+        return
 
-    for bench_name, bench_data in summary.get("per_benchmark", {}).items():
-        strategy = bench_data.get("strategy", "")
-        tests = bench_data.get("total_tests", 0)
-        print(f"{bench_name:<20} {strategy:<12} {tests:<8}", end="")
-        for approach_name, approach_data in bench_data.get("approaches", {}).items():
-            sr = approach_data.get("safety_rate", 0) * 100
-            ms = approach_data.get("mean_score", 0) * 100
-            print(f" {sr:5.1f}%/{ms:5.1f}%    ", end="")
+    # Header Row 1: Benchmark Names
+    print(f"\n{'Approach':<20}", end="")
+    for bench in benchmarks:
+        print(f" {bench:<13}", end="")
+    print()
+
+    # Header Row 2: Metric labels
+    print(f"{'':<20}", end="")
+    for _ in benchmarks:
+        print(f" {'S/ASR/TSR':<13}", end="")
+    print()
+    
+    col_count = len(benchmarks)
+    print("-" * (20 + col_count * 14))
+
+    # Data Rows: Individual Approaches
+    for approach_name in summary.get("per_approach", {}).keys():
+        print(f"{approach_name:<20}", end="")
+        for bench_name in benchmarks:
+            bench_data = summary["per_benchmark"][bench_name]
+            approach_data = bench_data.get("approaches", {}).get(approach_name)
+            
+            if approach_data:
+                sr = approach_data.get("safety_rate", 0) * 100
+                asr = approach_data.get("asr", 0) * 100
+                tsr = approach_data.get("tsr", 0) * 100
+                print(f" {sr:4.0f}/{asr:2.0f}/{tsr:2.0f}% ", end="")
+            else:
+                print(f" {'-':^13} ", end="")
         print()
 
-    print("-" * 90)
+    print("-" * (20 + col_count * 14))
+
     print("\nPer-Approach Averages:")
     for approach_name, data in summary.get("per_approach", {}).items():
         sr = data["avg_safety_rate"] * 100
-        ms = data["avg_mean_score"] * 100
+        asr = data["avg_asr"] * 100
+        tsr = data["avg_tsr"] * 100
+        init = data["avg_init_latency"]
+        inf = data["avg_inference_latency"]
         nb = data["benchmarks_tested"]
-        print(f"  {approach_name}: safety={sr:.1f}% score={ms:.1f}% ({nb} benchmarks)")
+        print(f"  {approach_name:<20}: Safety={sr:>5.1f}% | ASR={asr:>5.1f}% | TSR={tsr:>5.1f}% | Init={init:>5.2f}s | Inf={inf:>5.2f}s ({nb} benchmarks)")
 
 
 # ============================================================================
