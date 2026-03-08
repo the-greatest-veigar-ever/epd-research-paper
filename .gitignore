@@ -19,7 +19,6 @@ env/
 eval_results_ollama.json
 eval_results_batch.json
 Simulation_History.xlsx
-report-output/
 
 # Data (Large files)
 ai/data/
