@@ -28,3 +28,6 @@ ai/models/
 old-data/
 reports/
 src/qlora-hugging-face/output/
+
+# Benchmark Outputs
+report-output/
