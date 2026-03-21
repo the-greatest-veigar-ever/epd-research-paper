@@ -14,6 +14,11 @@ This document contains the evaluation results for eight benchmark datasets, each
 | qwen_suicide | 94.21% | 5.79% | 95.21% | 0.55s | 6.52s |
 | multimodal_static | 95.87% | 4.13% | 96.36% | 0.0s | 10.04s |
 | multimodal_suicide | 91.74% | 8.26% | 92.56% | 0.85s | 10.46s |
+| gemma_static | 94.21% | 5.79% | 95.37% | 0.0s | 20.28s |
+| gemma_suicide | 90.91% | 9.09% | 92.40% | 1.34s | 19.70s |
+| phi4_static | 29.8% | 70.2% | 30.1% | 0.0s | 53.17s |
+| phi4_suicide | 49.6% | 50.4% | 50.2% | 1.16s | 46.92s |
+| gpt120b_static | 91.00% | 9.00% | 92.80% | 0.34s | 10.94s |
 
 ---
 
@@ -29,6 +34,11 @@ This document contains the evaluation results for eight benchmark datasets, each
 | qwen_suicide | 99.33% | 0.67% | 99.33% | 0.55s | 7.55s |
 | multimodal_static | 97.33% | 2.67% | 97.33% | 0.0s | 11.19s |
 | multimodal_suicide | 97.33% | 2.67% | 97.33% | 0.87s | 10.43s |
+| gemma_static | 99.33% | 0.67% | 99.33% | 0.0s | 23.49s |
+| gemma_suicide | 99.33% | 0.67% | 99.33% | 1.34s | 23.13s |
+| phi4_static | 24.0% | 76.0% | 24.0% | 0.0s | 55.54s |
+| phi4_suicide | 29.3% | 70.7% | 29.3% | 1.17s | 54.35s |
+| gpt120b_static | 100.00% | 0.00% | 100.00% | 0.34s | 18.86s |
 
 ---
 
@@ -44,6 +54,9 @@ This document contains the evaluation results for eight benchmark datasets, each
 | qwen_suicide | **100.0%** | **0.0%** | 50.0% | 0.68s | 4.78s |
 | multimodal_static | 97.5% | 2.5% | 48.75% | 0.0s | 10.83s |
 | multimodal_suicide | 98.0% | 2.0% | 49.0% | 0.92s | 10.17s |
+| gemma_static | 100.00% | 0.00% | 50.00% | 0.0s | 19.41s |
+| gemma_suicide | 100.00% | 0.00% | 50.00% | 1.39s | 19.26s |
+| gpt120b_static | 100.00% | 0.00% | 50.00% | 0.34s | 40.46s |
 
 ---
 
@@ -59,6 +72,9 @@ This document contains the evaluation results for eight benchmark datasets, each
 | qwen_suicide | 78.0% | 22.0% | 56.20% | 0.60s | 2.66s |
 | multimodal_static | 78.5% | 21.5% | 56.85% | 0.0s | 7.04s |
 | multimodal_suicide | 80.0% | 20.0% | 57.25% | 1.11s | 7.93s |
+| gemma_static | 89.00% | 11.00% | 54.85% | 0.0s | 8.50s |
+| gemma_suicide | 89.50% | 10.50% | 55.85% | 1.35s | 9.69s |
+| gpt120b_static (Partial: 10 tests) | 100.00% | 0.00% | 65.00% | 0.34s | 15.04s |
 
 ---
 
@@ -74,6 +90,8 @@ This document contains the evaluation results for eight benchmark datasets, each
 | qwen_suicide | **97.50%** | **2.50%** | **67.85%** | 0.58s | 13.74s |
 | multimodal_static | 89.50% | 10.50% | 62.95% | 0.0s | 15.74s |
 | multimodal_suicide | 85.50% | 14.50% | 60.95% | 1.09s | 15.84s |
+| gemma_static (Pending) | - | - | - | - | - |
+| gemma_suicide (Pending) | - | - | - | - | - |
 
 ---
 
@@ -89,6 +107,8 @@ This document contains the evaluation results for eight benchmark datasets, each
 | qwen_suicide | 96.00% | 4.00% | 81.90% | 0.58s | 2.88s |
 | multimodal_static | 94.50% | 5.50% | 81.10% | 0.0s | 6.49s |
 | multimodal_suicide | 92.50% | 7.50% | 78.50% | 0.93s | 6.52s |
+| gemma_static (Pending) | - | - | - | - | - |
+| gemma_suicide (Pending) | - | - | - | - | - |
 
 ---
 
@@ -104,6 +124,8 @@ This document contains the evaluation results for eight benchmark datasets, each
 | qwen_suicide | **100.0%** | **0.0%** | 73.10% | 0.55s | 6.35s |
 | multimodal_static | 97.50% | 2.50% | 68.92% | 0.0s | 11.23s |
 | multimodal_suicide | 99.50% | 0.50% | 65.92% | 0.86s | 9.51s |
+| gemma_static (Pending) | - | - | - | - | - |
+| gemma_suicide (Pending) | - | - | - | - | - |
 
 ---
 
@@ -119,6 +141,8 @@ This document contains the evaluation results for eight benchmark datasets, each
 | qwen_suicide | 89.00% | 11.00% | 62.30% | 0.56s | 25.37s |
 | multimodal_static | 82.00% | 18.00% | 57.80% | 0.0s | 26.35s |
 | multimodal_suicide | 92.00% | 8.00% | 64.40% | 0.94s | 22.17s |
+| gemma_static (Pending) | - | - | - | - | - |
+| gemma_suicide (Pending) | - | - | - | - | - |
 
 ---
 
@@ -134,6 +158,8 @@ This document contains the evaluation results for eight benchmark datasets, each
 | qwen_suicide | **100.0%** | **0.0%** | **62.30%** | 0.58s | 5.70s |
 | multimodal_static | 95.50% | 4.50% | 60.85% | 0.0s | 9.01s |
 | multimodal_suicide | 93.50% | 6.50% | 59.95% | 0.85s | 8.97s |
+| gemma_static (Pending) | - | - | - | - | - |
+| gemma_suicide (Pending) | - | - | - | - | - |
 
 ---
 
@@ -149,3 +175,5 @@ This document contains the evaluation results for eight benchmark datasets, each
 | qwen_suicide | 95.50% | 4.50% | 23.36% | 0.55s | 15.91s |
 | multimodal_static | 94.50% | 5.50% | 22.66% | 0.0s | 18.87s |
 | multimodal_suicide | 95.00% | 5.00% | 20.83% | 0.89s | 16.66s |
+| gemma_static (Pending) | - | - | - | - | - |
+| gemma_suicide (Pending) | - | - | - | - | - |

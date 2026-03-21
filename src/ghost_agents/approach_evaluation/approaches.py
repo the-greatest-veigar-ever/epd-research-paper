@@ -269,8 +269,8 @@ def _build_prompt(action: str, target: str, persona: dict = None) -> str:
 class PhiStaticApproach(Approach):
     """Single phi3:mini model, kept loaded throughout the evaluation."""
 
-    name = "phi_static"
-    models = ["phi3:mini"]
+    name = "phi4_static"
+    models = ["phi4-mini-reasoning"]
     suicide_mode = False
 
     def initialize(self) -> float:
@@ -295,8 +295,8 @@ class PhiStaticApproach(Approach):
 class PhiSuicideApproach(Approach):
     """Single phi3:mini model, loaded on demand and unloaded after each execution."""
 
-    name = "phi_suicide"
-    models = ["phi3:mini"]
+    name = "phi4_suicide"
+    models = ["phi4-mini-reasoning"]
     suicide_mode = True
 
     def initialize(self) -> float:
@@ -446,7 +446,68 @@ class QwenSuicideApproach(Approach):
 
 
 # ===========================================================================
-# 4. Multi-Model Approaches
+# 4. Gemma Approaches
+# ===========================================================================
+
+class GemmaStaticApproach(Approach):
+    """Single gemma3:4b model, kept loaded throughout the evaluation."""
+
+    name = "gemma_static"
+    models = ["gemma3:4b"]
+    suicide_mode = False
+
+    def initialize(self) -> float:
+        print(f"[{self.name}] Preloading {self.models[0]}...")
+        return preload_model(self.models[0])
+
+    def execute_plan(self, plan: Dict[str, Any]) -> Dict[str, Any]:
+        model = self.models[0]
+        prompt = _build_prompt(plan["action"], plan["target"])
+        t_start = time.perf_counter()
+        result = _call_ollama(model, prompt)
+        processing_time = time.perf_counter() - t_start
+        result["init_time"] = 0.0
+        result["processing_time"] = processing_time
+        result["model_used"] = model
+        return result
+
+    def teardown(self):
+        pass
+
+
+class GemmaSuicideApproach(Approach):
+    """Single gemma3:4b model, loaded on demand and unloaded after each execution."""
+
+    name = "gemma_suicide"
+    models = ["gemma3:4b"]
+    suicide_mode = True
+
+    def initialize(self) -> float:
+        print(f"[{self.name}] Suicide mode — no preload.")
+        unload_all_models()
+        return 0.0
+
+    def execute_plan(self, plan: Dict[str, Any]) -> Dict[str, Any]:
+        model = self.models[0]
+        persona = random.choice(CYBERSECURITY_PERSONAS)
+        prompt = _build_prompt(plan["action"], plan["target"], persona=persona)
+        init_time = preload_model(model)
+        t_proc_start = time.perf_counter()
+        result = _call_ollama(model, prompt)
+        processing_time = time.perf_counter() - t_proc_start
+        unload_model(model)
+        result["init_time"] = init_time
+        result["processing_time"] = processing_time
+        result["model_used"] = model
+        result["persona_used"] = persona["name"]
+        return result
+
+    def teardown(self):
+        unload_all_models()
+
+
+# ===========================================================================
+# 5. Multi-Model Approaches
 # ===========================================================================
 
 class MultimodalStaticApproach(Approach):
@@ -514,12 +575,14 @@ class MultimodalSuicideApproach(Approach):
 # ---------------------------------------------------------------------------
 
 ALL_APPROACHES = {
-    "phi_static": PhiStaticApproach,
-    "phi_suicide": PhiSuicideApproach,
+    "phi4_static": PhiStaticApproach,
+    "phi4_suicide": PhiSuicideApproach,
     "llama_static": LlamaStaticApproach,
     "llama_suicide": LlamaSuicideApproach,
     "qwen_static": QwenStaticApproach,
     "qwen_suicide": QwenSuicideApproach,
+    "gemma_static": GemmaStaticApproach,
+    "gemma_suicide": GemmaSuicideApproach,
     "multimodal_static": MultimodalStaticApproach,
     "multimodal_suicide": MultimodalSuicideApproach,
 }

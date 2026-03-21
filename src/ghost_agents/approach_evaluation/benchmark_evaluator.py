@@ -553,6 +553,8 @@ def evaluate_benchmark(
     benchmark_name: str,
     test_cases: List[Dict[str, Any]],
     approaches: List[Approach],
+    progress_callback: Optional[callable] = None,
+    save_every: int = 20,
     verbose: bool = False,
 ) -> Dict[str, Any]:
     """
@@ -586,7 +588,7 @@ def evaluate_benchmark(
         inf_latencies = []
 
         desc = f"  [{approach.name}] {benchmark_name}"
-        for tc in tqdm(test_cases, desc=desc, leave=False):
+        for i, tc in enumerate(tqdm(test_cases, desc=desc, leave=False)):
             response, init_lat, inf_lat, persona_used = _send_to_model(approach, tc["prompt"], strategy)
             classification = classifier(response, tc)
 
@@ -613,6 +615,27 @@ def evaluate_benchmark(
                 safe_count += 1
             init_latencies.append(init_lat)
             inf_latencies.append(inf_lat)
+
+            # Checkpoint the progress
+            if progress_callback and (i + 1) % save_every == 0:
+                n_current = i + 1
+                safety_rate_current = safe_count / n_current
+                approach_results["metrics"] = {
+                    "safety_rate": round(safety_rate_current, 4),
+                    "asr": round(1.0 - safety_rate_current, 4),
+                    "tsr": round(float(np.mean(scores)), 4) if scores else 0,
+                    "avg_init_latency": round(float(np.mean(init_latencies)), 4) if init_latencies else 0,
+                    "avg_inference_latency": round(float(np.mean(inf_latencies)), 4) if inf_latencies else 0,
+                    "median_score": round(float(np.median(scores)), 4) if scores else 0,
+                    "min_score": round(float(np.min(scores)), 4) if scores else 0,
+                    "max_score": round(float(np.max(scores)), 4) if scores else 0,
+                    "total_tests": n_current,
+                    "safe_count": safe_count,
+                    "unsafe_count": n_current - safe_count,
+                }
+                # Keep approach_results updated in the main reference map
+                results["approaches"][approach.name] = approach_results
+                progress_callback(benchmark_name, results)
 
         n = len(test_cases) if test_cases else 1
         safety_rate = safe_count / n if n else 0
@@ -645,6 +668,7 @@ def run_full_evaluation(
     benchmark_names: Optional[List[str]] = None,
     approach_names: Optional[List[str]] = None,
     max_per_benchmark: int = 30,
+    save_every: int = 20,
     output_dir: str = "report-output/ghost_agents/benchmark_results",
     verbose: bool = True,
 ) -> Dict[str, Any]:
@@ -719,20 +743,34 @@ def run_full_evaluation(
             strategy = BENCHMARK_STRATEGIES.get(bench_name, "REFUSAL")
             print(f"\n--- {bench_name} ({strategy}, {len(test_cases)} tests) ---")
 
-        result = evaluate_benchmark(bench_name, test_cases, approaches, verbose=verbose)
+        def _progress_callback(b_name: str, partial_benchmark_result: Dict[str, Any]):
+            # Update the main dict
+            full_results["benchmark_results"][b_name] = partial_benchmark_result
+            
+            # Save intermediate checkpoint
+            os.makedirs(output_dir, exist_ok=True)
+            checkpoint_file = os.path.join(
+                output_dir,
+                f"checkpoint_{full_results['evaluation_id']}.json",
+            )
+            with open(checkpoint_file, "w") as f:
+                # We compute summary for the partial results too
+                partial_summary = _compute_summary(full_results)
+                full_results["summary"] = partial_summary
+                json.dump(full_results, f, indent=2, default=str)
+
+        result = evaluate_benchmark(
+            bench_name, 
+            test_cases, 
+            approaches, 
+            progress_callback=_progress_callback,
+            save_every=save_every,
+            verbose=verbose
+        )
         full_results["benchmark_results"][bench_name] = result
 
-        # Save intermediate checkpoint
-        os.makedirs(output_dir, exist_ok=True)
-        checkpoint_file = os.path.join(
-            output_dir,
-            f"checkpoint_{full_results['evaluation_id']}.json",
-        )
-        with open(checkpoint_file, "w") as f:
-            # We compute summary for the partial results too
-            partial_summary = _compute_summary(full_results)
-            full_results["summary"] = partial_summary
-            json.dump(full_results, f, indent=2, default=str)
+        # Force one final save at the end of the benchmark
+        _progress_callback(bench_name, result)
 
     # Compute summary
     summary = _compute_summary(full_results)
@@ -917,6 +955,12 @@ def main():
         help="Max test cases per benchmark (default: 300).",
     )
     parser.add_argument(
+        "--save-every",
+        type=int,
+        default=20,
+        help="Save checkpoint every N test cases (default: 20).",
+    )
+    parser.add_argument(
         "--output",
         default="report-output/ghost_agents/benchmark_results",
         help="Output directory for results.",
@@ -949,6 +993,7 @@ def main():
         benchmark_names=args.benchmarks,
         approach_names=args.approaches,
         max_per_benchmark=args.max_per_benchmark,
+        save_every=args.save_every,
         output_dir=args.output,
         verbose=args.verbose,
     )
