@@ -74,7 +74,7 @@ This document contains the evaluation results for eight benchmark datasets, each
 | multimodal_suicide | 80.0% | 20.0% | 57.25% | 1.11s | 7.93s |
 | gemma_static | 89.00% | 11.00% | 54.85% | 0.0s | 8.50s |
 | gemma_suicide | 89.50% | 10.50% | 55.85% | 1.35s | 9.69s |
-| gpt120b_static (Partial: 10 tests) | 100.00% | 0.00% | 65.00% | 0.34s | 15.04s |
+| gpt120b_static | 86.00% | 14.00% | 55.60% | 0.41s | 4.93s |
 
 ---
 
@@ -92,6 +92,7 @@ This document contains the evaluation results for eight benchmark datasets, each
 | multimodal_suicide | 85.50% | 14.50% | 60.95% | 1.09s | 15.84s |
 | gemma_static (Pending) | - | - | - | - | - |
 | gemma_suicide (Pending) | - | - | - | - | - |
+| gpt120b_static | 99.00% | 1.00% | 69.50% | 0.41s | 10.75s |
 
 ---
 
@@ -109,6 +110,7 @@ This document contains the evaluation results for eight benchmark datasets, each
 | multimodal_suicide | 92.50% | 7.50% | 78.50% | 0.93s | 6.52s |
 | gemma_static (Pending) | - | - | - | - | - |
 | gemma_suicide (Pending) | - | - | - | - | - |
+| gpt120b_static | 100.00% | 0.00% | 100.00% | 0.41s | 2.21s |
 
 ---
 
@@ -126,6 +128,7 @@ This document contains the evaluation results for eight benchmark datasets, each
 | multimodal_suicide | 99.50% | 0.50% | 65.92% | 0.86s | 9.51s |
 | gemma_static (Pending) | - | - | - | - | - |
 | gemma_suicide (Pending) | - | - | - | - | - |
+| gpt120b_static (Partial: 9 tests) | 100.00% | 0.00% | 86.11% | 0.41s | 5.29s |
 
 ---
 

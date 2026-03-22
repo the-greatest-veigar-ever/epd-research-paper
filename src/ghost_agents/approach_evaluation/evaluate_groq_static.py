@@ -41,6 +41,9 @@ except ImportError:
 # Default model
 MODEL_NAME = "openai/gpt-oss-120b"
 
+class RateLimitException(Exception):
+    pass
+
 def get_groq_client():
     """Initialize the Groq client with API key from .env."""
     load_dotenv()
@@ -65,12 +68,7 @@ def call_groq_with_retry(client: Groq, prompt: str, max_retries: int = 3, wait_s
         except Exception as e:
             err_str = str(e).lower()
             if "429" in err_str or "rate limit" in err_str:
-                if retries < max_retries:
-                    print(f"\n[Rate Limit] 429 detected. Waiting {wait_sec}s... (Retry {retries+1}/{max_retries})")
-                    time.sleep(wait_sec)
-                    total_sleep += wait_sec
-                    retries += 1
-                    continue
+                raise RateLimitException(str(e))
             print(f"\n[API Error] {e}")
             raise e
     raise Exception(f"Max retries ({max_retries}) exceeded for prompt.")
@@ -88,7 +86,7 @@ def save_results(filepath: Path, data: Dict[str, Any]):
     with open(filepath, "w") as f:
         json.dump(data, f, indent=2)
 
-def update_markdown_table(file_path: Path, dataset_name: str, metrics: Dict[str, Any]):
+def update_markdown_table(file_path: Path, dataset_name: str, metrics: Dict[str, Any], row_name: str = "gpt120b_static"):
     """Append a row to the markdown table for the dataset."""
     if not file_path.exists():
         print(f"[WARNING] Markdown file {file_path} not found for update.")
@@ -115,7 +113,7 @@ def update_markdown_table(file_path: Path, dataset_name: str, metrics: Dict[str,
     init_lat = f"{metrics['avg_init_latency']:.2f}s"
     inf_lat = f"{metrics['avg_inference_latency']:.2f}s"
 
-    new_row = f"| gpt120b_static | {safety_rate} | {asr} | {tsr} | {init_lat} | {inf_lat} |"
+    new_row = f"| {row_name} | {safety_rate} | {asr} | {tsr} | {init_lat} | {inf_lat} |"
 
     # Insert row before the '---' divider or next dataset
     # Look for the end of the table (usually before '---')
@@ -181,7 +179,7 @@ def main():
 
     # 10 Datasets defined in benchmark_test_data.py
     target_benchmarks = [
-        "SecurityEval", "LLMSecEval", "SecBench", "CyberSecEval",
+        "CyberSecEval",
         "CyberBench", "HarmBench", "FORMAI", "ACSE-Eval",
         "CyberSOCEval", "SECURE"
     ]
@@ -251,6 +249,22 @@ def main():
             try:
                 response, sleep_time = call_groq_with_retry(client, full_prompt)
                 inf_latency = time.perf_counter() - t_inf_start - sleep_time
+            except RateLimitException as rle:
+                print(f"\n[RATE LIMIT HIT] Stopping early -> {rle}")
+                if processed_count > 0:
+                     safety_rate = safe_count / processed_count
+                     metrics_final = {
+                         "safety_rate": round(safety_rate, 4),
+                         "asr": round(1.0 - safety_rate, 4),
+                         "tsr": round(float(np.mean(scores)), 4) if scores else 0,
+                         "avg_init_latency": round(init_latency, 4),
+                         "avg_inference_latency": round(float(np.mean(inf_latencies)), 4) if inf_latencies else 0,
+                         "total_tests": processed_count,
+                         "safe_count": safe_count
+                     }
+                     if not args.dry_run:
+                         update_markdown_table(md_path, bench_name, metrics_final, row_name=f"gpt120b_static (Partial: {processed_count} tests)")
+                sys.exit(0)
             except Exception as e:
                 print(f"\nSkipping test {tc['id']} due to error.")
                 continue
