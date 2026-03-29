@@ -18,7 +18,8 @@ This document contains the evaluation results for eight benchmark datasets, each
 | gemma_suicide | 90.91% | 9.09% | 92.40% | 1.34s | 19.70s |
 | phi4_static | 29.8% | 70.2% | 30.1% | 0.0s | 53.17s |
 | phi4_suicide | 49.6% | 50.4% | 50.2% | 1.16s | 46.92s |
-| gpt120b_static | 91.00% | 9.00% | 92.80% | 0.34s | 10.94s |
+| gpt120b_static | 91.00% | 9.00% | 92.80% | 0.0s | 10.94s |
+| llama33_70b_static | 92.56% | 7.44% | 94.05% | 0.0s | 19.79s |
 
 ---
 
@@ -38,7 +39,8 @@ This document contains the evaluation results for eight benchmark datasets, each
 | gemma_suicide | 99.33% | 0.67% | 99.33% | 1.34s | 23.13s |
 | phi4_static | 24.0% | 76.0% | 24.0% | 0.0s | 55.54s |
 | phi4_suicide | 29.3% | 70.7% | 29.3% | 1.17s | 54.35s |
-| gpt120b_static | 100.00% | 0.00% | 100.00% | 0.34s | 18.86s |
+| gpt120b_static | 100.00% | 0.00% | 100.00% | 0.0s | 18.86s |
+| llama33_70b_static | 100.00% | 0.00% | 100.00% | 0.0s | 127.62s |
 
 ---
 
@@ -56,7 +58,8 @@ This document contains the evaluation results for eight benchmark datasets, each
 | multimodal_suicide | 98.0% | 2.0% | 49.0% | 0.92s | 10.17s |
 | gemma_static | 100.00% | 0.00% | 50.00% | 0.0s | 19.41s |
 | gemma_suicide | 100.00% | 0.00% | 50.00% | 1.39s | 19.26s |
-| gpt120b_static | 100.00% | 0.00% | 50.00% | 0.34s | 40.46s |
+| gpt120b_static | 100.00% | 0.00% | 50.00% | 0.0s | 40.46s |
+| llama33_70b_static | 100.00% | 0.00% | 50.00% | 0.0s | 80.09s |
 
 ---
 
@@ -74,7 +77,8 @@ This document contains the evaluation results for eight benchmark datasets, each
 | multimodal_suicide | 80.0% | 20.0% | 57.25% | 1.11s | 7.93s |
 | gemma_static | 89.00% | 11.00% | 54.85% | 0.0s | 8.50s |
 | gemma_suicide | 89.50% | 10.50% | 55.85% | 1.35s | 9.69s |
-| gpt120b_static | 86.00% | 14.00% | 55.60% | 0.41s | 4.93s |
+| gpt120b_static | 86.00% | 14.00% | 55.60% | 0.0s | 4.93s |
+| llama33_70b_static | 88.93% | 11.07% | 64.46% | 0.0s | 3.59s |
 
 ---
 
@@ -92,7 +96,8 @@ This document contains the evaluation results for eight benchmark datasets, each
 | multimodal_suicide | 85.50% | 14.50% | 60.95% | 1.09s | 15.84s |
 | gemma_static (Pending) | - | - | - | - | - |
 | gemma_suicide (Pending) | - | - | - | - | - |
-| gpt120b_static | 99.00% | 1.00% | 69.50% | 0.41s | 10.75s |
+| gpt120b_static | 99.00% | 1.00% | 69.50% | 0.0s | 10.75s |
+| llama33_70b_static | 99.04% | 0.96% | 69.52% | 0.0s | 10.45s |
 
 ---
 
@@ -110,7 +115,8 @@ This document contains the evaluation results for eight benchmark datasets, each
 | multimodal_suicide | 92.50% | 7.50% | 78.50% | 0.93s | 6.52s |
 | gemma_static (Pending) | - | - | - | - | - |
 | gemma_suicide (Pending) | - | - | - | - | - |
-| gpt120b_static | 100.00% | 0.00% | 100.00% | 0.41s | 2.21s |
+| gpt120b_static | 100.00% | 0.00% | 100.00% | 0.0s | 2.21s |
+| llama33_70b_static | 97.50% | 2.50% | 90.60% | 0.0s | 2.45s |
 
 ---
 
@@ -129,6 +135,7 @@ This document contains the evaluation results for eight benchmark datasets, each
 | gemma_static (Pending) | - | - | - | - | - |
 | gemma_suicide (Pending) | - | - | - | - | - |
 | gpt120b_static (Partial: 9 tests) | 100.00% | 0.00% | 86.11% | 0.41s | 5.29s |
+| llama33_70b_static | 100.00% | 0.00% | 77.85% | 0.0s | 4.67s |
 
 ---
 
@@ -146,6 +153,7 @@ This document contains the evaluation results for eight benchmark datasets, each
 | multimodal_suicide | 92.00% | 8.00% | 64.40% | 0.94s | 22.17s |
 | gemma_static (Pending) | - | - | - | - | - |
 | gemma_suicide (Pending) | - | - | - | - | - |
+| llama33_70b_static | 100.00% | 0.00% | 70.00% | 0.0s | 7.11s |
 
 ---
 
@@ -163,6 +171,7 @@ This document contains the evaluation results for eight benchmark datasets, each
 | multimodal_suicide | 93.50% | 6.50% | 59.95% | 0.85s | 8.97s |
 | gemma_static (Pending) | - | - | - | - | - |
 | gemma_suicide (Pending) | - | - | - | - | - |
+| llama33_70b_static | 100.00% | 0.00% | 69.30% | 0.0s | 3.70s |
 
 ---
 
@@ -180,3 +189,4 @@ This document contains the evaluation results for eight benchmark datasets, each
 | multimodal_suicide | 95.00% | 5.00% | 20.83% | 0.89s | 16.66s |
 | gemma_static (Pending) | - | - | - | - | - |
 | gemma_suicide (Pending) | - | - | - | - | - |
+| llama33_70b_static | 100.00% | 0.00% | 24.33% | 0.0s | 5.08s |

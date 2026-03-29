@@ -40,7 +40,7 @@ from typing import Dict, List, Any, Optional
 # ============================================================================
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[3]  # src/ghost_agents/approach_evaluation -> project root
-_BENCHMARK_DIR = _PROJECT_ROOT / "ai" / "data" / "ghost_agents" / "benchmarks"
+_BENCHMARK_DIR = _PROJECT_ROOT / "benchmarks"
 
 # ============================================================================
 # Benchmark citations

@@ -39,7 +39,7 @@ except ImportError:
     sys.exit(1)
 
 # Default model
-MODEL_NAME = "openai/gpt-oss-120b"
+MODEL_NAME = "llama-3.3-70b-versatile"
 
 class RateLimitException(Exception):
     pass
@@ -47,11 +47,12 @@ class RateLimitException(Exception):
 def get_groq_client():
     """Initialize the Groq client with API key from .env."""
     load_dotenv()
-    api_key = os.getenv("GROQ_API_KEY")
+    # User .env has GROQ_API, script was using GROQ_API_KEY
+    api_key = os.getenv("GROQ_API") or os.getenv("GROQ_API_KEY")
     if not api_key:
-        print("[WARNING] GROQ_API_KEY is not set in .env. Initialization may fail or use default SDK auth.")
+        print("[WARNING] GROQ_API or GROQ_API_KEY is not set in .env. Initialization may fail or use default SDK auth.")
         # We try initializing anyway, it will raise an error if auth fails
-    return Groq()
+    return Groq(api_key=api_key)
 
 def call_groq_with_retry(client: Groq, prompt: str, max_retries: int = 3, wait_sec: int = 60) -> (str, float):
     """Call Groq API with 429 rate limit backoff and retry logic."""
@@ -177,12 +178,8 @@ def main():
         print("Please ensure GROQ_API_KEY is correctly set in .env")
         sys.exit(1)
 
-    # 10 Datasets defined in benchmark_test_data.py
-    target_benchmarks = [
-        "CyberSecEval",
-        "CyberBench", "HarmBench", "FORMAI", "ACSE-Eval",
-        "CyberSOCEval", "SECURE"
-    ]
+    # Use all benchmarks defined in ALL_BENCHMARK_LOADERS
+    target_benchmarks = list(ALL_BENCHMARK_LOADERS.keys())
 
     for bench_name in target_benchmarks:
         print(f"\n==========================================")
@@ -200,8 +197,8 @@ def main():
              print(f"[ERROR] No loader for {bench_name}")
              continue
 
-        # Sample exactly 100 inputs (handled by loader if max_samples is set)
-        max_samples = 2 if args.dry_run else 100
+        # Sample exactly 200 inputs (handled by loader if max_samples is set)
+        max_samples = 2 if args.dry_run else 200
         test_cases = loader_func(max_samples=max_samples)
 
         if not test_cases:
@@ -263,7 +260,7 @@ def main():
                          "safe_count": safe_count
                      }
                      if not args.dry_run:
-                         update_markdown_table(md_path, bench_name, metrics_final, row_name=f"gpt120b_static (Partial: {processed_count} tests)")
+                         update_markdown_table(md_path, bench_name, metrics_final, row_name=f"llama33_70b_static (Partial: {processed_count} tests)")
                 sys.exit(0)
             except Exception as e:
                 print(f"\nSkipping test {tc['id']} due to error.")
@@ -328,7 +325,7 @@ def main():
 
              # Update markdown table
              if not args.dry_run:
-                 update_markdown_table(md_path, bench_name, metrics_final)
+                 update_markdown_table(md_path, bench_name, metrics_final, row_name="llama33_70b_static")
 
     print("\nEvaluation Completed!")
 
