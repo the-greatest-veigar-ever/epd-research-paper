@@ -20,6 +20,7 @@ This document contains the evaluation results for eight benchmark datasets, each
 | phi4_suicide | 49.6% | 50.4% | 50.2% | 1.16s | 46.92s |
 | gpt120b_static | 91.00% | 9.00% | 92.80% | 0.0s | 10.94s |
 | llama33_70b_static | 92.56% | 7.44% | 94.05% | 0.0s | 19.79s |
+| gpt_20b_oss_static | 68.60% | 31.40% | 69.26% | 0.41s | 12.98s |
 
 ---
 
@@ -41,6 +42,7 @@ This document contains the evaluation results for eight benchmark datasets, each
 | phi4_suicide | 29.3% | 70.7% | 29.3% | 1.17s | 54.35s |
 | gpt120b_static | 100.00% | 0.00% | 100.00% | 0.0s | 18.86s |
 | llama33_70b_static | 100.00% | 0.00% | 100.00% | 0.0s | 127.62s |
+| gpt_20b_oss_static | 90.67% | 9.33% | 90.67% | 0.41s | 10.37s |
 
 ---
 
@@ -60,6 +62,7 @@ This document contains the evaluation results for eight benchmark datasets, each
 | gemma_suicide | 100.00% | 0.00% | 50.00% | 1.39s | 19.26s |
 | gpt120b_static | 100.00% | 0.00% | 50.00% | 0.0s | 40.46s |
 | llama33_70b_static | 100.00% | 0.00% | 50.00% | 0.0s | 80.09s |
+| gpt_20b_oss_static | 96.00% | 4.00% | 48.00% | 0.41s | 5.33s |
 
 ---
 
@@ -79,6 +82,7 @@ This document contains the evaluation results for eight benchmark datasets, each
 | gemma_suicide | 89.50% | 10.50% | 55.85% | 1.35s | 9.69s |
 | gpt120b_static | 86.00% | 14.00% | 55.60% | 0.0s | 4.93s |
 | llama33_70b_static | 88.93% | 11.07% | 64.46% | 0.0s | 3.59s |
+| gpt_20b_oss_static | 84.00% | 16.00% | 57.95% | 0.41s | 5.48s |
 
 ---
 
@@ -98,6 +102,7 @@ This document contains the evaluation results for eight benchmark datasets, each
 | gemma_suicide (Pending) | - | - | - | - | - |
 | gpt120b_static | 99.00% | 1.00% | 69.50% | 0.0s | 10.75s |
 | llama33_70b_static | 99.04% | 0.96% | 69.52% | 0.0s | 10.45s |
+| gpt_20b_oss_static | 100.00% | 0.00% | 50.00% | 0.41s | 2.08s |
 
 ---
 
@@ -117,6 +122,7 @@ This document contains the evaluation results for eight benchmark datasets, each
 | gemma_suicide (Pending) | - | - | - | - | - |
 | gpt120b_static | 100.00% | 0.00% | 100.00% | 0.0s | 2.21s |
 | llama33_70b_static | 97.50% | 2.50% | 90.60% | 0.0s | 2.45s |
+| gpt_20b_oss_static | 98.00% | 2.00% | 97.85% | 0.41s | 2.48s |
 
 ---
 
@@ -136,6 +142,7 @@ This document contains the evaluation results for eight benchmark datasets, each
 | gemma_suicide (Pending) | - | - | - | - | - |
 | gpt120b_static (Partial: 9 tests) | 100.00% | 0.00% | 86.11% | 0.41s | 5.29s |
 | llama33_70b_static | 100.00% | 0.00% | 77.85% | 0.0s | 4.67s |
+| gpt_20b_oss_static | 88.00% | 12.00% | 75.32% | 0.41s | 11.59s |
 
 ---
 
@@ -154,6 +161,7 @@ This document contains the evaluation results for eight benchmark datasets, each
 | gemma_static (Pending) | - | - | - | - | - |
 | gemma_suicide (Pending) | - | - | - | - | - |
 | llama33_70b_static | 100.00% | 0.00% | 70.00% | 0.0s | 7.11s |
+| gpt_20b_oss_static | 73.00% | 27.00% | 51.10% | 0.41s | 16.40s |
 
 ---
 
@@ -172,6 +180,7 @@ This document contains the evaluation results for eight benchmark datasets, each
 | gemma_static (Pending) | - | - | - | - | - |
 | gemma_suicide (Pending) | - | - | - | - | - |
 | llama33_70b_static | 100.00% | 0.00% | 69.30% | 0.0s | 3.70s |
+| gpt_20b_oss_static | 99.50% | 0.50% | 63.75% | 0.41s | 5.83s |
 
 ---
 
@@ -190,3 +199,4 @@ This document contains the evaluation results for eight benchmark datasets, each
 | gemma_static (Pending) | - | - | - | - | - |
 | gemma_suicide (Pending) | - | - | - | - | - |
 | llama33_70b_static | 100.00% | 0.00% | 24.33% | 0.0s | 5.08s |
+| gpt_20b_oss_static (Partial: 112 tests) | 47.32% | 52.68% | 9.84% | 0.41s | 16.88s |

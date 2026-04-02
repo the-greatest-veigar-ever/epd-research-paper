@@ -38,8 +38,13 @@ except ImportError:
     print("[ERROR] Groq package is not installed. Please install with `pip install groq`")
     sys.exit(1)
 
-# Default model
-MODEL_NAME = "llama-3.3-70b-versatile"
+# Default model (can be overridden via CLI)
+# DEFAULT_MODEL = "llama-3.3-70b-versatile"
+# DEFAULT_ROW_NAME = llama33_70b_static
+DEFAULT_MODEL = "openai/gpt-oss-20b"
+
+DEFAULT_ROW_NAME = "gpt_20b_oss_static"
+
 
 class RateLimitException(Exception):
     pass
@@ -54,14 +59,14 @@ def get_groq_client():
         # We try initializing anyway, it will raise an error if auth fails
     return Groq(api_key=api_key)
 
-def call_groq_with_retry(client: Groq, prompt: str, max_retries: int = 3, wait_sec: int = 60) -> (str, float):
+def call_groq_with_retry(client: Groq, prompt: str, model_name: str, max_retries: int = 3, wait_sec: int = 60) -> (str, float):
     """Call Groq API with 429 rate limit backoff and retry logic."""
     retries = 0
     total_sleep = 0.0
     while retries <= max_retries:
         try:
             response = client.chat.completions.create(
-                model=MODEL_NAME,
+                model=model_name,
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.0,
             )
@@ -154,9 +159,15 @@ def update_markdown_table(file_path: Path, dataset_name: str, metrics: Dict[str,
     print(f"Updated table in {file_path} for {dataset_name}")
 
 def main():
-    parser = argparse.ArgumentParser(description="Evaluate GPT-OSS-120B Static on Groq")
-    parser.add_argument("--dry-run", action="store_true", help="Run 2 items per dataset for testing")
+    parser = argparse.ArgumentParser(description="Evaluate Static Models on Groq")
+    parser.add_argument("--model", type=str, default=DEFAULT_MODEL, help=f"Groq model ID (default: {DEFAULT_MODEL})")
+    parser.add_argument("--row-name", type=str, default=DEFAULT_ROW_NAME, help=f"Row name in markdown table (default: {DEFAULT_ROW_NAME})")
+    parser.add_argument("--max-samples", type=int, default=200, help="Max samples per dataset (default: 200)")
+    parser.add_argument("--dry-run", action="store_true", help="Run a small sample per dataset for testing")
     args = parser.parse_args()
+
+    model_name = args.model
+    row_name = args.row_name
 
     # Create results folder
     results_dir = project_root / "results"
@@ -197,8 +208,8 @@ def main():
              print(f"[ERROR] No loader for {bench_name}")
              continue
 
-        # Sample exactly 200 inputs (handled by loader if max_samples is set)
-        max_samples = 2 if args.dry_run else 200
+        # Sample according to max_samples
+        max_samples = 2 if args.dry_run else args.max_samples
         test_cases = loader_func(max_samples=max_samples)
 
         if not test_cases:
@@ -207,8 +218,8 @@ def main():
 
         print(f"Loaded {len(test_cases)} test cases.")
 
-        # Checkpoint file
-        checkpoint_file = results_dir / f"{bench_name}_results.json"
+        # Checkpoint file (model specific)
+        checkpoint_file = results_dir / f"{bench_name}_{row_name}_results.json"
         results_cache = load_results_checkpoint(checkpoint_file)
 
         test_results = results_cache.get("test_results", [])
@@ -244,7 +255,7 @@ def main():
 
             t_inf_start = time.perf_counter()
             try:
-                response, sleep_time = call_groq_with_retry(client, full_prompt)
+                response, sleep_time = call_groq_with_retry(client, full_prompt, model_name=model_name)
                 inf_latency = time.perf_counter() - t_inf_start - sleep_time
             except RateLimitException as rle:
                 print(f"\n[RATE LIMIT HIT] Stopping early -> {rle}")
@@ -260,7 +271,7 @@ def main():
                          "safe_count": safe_count
                      }
                      if not args.dry_run:
-                         update_markdown_table(md_path, bench_name, metrics_final, row_name=f"llama33_70b_static (Partial: {processed_count} tests)")
+                         update_markdown_table(md_path, bench_name, metrics_final, row_name=f"{row_name} (Partial: {processed_count} tests)")
                 sys.exit(0)
             except Exception as e:
                 print(f"\nSkipping test {tc['id']} due to error.")
@@ -325,7 +336,7 @@ def main():
 
              # Update markdown table
              if not args.dry_run:
-                 update_markdown_table(md_path, bench_name, metrics_final, row_name="llama33_70b_static")
+                 update_markdown_table(md_path, bench_name, metrics_final, row_name=row_name)
 
     print("\nEvaluation Completed!")
 
