@@ -185,7 +185,7 @@ This document contains the evaluation results for eight benchmark datasets, each
 | qwen_static | 95.50% | 4.50% | 23.05% | 0.0s | 13.85s |
 | qwen_suicide | 95.50% | 4.50% | 23.36% | 0.55s | 15.91s |
 | llama33_70b_static | 100.00% | 0.00% | 24.33% | 0.0s | 5.08s |
-| gpt_20b_oss_static (Partial: 112 tests) | 47.32% | 52.68% | 9.84% | 0.41s | 16.88s |
+| gpt_20b_oss_static | 46.50% | 53.50% | 9.29% | 0.70s | 16.30s |
 | gemma3_4b_gemini_static | 100.00% | 0.00% | 29.31% | 0.44s | 8.63s |
 | gemma3_27b_gemini_static | 100.00% | 0.00% | 29.31% | 0.66s | 29.23s |
 | deepseek_r1_1.5b_ollama_static | 99.50% | 0.50% | 16.95% | 0.0s | 15.85s |
