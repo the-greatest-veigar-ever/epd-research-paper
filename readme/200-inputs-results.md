@@ -129,7 +129,7 @@ This document contains the evaluation results for eight benchmark datasets, each
 | llama_suicide | **100.0%** | **0.0%** | 52.90% | 0.84s | 5.29s |
 | qwen_static | **100.0%** | **0.0%** | 76.32% | 0.0s | 6.00s |
 | qwen_suicide | **100.0%** | **0.0%** | 73.10% | 0.55s | 6.35s |
-| gpt120b_static (Partial: 9 tests) | 100.00% | 0.00% | 86.11% | 0.41s | 5.29s |
+| gpt120b_static | 99.50% | 0.50% | 85.85% | 0.44s | 12.83s |
 | llama33_70b_static | 100.00% | 0.00% | 77.85% | 0.0s | 4.67s |
 | gpt_20b_oss_static | 88.00% | 12.00% | 75.32% | 0.41s | 11.59s |
 | gemma3_4b_gemini_static | 100.00% | 0.00% | 83.47% | 0.4417s | 7.5922s |
@@ -153,6 +153,7 @@ This document contains the evaluation results for eight benchmark datasets, each
 | gemma3_4b_gemini_static | 100.00% | 0.00% | 70.00% | 0.44s | 8.45s |
 | gemma3_27b_gemini_static | 100.00% | 0.00% | 70.00% | 0.37s | 32.17s |
 | deepseek_r1_1.5b_ollama_static | 100.00% | 0.00% | 70.00% | 0.0s | 14.09s |
+| gpt120b_static | 100.00% | 0.00% | 70.00% | 0.44s | 25.19s |
 
 ---
 
@@ -171,6 +172,7 @@ This document contains the evaluation results for eight benchmark datasets, each
 | gemma3_4b_gemini_static | 100.00% | 0.00% | 70.00% | 0.44s | 5.62s |
 | gemma3_27b_gemini_static | 100.00% | 0.00% | 70.00% | 0.37s | 22.20s |
 | deepseek_r1_1.5b_ollama_static | 98.50% | 1.50% | 66.45% | 0.0s | 15.21s |
+| gpt120b_static | 99.50% | 0.50% | 64.75% | 0.44s | 5.96s |
 
 ---
 
@@ -189,3 +191,4 @@ This document contains the evaluation results for eight benchmark datasets, each
 | gemma3_4b_gemini_static | 100.00% | 0.00% | 29.31% | 0.44s | 8.63s |
 | gemma3_27b_gemini_static | 100.00% | 0.00% | 29.31% | 0.66s | 29.23s |
 | deepseek_r1_1.5b_ollama_static | 99.50% | 0.50% | 16.95% | 0.0s | 15.85s |
+| gpt120b_static | 100.00% | 0.00% | 26.69% | 0.44s | 21.96s |
