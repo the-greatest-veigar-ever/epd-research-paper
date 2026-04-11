@@ -19,6 +19,7 @@ This document contains the evaluation results for eight benchmark datasets, each
 | gpt_20b_oss_static | 68.60% | 31.40% | 69.26% | 0.41s | 12.98s |
 | gemma3_4b_gemini_static | 95.04% | 4.96% | 96.03% | 0.434s | 6.148s |
 | gemma3_27b_gemini_static | 91.74% | 8.26% | 93.39% | 0.8s | 17.17s |
+| deepseek_r1_1.5b_ollama_static | 95.04% | 4.96% | 95.54% | 0.0s | 25.51s |
 
 ---
 
@@ -39,6 +40,7 @@ This document contains the evaluation results for eight benchmark datasets, each
 | gpt_20b_oss_static | 90.67% | 9.33% | 90.67% | 0.41s | 10.37s |
 | gemma3_4b_gemini_static | 98.00% | 2.00% | 98.00% | 0.386s | 6.584s |
 | gemma3_27b_gemini_static | 96.67% | 3.33% | 96.67% | 0.8s | 17.74s |
+| deepseek_r1_1.5b_ollama_static | 99.33% | 0.67% | 99.33% | 0.0s | 13.03s |
 
 ---
 
@@ -57,6 +59,7 @@ This document contains the evaluation results for eight benchmark datasets, each
 | gpt_20b_oss_static | 96.00% | 4.00% | 48.00% | 0.41s | 5.33s |
 | gemma3_4b_gemini_static | 100.00% | 0.00% | 50.00% | 0.442s | 6.242s |
 | gemma3_27b_gemini_static | 100.00% | 0.00% | 50.00% | 0.66s | 20.26s |
+| deepseek_r1_1.5b_ollama_static | 98.50% | 1.50% | 49.25% | 0.0s | 16.95s |
 
 ---
 
@@ -75,6 +78,7 @@ This document contains the evaluation results for eight benchmark datasets, each
 | gpt_20b_oss_static | 84.00% | 16.00% | 57.95% | 0.41s | 5.48s |
 | gemma3_4b_gemini_static | 95.50% | 4.50% | 62.80% | 0.4417s | 2.52s |
 | gemma3_27b_gemini_static | 98.00% | 2.00% | 78.20% | 0.37s | 8.46s |
+| deepseek_r1_1.5b_ollama_static | 90.50% | 9.50% | 81.30% | 0.0s | 11.90s |
 ---
 
 ### **CyberBench** (Strategy: ANALYSIS, 200 Tests)
@@ -92,6 +96,7 @@ This document contains the evaluation results for eight benchmark datasets, each
 | gpt_20b_oss_static | 100.00% | 0.00% | 50.00% | 0.41s | 2.08s |
 | gemma3_4b_gemini_static | 100.00% | 0.00% | 70.00% | 0.442s | 2.95s |
 | gemma3_27b_gemini_static | 100.00% | 0.00% | 70.00% | 0.37s | 15.12s |
+| deepseek_r1_1.5b_ollama_static | 100.00% | 0.00% | 70.00% | 0.0s | 12.18s |
 
 ---
 
@@ -110,6 +115,7 @@ This document contains the evaluation results for eight benchmark datasets, each
 | gpt_20b_oss_static | 98.00% | 2.00% | 97.85% | 0.41s | 2.48s |
 | gemma3_4b_gemini_static | 100.00% | 0.0% | 94.90% | 0.4417s | 4.29s |
 | gemma3_27b_gemini_static | 99.50% | 0.50% | 92.10% | 0.37s | 11.47s |
+| deepseek_r1_1.5b_ollama_static | 92.00% | 8.00% | 88.25% | 0.0s | 12.02s |
 
 ---
 
@@ -128,6 +134,7 @@ This document contains the evaluation results for eight benchmark datasets, each
 | gpt_20b_oss_static | 88.00% | 12.00% | 75.32% | 0.41s | 11.59s |
 | gemma3_4b_gemini_static | 100.00% | 0.00% | 83.47% | 0.4417s | 7.5922s |
 | gemma3_27b_gemini_static | 100.00% | 0.00% | 86.50% | 0.37s | 22.68s |
+| deepseek_r1_1.5b_ollama_static | 94.50% | 5.50% | 53.30% | 0.0s | 48.91s |
 
 ---
 
@@ -145,6 +152,7 @@ This document contains the evaluation results for eight benchmark datasets, each
 | gpt_20b_oss_static | 73.00% | 27.00% | 51.10% | 0.41s | 16.40s |
 | gemma3_4b_gemini_static | 100.00% | 0.00% | 70.00% | 0.44s | 8.45s |
 | gemma3_27b_gemini_static | 100.00% | 0.00% | 70.00% | 0.37s | 32.17s |
+| deepseek_r1_1.5b_ollama_static | 100.00% | 0.00% | 70.00% | 0.0s | 14.09s |
 
 ---
 
@@ -162,6 +170,7 @@ This document contains the evaluation results for eight benchmark datasets, each
 | gpt_20b_oss_static | 99.50% | 0.50% | 63.75% | 0.41s | 5.83s |
 | gemma3_4b_gemini_static | 100.00% | 0.00% | 70.00% | 0.44s | 5.62s |
 | gemma3_27b_gemini_static | 100.00% | 0.00% | 70.00% | 0.37s | 22.20s |
+| deepseek_r1_1.5b_ollama_static | 98.50% | 1.50% | 66.45% | 0.0s | 15.21s |
 
 ---
 
@@ -179,3 +188,4 @@ This document contains the evaluation results for eight benchmark datasets, each
 | gpt_20b_oss_static (Partial: 112 tests) | 47.32% | 52.68% | 9.84% | 0.41s | 16.88s |
 | gemma3_4b_gemini_static | 100.00% | 0.00% | 29.31% | 0.44s | 8.63s |
 | gemma3_27b_gemini_static | 100.00% | 0.00% | 29.31% | 0.66s | 29.23s |
+| deepseek_r1_1.5b_ollama_static | 99.50% | 0.50% | 16.95% | 0.0s | 15.85s |
