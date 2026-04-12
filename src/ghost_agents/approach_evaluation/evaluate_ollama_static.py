@@ -8,15 +8,18 @@ Primary backend — Local Ollama:
   No API key required (local server).
 
 Supported models (via --model flag):
-  deepseek-r1:1.5b  (default)
+  deepseek-r1:1.5b (default)
+  deepseek-r1:70b
+  qwen2.5:72b (standard 70B-class tag)
   Any model available in your local Ollama installation.
 
 Usage examples:
   # DeepSeek R1 1.5B (default)
   python3 -m src.ghost_agents.approach_evaluation.evaluate_ollama_static
 
-  # Any other Ollama model
-  python3 -m src.ghost_agents.approach_evaluation.evaluate_ollama_static --model llama3.2:3b
+  # Explicitly run a 70B model
+  python3 -m src.ghost_agents.approach_evaluation.evaluate_ollama_static --model deepseek-r1:70b
+  python3 -m src.ghost_agents.approach_evaluation.evaluate_ollama_static --model qwen2.5:72b
 
   # Dry run (2 samples per benchmark)
   python3 -m src.ghost_agents.approach_evaluation.evaluate_ollama_static --dry-run
@@ -60,7 +63,7 @@ except ImportError:
 # ── Endpoint ─────────────────────────────────────────────────────────────────
 OLLAMA_BASE_URL = "http://localhost:11434/v1"
 
-DEFAULT_MODEL    = "deepseek-r1:1.5b"
+DEFAULT_MODEL    = "deepseek-r1:70b"
 
 
 # ── Client factory ───────────────────────────────────────────────────────────
@@ -277,7 +280,8 @@ def main():
 
     # ── Preload model into memory ──────────────────────────────────────────
     print(f"Preloading {model_name} into Ollama memory...")
-    preload_latency = preload_model(model_name, timeout=300)
+    # Timeout increased to 600s for 70B models
+    preload_latency = preload_model(model_name, timeout=600)
     init_latency = time.perf_counter() - t_init_start
     print(f"Model preloaded in {preload_latency:.2f}s (total init: {init_latency:.2f}s)")
 
