@@ -11,7 +11,7 @@ security constraints.
 Usage:
     python -m src.ghost_agents.approach_evaluation.benchmark_evaluator \
         --benchmarks all \
-        --approaches phi_static phi_suicide \
+        --approaches phi4_suicide llama_suicide \
         --max-per-benchmark 300 \
         --output report-output/ghost_agents/benchmark_results/
 
@@ -548,6 +548,58 @@ def _send_to_model(
         print(f"[ERROR] Model execution failed: {e}")
         return f"[ERROR] {e}", 0.0, 0.0, "default"
 
+def update_markdown_table(file_path: str, dataset_name: str, metrics: Dict[str, Any], base_row_name: str, display_row_name: str):
+    """Append or replace a row in the markdown table for the dataset."""
+    import os
+    if not os.path.exists(file_path):
+        return
+
+    with open(file_path, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    section_title = f"### **{dataset_name}**"
+    if section_title not in content:
+        return
+
+    table_divider = "| :--- | :--- | :--- | :--- | :--- | :--- |"
+
+    safety_rate = f"{metrics.get('safety_rate', 0)*100:.2f}%"
+    asr = f"{metrics.get('asr', 0)*100:.2f}%"
+    tsr = f"{metrics.get('tsr', 0)*100:.2f}%"
+    init_lat = f"{metrics.get('avg_init_latency', 0):.2f}s"
+    inf_lat = f"{metrics.get('avg_inference_latency', 0):.2f}s"
+
+    new_row = f"| {display_row_name} | {safety_rate} | {asr} | {tsr} | {init_lat} | {inf_lat} |"
+
+    lines = content.split("\n")
+    insert_index = -1
+    for i in range(len(lines)):
+        if section_title in lines[i]:
+            for j in range(i+1, len(lines)):
+                if table_divider in lines[j]:
+                    for k in range(j+1, len(lines)):
+                        if not lines[k].strip() or "---" in lines[k]:
+                            insert_index = k
+                            break
+                        if lines[k].startswith("|") and base_row_name in lines[k]:
+                            lines[k] = new_row
+                            insert_index = -2
+                            break
+                    break
+        if insert_index != -1:
+            break
+
+    if insert_index == -2:
+        pass
+    elif insert_index != -1:
+        lines.insert(insert_index, new_row)
+    else:
+        return
+
+    with open(file_path, "w", encoding="utf-8") as f:
+        f.write("\n".join(lines))
+
+
 
 def evaluate_benchmark(
     benchmark_name: str,
@@ -636,6 +688,13 @@ def evaluate_benchmark(
                 # Keep approach_results updated in the main reference map
                 results["approaches"][approach.name] = approach_results
                 progress_callback(benchmark_name, results)
+                update_markdown_table(
+                    "readme/200-inputs-results.md", 
+                    benchmark_name, 
+                    approach_results["metrics"], 
+                    base_row_name=approach.name, 
+                    display_row_name=f"{approach.name} (Partial: {n_current} tests)"
+                )
 
         n = len(test_cases) if test_cases else 1
         safety_rate = safe_count / n if n else 0
@@ -654,6 +713,13 @@ def evaluate_benchmark(
         }
 
         results["approaches"][approach.name] = approach_results
+        update_markdown_table(
+            "readme/200-inputs-results.md", 
+            benchmark_name, 
+            approach_results["metrics"], 
+            base_row_name=approach.name, 
+            display_row_name=approach.name
+        )
 
         if verbose:
             s_rate = approach_results["metrics"]["safety_rate"] * 100

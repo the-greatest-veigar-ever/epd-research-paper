@@ -478,7 +478,7 @@ class GemmaStaticApproach(Approach):
 class GemmaSuicideApproach(Approach):
     """Single gemma3:4b model, loaded on demand and unloaded after each execution."""
 
-    name = "gemma_suicide"
+    name = "gemma3_4b_gemini_suicide"
     models = ["gemma3:4b"]
     suicide_mode = True
 
@@ -570,19 +570,85 @@ class MultimodalSuicideApproach(Approach):
         unload_all_models()
 
 
+# ===========================================================================
+# 6. GPT OSS Approaches
+# ===========================================================================
+
+class GptOss20bSuicideApproach(Approach):
+    """Single gpt-oss:20b model, loaded on demand and unloaded after each execution."""
+
+    name = "gpt_oss_20b_suicide"
+    models = ["gpt-oss:20b"]
+    suicide_mode = True
+
+    def initialize(self) -> float:
+        print(f"[{self.name}] Suicide mode — no preload.")
+        unload_all_models()
+        return 0.0
+
+    def execute_plan(self, plan: Dict[str, Any]) -> Dict[str, Any]:
+        model = self.models[0]
+        persona = random.choice(CYBERSECURITY_PERSONAS)
+        prompt = _build_prompt(plan["action"], plan["target"], persona=persona)
+        init_time = preload_model(model)
+        t_proc_start = time.perf_counter()
+        result = _call_ollama(model, prompt)
+        processing_time = time.perf_counter() - t_proc_start
+        unload_model(model)
+        result["init_time"] = init_time
+        result["processing_time"] = processing_time
+        result["model_used"] = model
+        result["persona_used"] = persona["name"]
+        return result
+
+    def teardown(self):
+        unload_all_models()
+
+
+# ---------------------------------------------------------------------------
+# 7. Deepseek Approaches
+# ---------------------------------------------------------------------------
+
+class DeepseekSuicideApproach(Approach):
+    """Single deepseek-r1:1.5b model, loaded on demand and unloaded after each execution."""
+
+    name = "deepseek_1_5b_suicide"
+    models = ["deepseek-r1:1.5b"]
+    suicide_mode = True
+
+    def initialize(self) -> float:
+        print(f"[{self.name}] Suicide mode — no preload.")
+        unload_all_models()
+        return 0.0
+
+    def execute_plan(self, plan: Dict[str, Any]) -> Dict[str, Any]:
+        model = self.models[0]
+        persona = random.choice(CYBERSECURITY_PERSONAS)
+        prompt = _build_prompt(plan["action"], plan["target"], persona=persona)
+        init_time = preload_model(model)
+        t_proc_start = time.perf_counter()
+        result = _call_ollama(model, prompt)
+        processing_time = time.perf_counter() - t_proc_start
+        unload_model(model)
+        result["init_time"] = init_time
+        result["processing_time"] = processing_time
+        result["model_used"] = model
+        result["persona_used"] = persona["name"]
+        return result
+
+    def teardown(self):
+        unload_all_models()
+
 # ---------------------------------------------------------------------------
 # Registry
 # ---------------------------------------------------------------------------
 
 ALL_APPROACHES = {
-    "phi4_static": PhiStaticApproach,
     "phi4_suicide": PhiSuicideApproach,
-    "llama_static": LlamaStaticApproach,
     "llama_suicide": LlamaSuicideApproach,
-    "qwen_static": QwenStaticApproach,
     "qwen_suicide": QwenSuicideApproach,
-    "gemma_static": GemmaStaticApproach,
-    "gemma_suicide": GemmaSuicideApproach,
-    "multimodal_static": MultimodalStaticApproach,
+    "gemma3_4b_gemini_suicide": GemmaSuicideApproach,
     "multimodal_suicide": MultimodalSuicideApproach,
+    "gpt_oss_20b_suicide": GptOss20bSuicideApproach,
+    "deepseek_1_5b_suicide": DeepseekSuicideApproach,
 }
