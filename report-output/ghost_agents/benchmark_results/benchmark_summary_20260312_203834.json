@@ -1,0 +1,201 @@
+{
+  "per_benchmark": {
+    "FORMAI": {
+      "strategy": "SAFETY",
+      "total_tests": 200,
+      "approaches": {
+        "phi_static": {
+          "safety_rate": 0.955,
+          "asr": 0.045,
+          "tsr": 0.7777,
+          "avg_init_latency": 0.0,
+          "avg_inference_latency": 19.5802
+        },
+        "phi_suicide": {
+          "safety_rate": 0.94,
+          "asr": 0.06,
+          "tsr": 0.757,
+          "avg_init_latency": 1.2142,
+          "avg_inference_latency": 21.67
+        },
+        "llama_static": {
+          "safety_rate": 1.0,
+          "asr": 0.0,
+          "tsr": 0.5132,
+          "avg_init_latency": 0.0,
+          "avg_inference_latency": 4.8354
+        },
+        "llama_suicide": {
+          "safety_rate": 1.0,
+          "asr": 0.0,
+          "tsr": 0.529,
+          "avg_init_latency": 0.8359,
+          "avg_inference_latency": 5.2912
+        },
+        "qwen_static": {
+          "safety_rate": 1.0,
+          "asr": 0.0,
+          "tsr": 0.7632,
+          "avg_init_latency": 0.0,
+          "avg_inference_latency": 5.9993
+        },
+        "qwen_suicide": {
+          "safety_rate": 1.0,
+          "asr": 0.0,
+          "tsr": 0.731,
+          "avg_init_latency": 0.552,
+          "avg_inference_latency": 6.3524
+        },
+        "multimodal_static": {
+          "safety_rate": 0.975,
+          "asr": 0.025,
+          "tsr": 0.6892,
+          "avg_init_latency": 0.0,
+          "avg_inference_latency": 11.2286
+        },
+        "multimodal_suicide": {
+          "safety_rate": 0.995,
+          "asr": 0.005,
+          "tsr": 0.6592,
+          "avg_init_latency": 0.8552,
+          "avg_inference_latency": 9.5125
+        }
+      }
+    },
+    "ACSE-Eval": {
+      "strategy": "ANALYSIS",
+      "total_tests": 100,
+      "approaches": {
+        "phi_static": {
+          "safety_rate": 0.92,
+          "asr": 0.08,
+          "tsr": 0.644,
+          "avg_init_latency": 0.0,
+          "avg_inference_latency": 28.5718
+        },
+        "phi_suicide": {
+          "safety_rate": 0.9,
+          "asr": 0.1,
+          "tsr": 0.63,
+          "avg_init_latency": 1.1578,
+          "avg_inference_latency": 31.3993
+        },
+        "llama_static": {
+          "safety_rate": 0.95,
+          "asr": 0.05,
+          "tsr": 0.673,
+          "avg_init_latency": 0.0,
+          "avg_inference_latency": 13.306
+        },
+        "llama_suicide": {
+          "safety_rate": 0.95,
+          "asr": 0.05,
+          "tsr": 0.659,
+          "avg_init_latency": 0.8327,
+          "avg_inference_latency": 13.0401
+        },
+        "qwen_static": {
+          "safety_rate": 0.91,
+          "asr": 0.09,
+          "tsr": 0.637,
+          "avg_init_latency": 0.0,
+          "avg_inference_latency": 23.9334
+        },
+        "qwen_suicide": {
+          "safety_rate": 0.89,
+          "asr": 0.11,
+          "tsr": 0.623,
+          "avg_init_latency": 0.5589,
+          "avg_inference_latency": 25.371
+        },
+        "multimodal_static": {
+          "safety_rate": 0.82,
+          "asr": 0.18,
+          "tsr": 0.578,
+          "avg_init_latency": 0.0,
+          "avg_inference_latency": 26.3515
+        },
+        "multimodal_suicide": {
+          "safety_rate": 0.92,
+          "asr": 0.08,
+          "tsr": 0.644,
+          "avg_init_latency": 0.9383,
+          "avg_inference_latency": 22.1713
+        }
+      }
+    }
+  },
+  "per_approach": {
+    "phi_static": {
+      "avg_safety_rate": 0.9375,
+      "avg_asr": 0.0625,
+      "avg_tsr": 0.7108,
+      "avg_init_latency": 0.0,
+      "avg_inference_latency": 24.076,
+      "benchmarks_tested": 2
+    },
+    "phi_suicide": {
+      "avg_safety_rate": 0.92,
+      "avg_asr": 0.08,
+      "avg_tsr": 0.6935,
+      "avg_init_latency": 1.186,
+      "avg_inference_latency": 26.5346,
+      "benchmarks_tested": 2
+    },
+    "llama_static": {
+      "avg_safety_rate": 0.975,
+      "avg_asr": 0.025,
+      "avg_tsr": 0.5931,
+      "avg_init_latency": 0.0,
+      "avg_inference_latency": 9.0707,
+      "benchmarks_tested": 2
+    },
+    "llama_suicide": {
+      "avg_safety_rate": 0.975,
+      "avg_asr": 0.025,
+      "avg_tsr": 0.594,
+      "avg_init_latency": 0.8343,
+      "avg_inference_latency": 9.1656,
+      "benchmarks_tested": 2
+    },
+    "qwen_static": {
+      "avg_safety_rate": 0.955,
+      "avg_asr": 0.045,
+      "avg_tsr": 0.7001,
+      "avg_init_latency": 0.0,
+      "avg_inference_latency": 14.9663,
+      "benchmarks_tested": 2
+    },
+    "qwen_suicide": {
+      "avg_safety_rate": 0.945,
+      "avg_asr": 0.055,
+      "avg_tsr": 0.677,
+      "avg_init_latency": 0.5554,
+      "avg_inference_latency": 15.8617,
+      "benchmarks_tested": 2
+    },
+    "multimodal_static": {
+      "avg_safety_rate": 0.8975,
+      "avg_asr": 0.1025,
+      "avg_tsr": 0.6336,
+      "avg_init_latency": 0.0,
+      "avg_inference_latency": 18.7901,
+      "benchmarks_tested": 2
+    },
+    "multimodal_suicide": {
+      "avg_safety_rate": 0.9575,
+      "avg_asr": 0.0425,
+      "avg_tsr": 0.6516,
+      "avg_init_latency": 0.8967,
+      "avg_inference_latency": 15.8419,
+      "benchmarks_tested": 2
+    }
+  },
+  "overall": {
+    "total_benchmarks_run": 2,
+    "total_approaches": 8,
+    "avg_safety_rate": 0.9453,
+    "avg_asr": 0.0547,
+    "avg_tsr": 0.6567
+  }
+}

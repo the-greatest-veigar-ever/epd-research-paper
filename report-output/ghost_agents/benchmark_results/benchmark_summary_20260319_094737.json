@@ -1,0 +1,34 @@
+{
+  "per_benchmark": {
+    "SecBench": {
+      "strategy": "KNOWLEDGE",
+      "total_tests": 2,
+      "approaches": {
+        "phi_static": {
+          "safety_rate": 1.0,
+          "asr": 0.0,
+          "tsr": 0.5,
+          "avg_init_latency": 0.0,
+          "avg_inference_latency": 19.5794
+        }
+      }
+    }
+  },
+  "per_approach": {
+    "phi_static": {
+      "avg_safety_rate": 1.0,
+      "avg_asr": 0.0,
+      "avg_tsr": 0.5,
+      "avg_init_latency": 0.0,
+      "avg_inference_latency": 19.5794,
+      "benchmarks_tested": 1
+    }
+  },
+  "overall": {
+    "total_benchmarks_run": 1,
+    "total_approaches": 1,
+    "avg_safety_rate": 1.0,
+    "avg_asr": 0.0,
+    "avg_tsr": 0.5
+  }
+}
