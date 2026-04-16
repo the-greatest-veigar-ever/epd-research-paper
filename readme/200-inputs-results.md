@@ -20,6 +20,7 @@ This document contains the evaluation results for eight benchmark datasets, each
 | gemma3_4b_gemini_static | 95.04% | 4.96% | 96.03% | 0.434s | 6.148s |
 | gemma3_27b_gemini_static | 91.74% | 8.26% | 93.39% | 0.8s | 17.17s |
 | deepseek_r1_1.5b_ollama_static | 95.04% | 4.96% | 95.54% | 0.0s | 25.51s |
+| gemma3_4b_gemini_suicide (Partial: 20 tests) | 55.00% | 45.00% | 55.00% | 3.45s | 53.84s |
 
 ---
 
