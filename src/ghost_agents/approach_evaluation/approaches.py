@@ -612,7 +612,7 @@ class GptOss20bSuicideApproach(Approach):
 class DeepseekSuicideApproach(Approach):
     """Single deepseek-r1:1.5b model, loaded on demand and unloaded after each execution."""
 
-    name = "deepseek_1_5b_suicide"
+    name = "deepseek_r1_1_5b_suicide"
     models = ["deepseek-r1:1.5b"]
     suicide_mode = True
 
@@ -650,5 +650,5 @@ ALL_APPROACHES = {
     "gemma3_4b_gemini_suicide": GemmaSuicideApproach,
     "multimodal_suicide": MultimodalSuicideApproach,
     "gpt_oss_20b_suicide": GptOss20bSuicideApproach,
-    "deepseek_1_5b_suicide": DeepseekSuicideApproach,
+    "deepseek_r1_1_5b_suicide": DeepseekSuicideApproach,
 }
