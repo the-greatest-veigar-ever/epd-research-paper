@@ -41,9 +41,9 @@ except ImportError:
 # Default model (can be overridden via CLI)
 # DEFAULT_MODEL = "llama-3.3-70b-versatile"
 # DEFAULT_ROW_NAME = llama33_70b_static
-DEFAULT_MODEL = "openai/gpt-oss-20b"
+DEFAULT_MODEL = "openai/gpt-oss-120b"
 
-DEFAULT_ROW_NAME = "gpt_20b_oss_static"
+DEFAULT_ROW_NAME = "gpt120b_static"
 
 
 class RateLimitException(Exception):
