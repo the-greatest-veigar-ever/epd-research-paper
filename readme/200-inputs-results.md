@@ -21,6 +21,7 @@ This document contains the evaluation results for eight benchmark datasets, each
 | gemma3_27b_gemini_static | 91.74% | 8.26% | 93.39% | 0.8s | 17.17s |
 | deepseek_r1_1.5b_ollama_static | 95.04% | 4.96% | 95.54% | 0.0s | 25.51s |
 | gemma3_4b_gemini_suicide (Partial: 20 tests) | 55.00% | 45.00% | 55.00% | 3.45s | 53.84s |
+| deepseek_r1_1_5b_suicide | 96.69% | 3.31% | 97.19% | 0.65s | 9.80s |
 
 ---
 
@@ -42,6 +43,7 @@ This document contains the evaluation results for eight benchmark datasets, each
 | gemma3_4b_gemini_static | 98.00% | 2.00% | 98.00% | 0.386s | 6.584s |
 | gemma3_27b_gemini_static | 96.67% | 3.33% | 96.67% | 0.8s | 17.74s |
 | deepseek_r1_1.5b_ollama_static | 99.33% | 0.67% | 99.33% | 0.0s | 13.03s |
+| deepseek_r1_1_5b_suicide | 100.00% | 0.00% | 100.00% | 0.67s | 10.78s |
 
 ---
 
@@ -61,6 +63,7 @@ This document contains the evaluation results for eight benchmark datasets, each
 | gemma3_4b_gemini_static | 100.00% | 0.00% | 50.00% | 0.442s | 6.242s |
 | gemma3_27b_gemini_static | 100.00% | 0.00% | 50.00% | 0.66s | 20.26s |
 | deepseek_r1_1.5b_ollama_static | 98.50% | 1.50% | 49.25% | 0.0s | 16.95s |
+| deepseek_r1_1_5b_suicide | 100.00% | 0.00% | 50.00% | 0.66s | 9.44s |
 
 ---
 
@@ -80,6 +83,7 @@ This document contains the evaluation results for eight benchmark datasets, each
 | gemma3_4b_gemini_static | 95.50% | 4.50% | 62.80% | 0.4417s | 2.52s |
 | gemma3_27b_gemini_static | 98.00% | 2.00% | 78.20% | 0.37s | 8.46s |
 | deepseek_r1_1.5b_ollama_static | 90.50% | 9.50% | 81.30% | 0.0s | 11.90s |
+| deepseek_r1_1_5b_suicide | 83.00% | 17.00% | 67.65% | 0.66s | 9.37s |
 ---
 
 ### **CyberBench** (Strategy: ANALYSIS, 200 Tests)
@@ -102,6 +106,7 @@ This document contains the evaluation results for eight benchmark datasets, each
 | multimodal_suicide | 85.50% | 14.50% | 60.95% | 1.09s | 15.84s |
 | gemma_static | 100.00% | 0.00% | 69.70% | 0.0s | 23.63s |
 | gemma_suicide | 100.00% | 0.00% | 69.90% | 1.37s | 24.58s |
+| deepseek_r1_1_5b_suicide | 100.00% | 0.00% | 70.00% | 0.71s | 13.98s |
 
 ---
 
@@ -125,6 +130,7 @@ This document contains the evaluation results for eight benchmark datasets, each
 | multimodal_suicide | 92.50% | 7.50% | 78.50% | 0.93s | 6.52s |
 | gemma_static | 98.50% | 1.50% | 89.10% | 0.0s | 14.06s |
 | gemma_suicide | 98.50% | 1.50% | 88.05% | 1.35s | 15.51s |
+| deepseek_r1_1_5b_suicide | 84.50% | 15.50% | 77.15% | 0.66s | 7.81s |
 
 ---
 
@@ -148,6 +154,7 @@ This document contains the evaluation results for eight benchmark datasets, each
 | multimodal_suicide | 99.50% | 0.50% | 65.92% | 0.86s | 9.51s |
 | gemma_static | 100.00% | 0.00% | 84.25% | 0.0s | 24.38s |
 | gemma_suicide | 100.00% | 0.00% | 79.95% | 1.35s | 24.10s |
+| deepseek_r1_1_5b_suicide | 99.50% | 0.50% | 55.25% | 0.66s | 11.36s |
 
 ---
 
@@ -171,6 +178,7 @@ This document contains the evaluation results for eight benchmark datasets, each
 | multimodal_suicide | 92.00% | 8.00% | 64.40% | 0.94s | 22.17s |
 | gemma_static | 100.00% | 0.00% | 70.00% | 0.0s | 26.04s |
 | gemma_suicide | 100.00% | 0.00% | 70.00% | 1.36s | 26.18s |
+| deepseek_r1_1_5b_suicide | 100.00% | 0.00% | 70.00% | 0.66s | 13.47s |
 
 ---
 
@@ -194,6 +202,7 @@ This document contains the evaluation results for eight benchmark datasets, each
 | multimodal_suicide | 93.50% | 6.50% | 59.95% | 0.85s | 8.97s |
 | gemma_static | 100.00% | 0.00% | 70.00% | 0.0s | 17.40s |
 | gemma_suicide | 100.00% | 0.00% | 70.00% | 1.35s | 18.91s |
+| deepseek_r1_1_5b_suicide | 99.00% | 1.00% | 67.80% | 0.66s | 10.53s |
 
 ---
 
@@ -218,3 +227,4 @@ This document contains the evaluation results for eight benchmark datasets, each
 | gemma_static | 100.00% | 0.00% | 30.20% | 0.0s | 25.07s |
 | gemma_suicide | 100.00% | 0.00% | 29.75% | 1.36s | 25.55s |
 | gpt120b_static (Partial: 57 tests) | 100.00% | 0.00% | 26.36% | 0.44s | 21.93s |
+| deepseek_r1_1_5b_suicide | 100.00% | 0.00% | 16.92% | 0.66s | 13.85s |

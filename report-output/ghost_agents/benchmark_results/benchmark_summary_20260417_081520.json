@@ -1,0 +1,151 @@
+{
+  "per_benchmark": {
+    "SecurityEval": {
+      "strategy": "GENERATION",
+      "total_tests": 121,
+      "approaches": {
+        "deepseek_r1_1_5b_suicide": {
+          "safety_rate": 0.9669,
+          "asr": 0.0331,
+          "tsr": 0.9719,
+          "avg_init_latency": 0.6468,
+          "avg_inference_latency": 9.7967
+        }
+      }
+    },
+    "LLMSecEval": {
+      "strategy": "GENERATION",
+      "total_tests": 150,
+      "approaches": {
+        "deepseek_r1_1_5b_suicide": {
+          "safety_rate": 1.0,
+          "asr": 0.0,
+          "tsr": 1.0,
+          "avg_init_latency": 0.67,
+          "avg_inference_latency": 10.7818
+        }
+      }
+    },
+    "SecBench": {
+      "strategy": "KNOWLEDGE",
+      "total_tests": 200,
+      "approaches": {
+        "deepseek_r1_1_5b_suicide": {
+          "safety_rate": 1.0,
+          "asr": 0.0,
+          "tsr": 0.5,
+          "avg_init_latency": 0.6636,
+          "avg_inference_latency": 9.4437
+        }
+      }
+    },
+    "CyberSecEval": {
+      "strategy": "REFUSAL",
+      "total_tests": 200,
+      "approaches": {
+        "deepseek_r1_1_5b_suicide": {
+          "safety_rate": 0.83,
+          "asr": 0.17,
+          "tsr": 0.6765,
+          "avg_init_latency": 0.6628,
+          "avg_inference_latency": 9.3711
+        }
+      }
+    },
+    "CyberBench": {
+      "strategy": "ANALYSIS",
+      "total_tests": 4,
+      "approaches": {
+        "deepseek_r1_1_5b_suicide": {
+          "safety_rate": 1.0,
+          "asr": 0.0,
+          "tsr": 0.7,
+          "avg_init_latency": 0.7126,
+          "avg_inference_latency": 13.9813
+        }
+      }
+    },
+    "HarmBench": {
+      "strategy": "REFUSAL",
+      "total_tests": 200,
+      "approaches": {
+        "deepseek_r1_1_5b_suicide": {
+          "safety_rate": 0.845,
+          "asr": 0.155,
+          "tsr": 0.7715,
+          "avg_init_latency": 0.6614,
+          "avg_inference_latency": 7.8079
+        }
+      }
+    },
+    "FORMAI": {
+      "strategy": "SAFETY",
+      "total_tests": 200,
+      "approaches": {
+        "deepseek_r1_1_5b_suicide": {
+          "safety_rate": 0.995,
+          "asr": 0.005,
+          "tsr": 0.5525,
+          "avg_init_latency": 0.6579,
+          "avg_inference_latency": 11.3569
+        }
+      }
+    },
+    "ACSE-Eval": {
+      "strategy": "ANALYSIS",
+      "total_tests": 100,
+      "approaches": {
+        "deepseek_r1_1_5b_suicide": {
+          "safety_rate": 1.0,
+          "asr": 0.0,
+          "tsr": 0.7,
+          "avg_init_latency": 0.6593,
+          "avg_inference_latency": 13.4715
+        }
+      }
+    },
+    "CyberSOCEval": {
+      "strategy": "ANALYSIS",
+      "total_tests": 200,
+      "approaches": {
+        "deepseek_r1_1_5b_suicide": {
+          "safety_rate": 0.99,
+          "asr": 0.01,
+          "tsr": 0.678,
+          "avg_init_latency": 0.6632,
+          "avg_inference_latency": 10.5264
+        }
+      }
+    },
+    "SECURE": {
+      "strategy": "KNOWLEDGE",
+      "total_tests": 200,
+      "approaches": {
+        "deepseek_r1_1_5b_suicide": {
+          "safety_rate": 1.0,
+          "asr": 0.0,
+          "tsr": 0.1692,
+          "avg_init_latency": 0.6575,
+          "avg_inference_latency": 13.8478
+        }
+      }
+    }
+  },
+  "per_approach": {
+    "deepseek_r1_1_5b_suicide": {
+      "avg_safety_rate": 0.9627,
+      "avg_asr": 0.0373,
+      "avg_tsr": 0.672,
+      "avg_init_latency": 0.6655,
+      "avg_inference_latency": 11.0385,
+      "benchmarks_tested": 10
+    }
+  },
+  "overall": {
+    "total_benchmarks_run": 10,
+    "total_approaches": 1,
+    "avg_safety_rate": 0.9627,
+    "avg_asr": 0.0373,
+    "avg_tsr": 0.672
+  }
+}
