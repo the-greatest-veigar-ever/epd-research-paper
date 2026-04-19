@@ -1,0 +1,125 @@
+{
+  "per_benchmark": {
+    "SecBench": {
+      "strategy": "KNOWLEDGE",
+      "total_tests": 200,
+      "approaches": {
+        "gemma3_4b_gemini_suicide": {
+          "safety_rate": 0.79,
+          "asr": 0.21,
+          "tsr": 0.395,
+          "avg_init_latency": 3.3738,
+          "avg_inference_latency": 53.364
+        }
+      }
+    },
+    "CyberSecEval": {
+      "strategy": "REFUSAL",
+      "total_tests": 200,
+      "approaches": {
+        "gemma3_4b_gemini_suicide": {
+          "safety_rate": 0.85,
+          "asr": 0.15,
+          "tsr": 0.661,
+          "avg_init_latency": 3.3763,
+          "avg_inference_latency": 26.6936
+        }
+      }
+    },
+    "CyberBench": {
+      "strategy": "ANALYSIS",
+      "total_tests": 200,
+      "approaches": {
+        "gemma3_4b_gemini_suicide": {
+          "safety_rate": 0.135,
+          "asr": 0.865,
+          "tsr": 0.0935,
+          "avg_init_latency": 3.3964,
+          "avg_inference_latency": 60.2878
+        }
+      }
+    },
+    "HarmBench": {
+      "strategy": "REFUSAL",
+      "total_tests": 200,
+      "approaches": {
+        "gemma3_4b_gemini_suicide": {
+          "safety_rate": 0.835,
+          "asr": 0.165,
+          "tsr": 0.749,
+          "avg_init_latency": 3.4117,
+          "avg_inference_latency": 43.4315
+        }
+      }
+    },
+    "FORMAI": {
+      "strategy": "SAFETY",
+      "total_tests": 200,
+      "approaches": {
+        "gemma3_4b_gemini_suicide": {
+          "safety_rate": 0.26,
+          "asr": 0.74,
+          "tsr": 0.154,
+          "avg_init_latency": 3.4514,
+          "avg_inference_latency": 59.9118
+        }
+      }
+    },
+    "ACSE-Eval": {
+      "strategy": "ANALYSIS",
+      "total_tests": 100,
+      "approaches": {
+        "gemma3_4b_gemini_suicide": {
+          "safety_rate": 0.0,
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 3.5313,
+          "avg_inference_latency": 62.062
+        }
+      }
+    },
+    "CyberSOCEval": {
+      "strategy": "ANALYSIS",
+      "total_tests": 200,
+      "approaches": {
+        "gemma3_4b_gemini_suicide": {
+          "safety_rate": 0.505,
+          "asr": 0.495,
+          "tsr": 0.3535,
+          "avg_init_latency": 3.4502,
+          "avg_inference_latency": 58.4842
+        }
+      }
+    },
+    "SECURE": {
+      "strategy": "KNOWLEDGE",
+      "total_tests": 200,
+      "approaches": {
+        "gemma3_4b_gemini_suicide": {
+          "safety_rate": 0.065,
+          "asr": 0.935,
+          "tsr": 0.012,
+          "avg_init_latency": 3.5871,
+          "avg_inference_latency": 60.2857
+        }
+      }
+    }
+  },
+  "per_approach": {
+    "gemma3_4b_gemini_suicide": {
+      "avg_safety_rate": 0.43,
+      "avg_asr": 0.57,
+      "avg_tsr": 0.3023,
+      "avg_init_latency": 3.4473,
+      "avg_inference_latency": 53.0651,
+      "benchmarks_tested": 8
+    }
+  },
+  "overall": {
+    "total_benchmarks_run": 8,
+    "total_approaches": 1,
+    "avg_safety_rate": 0.43,
+    "avg_asr": 0.57,
+    "avg_tsr": 0.3023
+  }
+}
