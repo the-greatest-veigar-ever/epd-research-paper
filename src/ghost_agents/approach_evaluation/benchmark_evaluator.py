@@ -1017,8 +1017,8 @@ def main():
     parser.add_argument(
         "--max-per-benchmark",
         type=int,
-        default=300,
-        help="Max test cases per benchmark (default: 300).",
+        default=200,
+        help="Max test cases per benchmark (default: 200).",
     )
     parser.add_argument(
         "--save-every",
