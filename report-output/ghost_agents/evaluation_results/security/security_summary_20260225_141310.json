@@ -1,0 +1,192 @@
+{
+  "evaluation_type": "security_comparison_summary",
+  "timestamp": "2026-02-25T14:13:10.632797",
+  "frameworks_tested": [
+    "harmbench",
+    "cyberseceval",
+    "jailbreakbench"
+  ],
+  "framework_citations": {
+    "harmbench": "Mazeika et al., \"HarmBench: A Standardized Evaluation Framework,\" ICML 2024",
+    "cyberseceval": "Bhatt et al., \"Purple Llama CyberSecEval,\" IEEE S&P Workshop 2024",
+    "jailbreakbench": "Chao et al., \"JailbreakBench: An Open Robustness Benchmark,\" NeurIPS 2024"
+  },
+  "comparison": {
+    "phi_baseline": {
+      "approach": "phi_baseline",
+      "models": [
+        "phi3:mini"
+      ],
+      "suicide_mode": false,
+      "aggregate_security_score": 0.7229196473244834,
+      "per_framework": {
+        "harmbench": {
+          "metric_name": "Harmful Request Rejection Rate",
+          "resistance_rate": 0.8716814159292036,
+          "weighted_score": 0.9203539823008849,
+          "total_tests": 226,
+          "valid_tests": 226,
+          "connection_failures": 0,
+          "safe_responses": 197,
+          "partial_compliance": 22,
+          "full_compliance": 7
+        },
+        "cyberseceval": {
+          "metric_name": "Prompt Injection Resistance Rate",
+          "resistance_rate": 0.5042735042735043,
+          "weighted_score": 0.5042735042735043,
+          "total_tests": 235,
+          "valid_tests": 234,
+          "connection_failures": 1,
+          "safe_responses": 118,
+          "partial_compliance": 0,
+          "full_compliance": 116
+        },
+        "jailbreakbench": {
+          "metric_name": "Jailbreak Resistance Rate",
+          "resistance_rate": 0.7417840375586855,
+          "weighted_score": 0.744131455399061,
+          "total_tests": 213,
+          "valid_tests": 213,
+          "connection_failures": 0,
+          "safe_responses": 158,
+          "partial_compliance": 1,
+          "full_compliance": 54
+        }
+      }
+    },
+    "phi_suicide": {
+      "approach": "phi_suicide",
+      "models": [
+        "phi3:mini"
+      ],
+      "suicide_mode": true,
+      "aggregate_security_score": 0.7279180277802753,
+      "per_framework": {
+        "harmbench": {
+          "metric_name": "Harmful Request Rejection Rate",
+          "resistance_rate": 0.8761061946902655,
+          "weighted_score": 0.922566371681416,
+          "total_tests": 226,
+          "valid_tests": 226,
+          "connection_failures": 0,
+          "safe_responses": 198,
+          "partial_compliance": 21,
+          "full_compliance": 7
+        },
+        "cyberseceval": {
+          "metric_name": "Prompt Injection Resistance Rate",
+          "resistance_rate": 0.5512820512820513,
+          "weighted_score": 0.5512820512820513,
+          "total_tests": 235,
+          "valid_tests": 234,
+          "connection_failures": 1,
+          "safe_responses": 129,
+          "partial_compliance": 0,
+          "full_compliance": 105
+        },
+        "jailbreakbench": {
+          "metric_name": "Jailbreak Resistance Rate",
+          "resistance_rate": 0.7075471698113207,
+          "weighted_score": 0.7099056603773585,
+          "total_tests": 213,
+          "valid_tests": 212,
+          "connection_failures": 1,
+          "safe_responses": 150,
+          "partial_compliance": 1,
+          "full_compliance": 61
+        }
+      }
+    },
+    "multimodal_static": {
+      "approach": "multimodal_static",
+      "models": [
+        "phi3:mini",
+        "llama3.2:3b",
+        "gemma2:2b"
+      ],
+      "suicide_mode": false,
+      "aggregate_security_score": 0.7518918079001987,
+      "per_framework": {
+        "harmbench": {
+          "metric_name": "Harmful Request Rejection Rate",
+          "resistance_rate": 0.9288888888888889,
+          "weighted_score": 0.9555555555555556,
+          "total_tests": 226,
+          "valid_tests": 225,
+          "connection_failures": 1,
+          "safe_responses": 209,
+          "partial_compliance": 12,
+          "full_compliance": 4
+        },
+        "cyberseceval": {
+          "metric_name": "Prompt Injection Resistance Rate",
+          "resistance_rate": 0.6170212765957447,
+          "weighted_score": 0.6170212765957447,
+          "total_tests": 235,
+          "valid_tests": 235,
+          "connection_failures": 0,
+          "safe_responses": 145,
+          "partial_compliance": 0,
+          "full_compliance": 90
+        },
+        "jailbreakbench": {
+          "metric_name": "Jailbreak Resistance Rate",
+          "resistance_rate": 0.6713615023474179,
+          "weighted_score": 0.6830985915492958,
+          "total_tests": 213,
+          "valid_tests": 213,
+          "connection_failures": 0,
+          "safe_responses": 143,
+          "partial_compliance": 5,
+          "full_compliance": 65
+        }
+      }
+    },
+    "multimodal_suicide": {
+      "approach": "multimodal_suicide",
+      "models": [
+        "phi3:mini",
+        "llama3.2:3b",
+        "gemma2:2b"
+      ],
+      "suicide_mode": true,
+      "aggregate_security_score": 0.7429228291357383,
+      "per_framework": {
+        "harmbench": {
+          "metric_name": "Harmful Request Rejection Rate",
+          "resistance_rate": 0.911504424778761,
+          "weighted_score": 0.9358407079646017,
+          "total_tests": 226,
+          "valid_tests": 226,
+          "connection_failures": 0,
+          "safe_responses": 206,
+          "partial_compliance": 11,
+          "full_compliance": 9
+        },
+        "cyberseceval": {
+          "metric_name": "Prompt Injection Resistance Rate",
+          "resistance_rate": 0.5957446808510638,
+          "weighted_score": 0.5957446808510638,
+          "total_tests": 235,
+          "valid_tests": 235,
+          "connection_failures": 0,
+          "safe_responses": 140,
+          "partial_compliance": 0,
+          "full_compliance": 95
+        },
+        "jailbreakbench": {
+          "metric_name": "Jailbreak Resistance Rate",
+          "resistance_rate": 0.6854460093896714,
+          "weighted_score": 0.6971830985915493,
+          "total_tests": 213,
+          "valid_tests": 213,
+          "connection_failures": 0,
+          "safe_responses": 146,
+          "partial_compliance": 5,
+          "full_compliance": 62
+        }
+      }
+    }
+  }
+}

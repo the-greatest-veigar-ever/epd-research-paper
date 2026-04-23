@@ -1,171 +1,71 @@
-import json
 import os
-import time
-import numpy as np
-from typing import List, Dict
-from src.ghost_agents.agent import GhostAgentFactory
-from tqdm import tqdm
-from sentence_transformers import SentenceTransformer
-from Levenshtein import distance as levenshtein_distance
-from sklearn.metrics.pairwise import cosine_similarity
+import argparse
+from src.ghost_agents.approach_evaluation.evaluator import ApproachEvaluator
+from src.ghost_agents.approach_evaluation.security_evaluator import SecurityEvaluator
 
-# Initialize Standard SBERT Model globally
-sbert_model = SentenceTransformer('all-MiniLM-L6-v2')
+# The new dataset we generated
+DEFAULT_DATASET = "ai/data/ghost_agents/squad_c_mixed_dataset_15pct.json"
+OUTPUT_DIR_BASE = "report-output/ghost_agents/evaluation_results"
 
-# CONFIG
-REPORT_OUTPUT_PATH = "report-output/ghost_agents/evaluation_results.json"
-DATASET_PATH = "ai/data/ghost_agents/combined_scenarios.jsonl"
-MODELS_TO_TEST = ["llama3.2:3b"] 
+def run_comprehensive_evaluation(limit=None):
+    print("=== SQUAD C COMPREHENSIVE EVALUATION (PERFORMANCE & SECURITY) ===")
+    
+    # We run the 4 requested modes:
+    # 1 model static
+    # 1 model suicide
+    # 3 models static
+    # 3 models suicide
+    approaches = [
+        "phi_baseline",       # 1 model static
+        "phi_suicide",        # 1 model suicide
+        "multimodal_static",  # 3 models static
+        "multimodal_suicide"  # 3 models suicide
+    ]
+    
+    # =========================================================================
+    # PART 1: PERFORMANCE & EFFICIENCY EVALUATION
+    # =========================================================================
+    print("\n\n" + "="*80)
+    print("  PHASE 1: PERFORMANCE & EFFICIENCY")
+    print("  (Init Time, Processing Time, ASR, TSR, PASS@1)")
+    print("="*80)
+    
+    perf_evaluator = ApproachEvaluator(
+        dataset_path=DEFAULT_DATASET,
+        limit=limit,
+        output_dir=os.path.join(OUTPUT_DIR_BASE, "performance")
+    )
+    
+    # The ApproachEvaluator already loops through approaches and saves 
+    # results incrementally (and handles Ctrl+C partial saves).
+    perf_results = perf_evaluator.run_all(approach_names=approaches)
+    
+    # =========================================================================
+    # PART 2: SECURITY RESILIENCE EVALUATION
+    # =========================================================================
+    print("\n\n" + "="*80)
+    print("  PHASE 2: SECURITY RESILIENCE")
+    print("  (Prompt Injection, Harmful Rejection, Jailbreak, Context Isolation)")
+    print("="*80)
+    
+    # The SecurityEvaluator specifically filters for records where is_injection=True
+    # and calculates the resistance rates.
+    sec_evaluator = SecurityEvaluator(
+        dataset_path=DEFAULT_DATASET,
+        limit=limit,
+        output_dir=os.path.join(OUTPUT_DIR_BASE, "security")
+    )
+    
+    sec_results = sec_evaluator.run_all(approach_names=approaches)
+    
+    print("\n\n=== COMPREHENSIVE EVALUATION COMPLETE ===")
+    print(f"Metrics saved to: {OUTPUT_DIR_BASE}/")
+    print("Review the _summary.json files in the performance/ and security/ subdirectories.")
 
-def run_evaluation():
-    print("=== STARTING GHOST AGENT EVALUATION (EXPANDED DATASET) ===")
-    
-    # Load Scenarios
-    all_scenarios = []
-    if os.path.exists(DATASET_PATH):
-        with open(DATASET_PATH, 'r') as f:
-            for line in f:
-                if line.strip():
-                    all_scenarios.append(json.loads(line))
-        print(f"Loaded {len(all_scenarios)} scenarios from {DATASET_PATH}")
-    else:
-        print(f"Dataset not found at {DATASET_PATH}. Falling back to default.")
-        # Fallback Scenarios
-        all_scenarios = [
-            {"prompt": "Remediate security threat immediately", "source": "default"}
-        ] * 5
-
-    # Run ALL Scenarios
-    evaluation_set = all_scenarios
-        
-    print(f"Selected {len(evaluation_set)} scenarios for evaluation (Full Run).")
-    
-    results = []
-    
-    # Analysis Loop
-    # Analysis Loop
-    print("\n--- Phase 1: Polymorphism & Inference Test (With Semantic Metrics) ---")
-    
-    # Results containers
-    polymorphism_scores = [] # SBERT Cosine Similarity
-    edit_distances = []     # Levenshtein
-    valid_executions = 0
-    
-    for scenario in tqdm(evaluation_set):
-        # The 'prompt' in our dataset is the task/instruction
-        user_intent = scenario.get("prompt", "Execute security task")
-        
-        try:
-            # 1. GENERATION (Polymorphism)
-            agent = GhostAgentFactory.create_agent(user_intent)
-            mutated_prompt = agent.prompt
-            
-            # --- ACADEMIC METRICS CALCULATION ---
-            
-            # A. Semantic Similarity (Do they mean the same thing?)
-            embeddings = sbert_model.encode([user_intent, mutated_prompt])
-            sem_sim = cosine_similarity([embeddings[0]], [embeddings[1]])[0][0]
-            polymorphism_scores.append(sem_sim)
-            
-            # B. Levenshtein Distance (How much did the text change?)
-            lev_dist = levenshtein_distance(user_intent, mutated_prompt)
-            edit_distances.append(lev_dist)
-                
-            # 2. INFERENCE EXECUTION
-            plan = {
-                "action": scenario.get("attack_type", "Mitigate Threat"),
-                "target": scenario.get("tool", "System-ID-1234")
-            }
-            
-            start_t = time.time()
-            agent.execute_remediation(plan)
-            duration = time.time() - start_t
-            
-            valid_executions += 1
-                
-            results.append({
-                "scenario_source": scenario.get("source"),
-                "agent_context": scenario.get("agent_context", "unknown"),
-                "user_intent": user_intent[:50] + "...",
-                "mutated_prompt_len": len(mutated_prompt),
-                "semantic_similarity": float(sem_sim),
-                "levenshtein_distance": int(lev_dist),
-                "inference_duration": duration
-            })
-            
-        except Exception as e:
-            results.append({
-                "scenario_source": scenario.get("source"),
-                "error": str(e),
-                "status": "failed"
-            })
-
-    print("\n--- Phase 2: Results Analysis ---")
-    
-    avg_semantic = np.mean(polymorphism_scores) if polymorphism_scores else 0
-    avg_levenshtein = np.mean(edit_distances) if edit_distances else 0
-    success_rate = valid_executions / len(evaluation_set) if evaluation_set else 0
-    
-    print(f"Execution Success: {success_rate*100:.2f}%")
-    print(f"Avg Semantic Similarity (Intent Preservation): {avg_semantic:.4f} (Target > 0.7)")
-    print(f"Avg Levenshtein Distance (Obfuscation Degree): {avg_levenshtein:.2f} (Target > 20)")
-
-    # --- Group by Role ---
-    role_stats = {}
-    for res in results:
-        role = res.get("agent_context", "unknown")
-        if role not in role_stats:
-            role_stats[role] = {"count": 0, "success": 0}
-        role_stats[role]["count"] += 1
-        # In this simulation, if it didn't crash, it counts as a valid execution/success
-        # A more robust check would verify the output command, but for now 'valid_executions' tracks crashes
-        if "error" not in res:
-            role_stats[role]["success"] += 1
-            
-    print("\n--- Role Performance Breakdown ---")
-    print(f"{'Role':<30} | {'Success Rate':<15} | {'Samples':<10}")
-    print("-" * 60)
-    for role, stats in role_stats.items():
-        rate = (stats["success"] / stats["count"]) * 100 if stats["count"] > 0 else 0
-        print(f"{role:<30} | {rate:6.2f}%        | {stats['count']:<10}")
-
-
-    # Construct Final Report
-    final_report = {
-        "summary": {
-            "total_scenarios": len(evaluation_set),
-            "execution_success_rate": success_rate,
-            "metrics": {
-                "semantic_similarity_avg": float(avg_semantic),
-                "levenshtein_distance_avg": float(avg_levenshtein)
-            }
-        },
-        "detailed_results": results
-    }
-
-    # Save Results
-    os.makedirs(os.path.dirname(REPORT_OUTPUT_PATH), exist_ok=True)
-    
-    with open(REPORT_OUTPUT_PATH, "w") as f:
-        json.dump(final_report, f, indent=4)
-        
-    print(f"Evaluation Complete. Report saved to {REPORT_OUTPUT_PATH}")
-
-    
-    # Save Report
-    report = {
-        "timestamp": time.time(),
-        "total_scenarios": len(evaluation_set),
-        "dataset_source": DATASET_PATH,
-        "polymorphism_rate": success_rate,
-        "details": results
-    }
-    
-    os.makedirs(os.path.dirname(REPORT_OUTPUT_PATH), exist_ok=True)
-    with open(REPORT_OUTPUT_PATH, "w") as f:
-        json.dump(report, f, indent=2)
-        
-    print(f"\nEvaluation Complete. Report saved to {REPORT_OUTPUT_PATH}")
 
 if __name__ == "__main__":
-    run_evaluation()
+    parser = argparse.ArgumentParser(description="Run Squad C Comprehensive Evaluation")
+    parser.add_argument("--limit", type=int, default=None, help="Max plans to evaluate for quick testing")
+    args = parser.parse_args()
+    
+    run_comprehensive_evaluation(limit=args.limit)

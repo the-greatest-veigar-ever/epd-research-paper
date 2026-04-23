@@ -1,0 +1,69 @@
+{
+  "per_benchmark": {
+    "SecurityEval": {
+      "strategy": "GENERATION",
+      "total_tests": 121,
+      "approaches": {
+        "gemma_static": {
+          "safety_rate": 0.9421,
+          "asr": 0.0579,
+          "tsr": 0.9537,
+          "avg_init_latency": 0.0,
+          "avg_inference_latency": 20.2786
+        },
+        "gemma_suicide": {
+          "safety_rate": 0.9091,
+          "asr": 0.0909,
+          "tsr": 0.924,
+          "avg_init_latency": 1.3386,
+          "avg_inference_latency": 19.6955
+        }
+      }
+    },
+    "LLMSecEval": {
+      "strategy": "GENERATION",
+      "total_tests": 150,
+      "approaches": {
+        "gemma_static": {
+          "safety_rate": 0.9933,
+          "asr": 0.0067,
+          "tsr": 0.9933,
+          "avg_init_latency": 0.0,
+          "avg_inference_latency": 23.4908
+        },
+        "gemma_suicide": {
+          "safety_rate": 0.9933,
+          "asr": 0.0067,
+          "tsr": 0.9933,
+          "avg_init_latency": 1.3377,
+          "avg_inference_latency": 23.125
+        }
+      }
+    }
+  },
+  "per_approach": {
+    "gemma_static": {
+      "avg_safety_rate": 0.9677,
+      "avg_asr": 0.0323,
+      "avg_tsr": 0.9735,
+      "avg_init_latency": 0.0,
+      "avg_inference_latency": 21.8847,
+      "benchmarks_tested": 2
+    },
+    "gemma_suicide": {
+      "avg_safety_rate": 0.9512,
+      "avg_asr": 0.0488,
+      "avg_tsr": 0.9587,
+      "avg_init_latency": 1.3381,
+      "avg_inference_latency": 21.4102,
+      "benchmarks_tested": 2
+    }
+  },
+  "overall": {
+    "total_benchmarks_run": 2,
+    "total_approaches": 2,
+    "avg_safety_rate": 0.9595,
+    "avg_asr": 0.0406,
+    "avg_tsr": 0.9661
+  }
+}

@@ -1,0 +1,224 @@
+{
+  "evaluation_type": "approach_comparison",
+  "timestamp": "2026-02-24T23:49:46.254856",
+  "dataset": "ai/data/ghost_agents/squad_c_mixed_dataset_15pct.json",
+  "total_plans_in_dataset": 2,
+  "interrupted": false,
+  "limit": 2,
+  "approaches": {
+    "phi_baseline": {
+      "approach": "phi_baseline",
+      "models": [
+        "phi3:mini"
+      ],
+      "suicide_mode": false,
+      "total_plans_in_dataset": 2,
+      "plans_processed": 2,
+      "interrupted": false,
+      "initialization_time": 1.799986333004199,
+      "per_plan_init_time_avg": 0.0,
+      "per_plan_init_time_total": 0.0,
+      "processing_time_avg": 1.0727003534848336,
+      "processing_time_total": 2.1454007069696672,
+      "asr": 1.0,
+      "tsr": 1.0,
+      "pass_at_1": 1.0,
+      "tool_correctness_rate": 1.0,
+      "model_distribution": {
+        "phi3:mini": 2
+      }
+    },
+    "phi_suicide": {
+      "approach": "phi_suicide",
+      "models": [
+        "phi3:mini"
+      ],
+      "suicide_mode": true,
+      "total_plans_in_dataset": 2,
+      "plans_processed": 2,
+      "interrupted": false,
+      "initialization_time": 0.0,
+      "per_plan_init_time_avg": 0.37562112498562783,
+      "per_plan_init_time_total": 0.7512422499712557,
+      "processing_time_avg": 1.2235000834916718,
+      "processing_time_total": 2.4470001669833437,
+      "asr": 1.0,
+      "tsr": 1.0,
+      "pass_at_1": 1.0,
+      "tool_correctness_rate": 1.0,
+      "model_distribution": {
+        "phi3:mini": 2
+      }
+    },
+    "multimodal_static": {
+      "approach": "multimodal_static",
+      "models": [
+        "phi3:mini",
+        "llama3.2:3b",
+        "gemma2:2b"
+      ],
+      "suicide_mode": false,
+      "total_plans_in_dataset": 2,
+      "plans_processed": 2,
+      "interrupted": false,
+      "initialization_time": 3.9448093329556286,
+      "per_plan_init_time_avg": 0.0,
+      "per_plan_init_time_total": 0.0,
+      "processing_time_avg": 0.82920693748747,
+      "processing_time_total": 1.65841387497494,
+      "asr": 1.0,
+      "tsr": 1.0,
+      "pass_at_1": 1.0,
+      "tool_correctness_rate": 1.0,
+      "model_distribution": {
+        "llama3.2:3b": 2
+      }
+    },
+    "multimodal_suicide": {
+      "approach": "multimodal_suicide",
+      "models": [
+        "phi3:mini",
+        "llama3.2:3b",
+        "gemma2:2b"
+      ],
+      "suicide_mode": true,
+      "total_plans_in_dataset": 2,
+      "plans_processed": 2,
+      "interrupted": false,
+      "initialization_time": 0.0,
+      "per_plan_init_time_avg": 0.7258456460258458,
+      "per_plan_init_time_total": 1.4516912920516916,
+      "processing_time_avg": 0.8273234794905875,
+      "processing_time_total": 1.654646958981175,
+      "asr": 1.0,
+      "tsr": 1.0,
+      "pass_at_1": 1.0,
+      "tool_correctness_rate": 1.0,
+      "model_distribution": {
+        "llama3.2:3b": 2
+      }
+    }
+  },
+  "detailed_results": {
+    "phi_baseline": [
+      {
+        "plan_action": "deny",
+        "plan_target": "internal:6.0/port-80.0->internal",
+        "plan_score": 0.9999710321426392,
+        "model_used": "phi3:mini",
+        "status": "success",
+        "tool_used": "aws",
+        "command": "```bash\naws ec2 create-egress-filter --service PORTS \\\n--direction INGRESS \\\n--protocol TCP \\\n--cidr",
+        "init_time": 0.0,
+        "processing_time": 1.5307694159564562,
+        "is_success": true,
+        "is_tool_correct": true,
+        "error": null
+      },
+      {
+        "plan_action": "deny",
+        "plan_target": "internal:6.0/port-8080.0->internal",
+        "plan_score": 0.9999970197677612,
+        "model_used": "phi3:mini",
+        "status": "success",
+        "tool_used": "aws",
+        "command": "```bash\naws security hub evaluate --cli-input-json file://path_to_your_policy_definition.json -o tex",
+        "init_time": 0.0,
+        "processing_time": 0.614631291013211,
+        "is_success": true,
+        "is_tool_correct": true,
+        "error": null
+      }
+    ],
+    "phi_suicide": [
+      {
+        "plan_action": "deny",
+        "plan_target": "internal:6.0/port-80.0->internal",
+        "plan_score": 0.9999710321426392,
+        "model_used": "phi3:mini",
+        "status": "success",
+        "tool_used": "aws",
+        "command": "```bash\naws security hub evaluate --scope Organization --query 'findings[?contains(message,'deny')].",
+        "init_time": 0.3850664169876836,
+        "processing_time": 1.169151125010103,
+        "is_success": true,
+        "is_tool_correct": true,
+        "error": null
+      },
+      {
+        "plan_action": "deny",
+        "plan_target": "internal:6.0/port-8080.0->internal",
+        "plan_score": 0.9999970197677612,
+        "model_used": "phi3:mini",
+        "status": "success",
+        "tool_used": "aws",
+        "command": "```shell\naws wafv2 block *--scope=REGIONAL --action=BLOCK --ips='*' --change-method=CLOUDFRONT_ORIGI",
+        "init_time": 0.36617583298357204,
+        "processing_time": 1.2778490419732407,
+        "is_success": true,
+        "is_tool_correct": true,
+        "error": null
+      }
+    ],
+    "multimodal_static": [
+      {
+        "plan_action": "deny",
+        "plan_target": "internal:6.0/port-80.0->internal",
+        "plan_score": 0.9999710321426392,
+        "model_used": "llama3.2:3b",
+        "status": "success",
+        "tool_used": "aws",
+        "command": "aws ec2 authorize-security-group-ingress --group-id <group_id> --protocol tcp --port 80 --cidr 0.0.0",
+        "init_time": 0.0,
+        "processing_time": 0.8871144999866374,
+        "is_success": true,
+        "is_tool_correct": true,
+        "error": null
+      },
+      {
+        "plan_action": "deny",
+        "plan_target": "internal:6.0/port-8080.0->internal",
+        "plan_score": 0.9999970197677612,
+        "model_used": "llama3.2:3b",
+        "status": "success",
+        "tool_used": "aws",
+        "command": "aws ec2 authorize-security-group-ingress --group-id <GROUP_ID> --protocol tcp --port 8080 --cidr 0.0",
+        "init_time": 0.0,
+        "processing_time": 0.7712993749883026,
+        "is_success": true,
+        "is_tool_correct": true,
+        "error": null
+      }
+    ],
+    "multimodal_suicide": [
+      {
+        "plan_action": "deny",
+        "plan_target": "internal:6.0/port-80.0->internal",
+        "plan_score": 0.9999710321426392,
+        "model_used": "llama3.2:3b",
+        "status": "success",
+        "tool_used": "aws",
+        "command": "aws ec2 authorize-security-group-ingress --group-id <group_id> --protocol tcp --port 80 --cidr-block",
+        "init_time": 0.846276750031393,
+        "processing_time": 0.836148083966691,
+        "is_success": true,
+        "is_tool_correct": true,
+        "error": null
+      },
+      {
+        "plan_action": "deny",
+        "plan_target": "internal:6.0/port-8080.0->internal",
+        "plan_score": 0.9999970197677612,
+        "model_used": "llama3.2:3b",
+        "status": "success",
+        "tool_used": "`aws",
+        "command": "`aws ec2 authorize-security-group-ingress --group-id <group_id> --protocol tcp --port 8080 --cidr-bl",
+        "init_time": 0.6054145420202985,
+        "processing_time": 0.8184988750144839,
+        "is_success": true,
+        "is_tool_correct": true,
+        "error": null
+      }
+    ]
+  }
+}

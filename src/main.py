@@ -7,8 +7,8 @@ import uuid
 import argparse
 from tqdm import tqdm
 from src.ghost_agents.agent import GhostAgent, GhostAgentFactory
-from src.watchers.agent import DetectionAgent
-from src.brain.agent import IntelligenceAgent
+# from src.watchers.agent import DetectionAgent
+# from src.brain.agent import IntelligenceAgent
 
 # CONFIG
 DATA_PATH = "ai/data/watchers/cse-cic-ids2018/Processed Traffic Data for ML Algorithms/Wednesday-14-02-2018_TrafficForML_CICFlowMeter.csv"
@@ -79,13 +79,13 @@ def run_autonomous_mode(test_mode=False, custom_limit=None):
     limit_rows = custom_limit if custom_limit else (1000 if test_mode else MAX_ROWS)
     
     print("Initializing Squads...")
-    watcher = DetectionAgent("Watcher-Auto")
-    brain = IntelligenceAgent("Brain-Auto")
+    # watcher = DetectionAgent("Watcher-Auto")
+    # brain = IntelligenceAgent("Brain-Auto")
     reporter = ReportGenerator()
     
-    if not watcher.is_trained:
-        print("Watcher model missing. Run training first.")
-        return
+    # if not watcher.is_trained:
+    #     print("Watcher model missing. Run training first.")
+    #     return
 
     # 2. Stream Data
     print(f"Loading Traffic Stream: {DATA_PATH}")
@@ -109,9 +109,21 @@ def run_autonomous_mode(test_mode=False, custom_limit=None):
             # Clean batch columns
             batch_df.columns = batch_df.columns.str.strip()
             
-            # --- SQUAD A: WATCHER SCAN ---
-            alerts = watcher.monitor_traffic_batch(batch_df)
+            # --- SQUAD A & B DISABLED ---
+            # To test Squad C without A and B, we will inject a simulated test anomaly.
+            # alerts = watcher.monitor_traffic_batch(batch_df)
             
+            # Create a single simulated alert per batch for testing Squad C (if in test mode)
+            alerts = []
+            if test_mode and reporter.stats["total_flows"] == 0:
+                alerts.append({
+                    "ai_score": 0.99,
+                    "details": {
+                        "event_name": "DDoS_ATTACK",
+                        "target": "192.168.1.100"
+                    }
+                })
+
             if alerts:
                 reporter.stats["anomalies"] += len(alerts)
                 
@@ -123,12 +135,19 @@ def run_autonomous_mode(test_mode=False, custom_limit=None):
                     # Measure Latency
                     t_brain_start = time.time()
                     
-                    # --- SQUAD B: BRAIN ANALYSIS ---
-                    plan = brain.analyze_alert(alert)
+                    # --- SQUAD B: BRAIN ANALYSIS (DISABLED) ---
+                    # plan = brain.analyze_alert(alert)
+                    
+                    # Simulated plan for Squad C to execute
+                    plan = {
+                        "action": "BLOCK_IP",
+                        "target": alert["details"].get("target", "unknown"),
+                        "threat_type": alert["details"].get("event_name", "ANOMALY")
+                    }
                     
                     t_brain_end = time.time()
                     brain_latency = t_brain_end - t_brain_start
-                    print(f"    [TIMING] Brain Analysis: {brain_latency:.2f}s")
+                    # print(f"    [TIMING] Brain Analysis: {brain_latency:.2f}s")
                     
                     mitigation_cmd = "Pending Review"
                     mitigation_status = "NOT_EXECUTED"
