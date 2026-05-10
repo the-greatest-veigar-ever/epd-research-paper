@@ -788,10 +788,10 @@ def run_full_evaluation(
         for name in approach_names:
             if name == "ablation":
                 expanded_names.extend([
-                    f"{_CLEAN_MODEL_NAME}_static_persona",
-                    f"{_CLEAN_MODEL_NAME}_static_safety_filter",
-                    f"{_CLEAN_MODEL_NAME}_ephemeral",
-                    f"{_CLEAN_MODEL_NAME}_static_persona_safety_filter"
+                    "ablation_static_persona",
+                    "ablation_static_safety",
+                    "ablation_suicide_base",
+                    "ablation_static_full"
                 ])
             else:
                 expanded_names.append(name)
@@ -1034,10 +1034,16 @@ def main():
         help="Approaches to evaluate (default: all).",
     )
     parser.add_argument(
+        "--ablation-model",
+        type=str,
+        default=None,
+        help="Override the model used for ablation approaches (e.g., llama3.2:1b).",
+    )
+    parser.add_argument(
         "--max-per-benchmark",
         type=int,
-        default=200,
-        help="Max test cases per benchmark (default: 200).",
+        default=30,
+        help="Maximum number of test cases per benchmark (default: 30).",
     )
     parser.add_argument(
         "--save-every",
@@ -1063,6 +1069,31 @@ def main():
     )
 
     args = parser.parse_args()
+
+    # Apply ablation model override if provided
+    if args.ablation_model:
+        from src.ghost_agents.approach_evaluation.approaches import (
+            AblationStaticPersonaApproach,
+            AblationStaticSafetyApproach,
+            AblationSuicideBaseApproach,
+            AblationStaticFullApproach
+        )
+        # Clean the name for the table labels
+        clean_name = args.ablation_model.replace(".", "").replace(":", "_")
+        
+        # Update the classes dynamically
+        for cls in [AblationStaticPersonaApproach, AblationStaticSafetyApproach, 
+                    AblationSuicideBaseApproach, AblationStaticFullApproach]:
+            cls.models = [args.ablation_model]
+            # Update the display name to match the new model
+            if "static_persona_safety_filter" in cls.name:
+                cls.name = f"{clean_name}_static_persona_safety_filter"
+            elif "static_persona" in cls.name:
+                cls.name = f"{clean_name}_static_persona"
+            elif "static_safety_filter" in cls.name:
+                cls.name = f"{clean_name}_static_safety_filter"
+            elif "ephemeral" in cls.name:
+                cls.name = f"{clean_name}_ephemeral"
 
     if args.list_benchmarks:
         print("Available benchmarks:\n")
