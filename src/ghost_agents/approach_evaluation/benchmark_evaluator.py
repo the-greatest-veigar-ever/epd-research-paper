@@ -788,10 +788,10 @@ def run_full_evaluation(
         for name in approach_names:
             if name == "ablation":
                 expanded_names.extend([
-                    "ablation_static_persona",
-                    "ablation_static_safety",
-                    "ablation_suicide_base",
-                    "ablation_static_full"
+                    f"{_CLEAN_MODEL_NAME}_static_persona",
+                    f"{_CLEAN_MODEL_NAME}_static_safety_filter",
+                    f"{_CLEAN_MODEL_NAME}_ephemeral",
+                    f"{_CLEAN_MODEL_NAME}_static_persona_safety_filter"
                 ])
             else:
                 expanded_names.append(name)
@@ -1080,6 +1080,10 @@ def main():
         )
         # Clean the name for the table labels
         clean_name = args.ablation_model.replace(".", "").replace(":", "_")
+        
+        # Update the global clean name used for shortcut expansion
+        global _CLEAN_MODEL_NAME
+        _CLEAN_MODEL_NAME = clean_name
         
         # Update the classes dynamically
         for cls in [AblationStaticPersonaApproach, AblationStaticSafetyApproach, 
