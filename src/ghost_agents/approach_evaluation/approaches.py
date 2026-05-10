@@ -719,7 +719,7 @@ class DeepseekSuicideApproach(Approach):
 # ===========================================================================
 
 # Helper to clean model name for display (e.g., "llama3.2:3b" -> "llama32_3b")
-_CLEAN_MODEL_NAME = ABLATION_MODEL.replace(":", "").replace(".", "")
+_CLEAN_MODEL_NAME = ABLATION_MODEL.replace(".", "").replace(":", "_")
 
 class AblationStaticPersonaApproach(Approach):
     """(a) Static + Persona assigned at start, No Safety Filter."""
