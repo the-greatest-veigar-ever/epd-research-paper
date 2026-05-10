@@ -52,6 +52,7 @@ from tqdm import tqdm
 from src.ghost_agents.approach_evaluation.approaches import (
     Approach,
     ALL_APPROACHES,
+    _CLEAN_MODEL_NAME,
     _call_ollama,
     _build_prompt,
     OLLAMA_URL,
@@ -639,6 +640,9 @@ def evaluate_benchmark(
         init_latencies = []
         inf_latencies = []
 
+        # Initialize the approach (preloads models for static approaches, etc.)
+        approach.initialize()
+
         desc = f"  [{approach.name}] {benchmark_name}"
         for i, tc in enumerate(tqdm(test_cases, desc=desc, leave=False)):
             response, init_lat, inf_lat, persona_used = _send_to_model(approach, tc["prompt"], strategy)
@@ -778,6 +782,21 @@ def run_full_evaluation(
     # If approach_names is None or contains 'all', evaluate every approach
     use_all = (approach_names is None or "all" in approach_names)
     
+    # Expand shortcuts
+    if approach_names:
+        expanded_names = []
+        for name in approach_names:
+            if name == "ablation":
+                expanded_names.extend([
+                    f"{_CLEAN_MODEL_NAME}_static_persona",
+                    f"{_CLEAN_MODEL_NAME}_static_safety_filter",
+                    f"{_CLEAN_MODEL_NAME}_ephemeral",
+                    f"{_CLEAN_MODEL_NAME}_static_persona_safety_filter"
+                ])
+            else:
+                expanded_names.append(name)
+        approach_names = expanded_names
+
     for a_class in ALL_APPROACHES.values():
         if use_all or a_class.name in approach_names:
             approaches.append(a_class())

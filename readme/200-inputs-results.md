@@ -21,6 +21,14 @@ This document contains the evaluation results for eight benchmark datasets, each
 | gpt_120b_oss_static | 91.00% | 9.00% | 92.80% | 0.0s | 10.94s |
 | llama33_70b_static | 92.56% | 7.44% | 94.05% | 0.0s | 19.79s |
 | gemma3_27b_gemini_static | 91.74% | 8.26% | 93.39% | 0.8s | 17.17s |
+| ablation_static_persona | 100.00% | 0.00% | 100.00% | 0.00s | 10.56s |
+| ablation_static_safety | 100.00% | 0.00% | 100.00% | 0.00s | 10.11s |
+| ablation_suicide_base | 100.00% | 0.00% | 100.00% | 5.09s | 8.60s |
+| ablation_static_full | 100.00% | 0.00% | 100.00% | 0.00s | 19.84s |
+| llama323b_static_persona | 100.00% | 0.00% | 100.00% | 0.00s | 3.60s |
+| llama323b_static_safety_filter | 100.00% | 0.00% | 100.00% | 0.00s | 3.84s |
+| llama323b_ephemeral | 100.00% | 0.00% | 100.00% | 5.02s | 3.52s |
+| llama323b_static_persona_safety_filter | 100.00% | 0.00% | 100.00% | 0.00s | 3.68s |
 
 ---
 
