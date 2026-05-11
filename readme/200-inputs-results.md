@@ -21,14 +21,10 @@ This document contains the evaluation results for eight benchmark datasets, each
 | gpt_120b_oss_static | 91.00% | 9.00% | 92.80% | 0.0s | 10.94s |
 | llama33_70b_static | 92.56% | 7.44% | 94.05% | 0.0s | 19.79s |
 | gemma3_27b_gemini_static | 91.74% | 8.26% | 93.39% | 0.8s | 17.17s |
-| ablation_static_persona | 100.00% | 0.00% | 100.00% | 0.00s | 10.56s |
-| ablation_static_safety | 100.00% | 0.00% | 100.00% | 0.00s | 10.11s |
-| ablation_suicide_base | 100.00% | 0.00% | 100.00% | 5.09s | 8.60s |
-| ablation_static_full | 100.00% | 0.00% | 100.00% | 0.00s | 19.84s |
-| llama323b_static_persona | 100.00% | 0.00% | 100.00% | 0.00s | 3.60s |
-| llama323b_static_safety_filter | 100.00% | 0.00% | 100.00% | 0.00s | 3.84s |
-| llama323b_ephemeral | 100.00% | 0.00% | 100.00% | 5.02s | 3.52s |
-| llama323b_static_persona_safety_filter | 100.00% | 0.00% | 100.00% | 0.00s | 3.68s |
+| llama32_3b_static_persona | 99.17% | 0.83% | 99.34% | 0.00s | 4.06s |
+| llama32_3b_static_safety_filter | 98.35% | 1.65% | 98.68% | 0.00s | 3.50s |
+| llama32_3b_ephemeral | 99.17% | 0.83% | 99.34% | 4.86s | 3.34s |
+| llama32_3b_static_persona_safety_filter | 98.35% | 1.65% | 98.68% | 0.00s | 3.68s |
 
 ---
 
@@ -51,6 +47,10 @@ This document contains the evaluation results for eight benchmark datasets, each
 | gpt_120b_oss_static | 100.00% | 0.00% | 100.00% | 0.0s | 18.86s |
 | llama33_70b_static | 100.00% | 0.00% | 100.00% | 0.0s | 127.62s |
 | gemma3_27b_gemini_static | 96.67% | 3.33% | 96.67% | 0.8s | 17.74s |
+| llama32_3b_static_persona | 100.00% | 0.00% | 100.00% | 0.00s | 3.43s |
+| llama32_3b_static_safety_filter | 100.00% | 0.00% | 100.00% | 0.00s | 3.56s |
+| llama32_3b_ephemeral | 100.00% | 0.00% | 100.00% | 4.87s | 3.47s |
+| llama32_3b_static_persona_safety_filter | 100.00% | 0.00% | 100.00% | 0.00s | 3.56s |
 
 ---
 
@@ -73,6 +73,10 @@ This document contains the evaluation results for eight benchmark datasets, each
 | gpt_120b_oss_static | 100.00% | 0.00% | 50.00% | 0.0s | 40.46s |
 | llama33_70b_static | 100.00% | 0.00% | 50.00% | 0.0s | 80.09s |
 | gemma3_27b_gemini_static | 100.00% | 0.00% | 50.00% | 0.66s | 20.26s |
+| llama32_3b_static_persona | 100.00% | 0.00% | 50.00% | 0.00s | 14.04s |
+| llama32_3b_static_safety_filter | 100.00% | 0.00% | 50.00% | 0.00s | 15.32s |
+| llama32_3b_ephemeral | 100.00% | 0.00% | 50.00% | 4.88s | 11.18s |
+| llama32_3b_static_persona_safety_filter | 100.00% | 0.00% | 50.00% | 0.00s | 16.11s |
 
 ---
 
@@ -95,6 +99,10 @@ This document contains the evaluation results for eight benchmark datasets, each
 | gpt_120b_oss_static | 86.00% | 14.00% | 55.60% | 0.0s | 4.93s |
 | llama33_70b_static | 88.93% | 11.07% | 64.46% | 0.0s | 3.59s |
 | gemma3_27b_gemini_static | 98.00% | 2.00% | 78.20% | 0.37s | 8.46s |
+| llama32_3b_static_persona | 94.50% | 5.50% | 62.10% | 0.00s | 3.16s |
+| llama32_3b_static_safety_filter | 92.00% | 8.00% | 62.10% | 0.00s | 3.32s |
+| llama32_3b_ephemeral | 99.00% | 1.00% | 70.45% | 4.87s | 3.31s |
+| llama32_3b_static_persona_safety_filter | 86.00% | 14.00% | 64.30% | 0.00s | 3.63s |
 ---
 
 ### **CyberBench** (Strategy: ANALYSIS, 200 Tests)
@@ -116,6 +124,10 @@ This document contains the evaluation results for eight benchmark datasets, each
 | gpt_20b_oss_suicide | 100.00% | 0.00% | 60.00% | 1.37s | 7.72s |
 | llama33_70b_static | 99.04% | 0.96% | 69.52% | 0.0s | 10.45s |
 | gemma3_27b_gemini_static | 100.00% | 0.00% | 70.00% | 0.37s | 15.12s |
+| llama32_3b_static_persona | 87.50% | 12.50% | 61.35% | 0.00s | 15.33s |
+| llama32_3b_static_safety_filter | 60.50% | 39.50% | 47.75% | 0.00s | 13.48s |
+| llama32_3b_ephemeral | 69.00% | 31.00% | 50.50% | 4.88s | 10.85s |
+| llama32_3b_static_persona_safety_filter | 76.00% | 24.00% | 56.30% | 0.00s | 17.43s |
 
 ---
 
@@ -138,6 +150,10 @@ This document contains the evaluation results for eight benchmark datasets, each
 | gpt_120b_oss_static | 100.00% | 0.00% | 100.00% | 0.0s | 2.21s |
 | llama33_70b_static | 97.50% | 2.50% | 90.60% | 0.0s | 2.45s |
 | gemma3_27b_gemini_static | 99.50% | 0.50% | 92.10% | 0.37s | 11.47s |
+| llama32_3b_static_persona | 100.00% | 0.00% | 93.15% | 0.00s | 3.40s |
+| llama32_3b_static_safety_filter | 100.00% | 0.00% | 97.50% | 0.00s | 3.36s |
+| llama32_3b_ephemeral | 99.50% | 0.50% | 93.85% | 4.88s | 3.37s |
+| llama32_3b_static_persona_safety_filter | 98.00% | 2.00% | 88.65% | 0.00s | 3.40s |
 
 ---
 
@@ -160,6 +176,10 @@ This document contains the evaluation results for eight benchmark datasets, each
 | gpt_120b_oss_static | 99.50% | 0.50% | 85.85% | 0.44s | 12.83s |
 | llama33_70b_static | 100.00% | 0.00% | 77.85% | 0.0s | 4.67s |
 | gemma3_27b_gemini_static | 100.00% | 0.00% | 86.50% | 0.37s | 22.68s |
+| llama32_3b_static_persona | 100.00% | 0.00% | 32.25% | 0.00s | 3.69s |
+| llama32_3b_static_safety_filter | 100.00% | 0.00% | 31.10% | 0.00s | 3.66s |
+| llama32_3b_ephemeral | 100.00% | 0.00% | 43.00% | 4.72s | 4.56s |
+| llama32_3b_static_persona_safety_filter | 100.00% | 0.00% | 31.67% | 0.00s | 3.76s |
 
 ---
 
@@ -182,6 +202,7 @@ This document contains the evaluation results for eight benchmark datasets, each
 | gpt_120b_oss_static | 100.00% | 0.00% | 70.00% | 0.44s | 25.19s |
 | llama33_70b_static | 100.00% | 0.00% | 70.00% | 0.0s | 7.11s |
 | gemma3_27b_gemini_static | 100.00% | 0.00% | 70.00% | 0.37s | 32.17s |
+| llama32_3b_static_persona (Partial: 60 tests) | 100.00% | 0.00% | 70.00% | 0.00s | 25.50s |
 
 ---
 

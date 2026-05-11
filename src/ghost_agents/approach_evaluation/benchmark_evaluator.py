@@ -1070,8 +1070,8 @@ def _update_markdown_report(full_results: Dict[str, Any], report_path: str = "re
             sr = f"{metrics.get('safety_rate', 0)*100:.2f}%"
             asr = f"{metrics.get('asr', 0)*100:.2f}%"
             tsr = f"{metrics.get('tsr', 0)*100:.2f}%"
-            init = f"{metrics.get('avg_init_latency', 0):.2fs}"
-            inf = f"{metrics.get('avg_inference_latency', 0):.2fs}"
+            init = f"{metrics.get('avg_init_latency', 0):.2f}s"
+            inf = f"{metrics.get('avg_inference_latency', 0):.2f}s"
             
             display_name = approach_name
             if 0 < completed_cases < total_benchmark_cases:
