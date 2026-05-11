@@ -843,6 +843,13 @@ def run_full_evaluation(
                 partial_summary = _compute_summary(full_results)
                 full_results["summary"] = partial_summary
                 json.dump(full_results, f, indent=2, default=str)
+            
+            # Update the Markdown README live
+            try:
+                _update_markdown_report(full_results)
+            except Exception as e:
+                if verbose:
+                    print(f"  [WARNING] Failed to update Markdown report: {e}")
 
         result = evaluate_benchmark(
             bench_name, 
@@ -1010,6 +1017,94 @@ def _print_summary(summary: Dict):
         inf = data["avg_inference_latency"]
         nb = data["benchmarks_tested"]
         print(f"  {approach_name:<20}: Safety={sr:>5.1f}% | ASR={asr:>5.1f}% | TSR={tsr:>5.1f}% | Init={init:>5.2f}s | Inf={inf:>5.2f}s ({nb} benchmarks)")
+
+
+def _update_markdown_report(full_results: Dict[str, Any], report_path: str = "readme/200-inputs-results.md"):
+    """
+    Update the Markdown report with results from the latest evaluation.
+    Matches benchmark sections and inserts or updates approach rows.
+    """
+    if not os.path.exists(report_path):
+        return
+
+    with open(report_path, "r", encoding="utf-8") as f:
+        lines = f.readlines()
+
+    updated = False
+    for bench_name, bench_result in full_results.get("benchmark_results", {}).items():
+        # Find the benchmark section (e.g., ### **SecurityEval**)
+        section_pattern = re.compile(rf"###\s+\*\*({bench_name})\*\*", re.IGNORECASE)
+        section_idx = -1
+        for i, line in enumerate(lines):
+            if section_pattern.search(line):
+                section_idx = i
+                break
+        
+        if section_idx == -1:
+            continue
+
+        # Find the table within this section
+        table_start = -1
+        table_header_found = False
+        for i in range(section_idx + 1, len(lines)):
+            if "| Approach |" in lines[i]:
+                table_header_found = True
+                continue
+            if table_header_found and lines[i].strip().startswith("| :---"):
+                table_start = i + 1
+                break
+            if lines[i].strip() == "---" or (lines[i].startswith("###") and i > section_idx + 5):
+                break
+
+        if table_start == -1:
+            continue
+
+        # Process each approach
+        total_benchmark_cases = bench_result.get("total_test_cases", 0)
+        
+        for approach_name, approach_data in bench_result.get("approaches", {}).items():
+            metrics = approach_data.get("metrics", {})
+            completed_cases = approach_data.get("cases_evaluated", 0)
+            
+            # Format row data
+            sr = f"{metrics.get('safety_rate', 0)*100:.2f}%"
+            asr = f"{metrics.get('asr', 0)*100:.2f}%"
+            tsr = f"{metrics.get('tsr', 0)*100:.2f}%"
+            init = f"{metrics.get('avg_init_latency', 0):.2fs}"
+            inf = f"{metrics.get('avg_inference_latency', 0):.2fs}"
+            
+            display_name = approach_name
+            if 0 < completed_cases < total_benchmark_cases:
+                display_name = f"{approach_name} (Partial: {completed_cases} tests)"
+
+            new_row = f"| {display_name} | {sr} | {asr} | {tsr} | {init} | {inf} |\n"
+            
+            # Check if this approach row already exists in the table
+            row_idx = -1
+            # We look for either the exact name or the partial variant
+            for i in range(table_start, len(lines)):
+                if lines[i].strip() == "" or lines[i].strip() == "---" or lines[i].startswith("###"):
+                    break
+                if f"| {approach_name} " in lines[i] or f"| {approach_name} (Partial:" in lines[i]:
+                    row_idx = i
+                    break
+            
+            if row_idx != -1:
+                # Update existing row
+                if lines[row_idx] != new_row:
+                    lines[row_idx] = new_row
+                    updated = True
+            else:
+                # Append to end of table
+                insert_pos = table_start
+                while insert_pos < len(lines) and lines[insert_pos].strip() != "" and not lines[insert_pos].startswith("###"):
+                    insert_pos += 1
+                lines.insert(insert_pos, new_row)
+                updated = True
+
+    if updated:
+        with open(report_path, "w", encoding="utf-8") as f:
+            f.writelines(lines)
 
 
 # ============================================================================
