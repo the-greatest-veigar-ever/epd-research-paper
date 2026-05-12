@@ -2,7 +2,7 @@
 
 This document contains the evaluation results for eight benchmark datasets, each capped at up to 200 inputs per approach.
 
-### **SecurityEval** (Strategy: GENERATION, 121 Tests)
+### SecurityEval (Strategy: GENERATION, 121 Tests)
 
 | Approach | Safety Rate | Attack Success Rate (ASR) | Task Success Rate (TSR) | Avg Initialization Latency | Avg Inference Latency |
 | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -21,6 +21,10 @@ This document contains the evaluation results for eight benchmark datasets, each
 | gpt_120b_oss_static | 91.00% | 9.00% | 92.80% | 0.0s | 10.94s |
 | llama33_70b_static | 92.56% | 7.44% | 94.05% | 0.0s | 19.79s |
 | gemma3_27b_gemini_static | 91.74% | 8.26% | 93.39% | 0.8s | 17.17s |
+| phi3_static_persona | 98.40% | 1.70% | 98.70% |
+| phi3_static_safety_filter | 97.50% | 2.50% | 97.70% |
+| phi3_ephemeral | 97.50% | 2.50% | 97.90% |
+| phi3_static_persona_safety_filter | 96.70% | 3.30% | 97.20% |
 | llama32_3b_static_persona | 99.17% | 0.83% | 99.34% | 0.00s | 4.06s |
 | llama32_3b_static_safety_filter | 98.35% | 1.65% | 98.68% | 0.00s | 3.50s |
 | llama32_3b_ephemeral | 99.17% | 0.83% | 99.34% | 4.86s | 3.34s |
@@ -28,7 +32,7 @@ This document contains the evaluation results for eight benchmark datasets, each
 
 ---
 
-### **LLMSecEval** (Strategy: GENERATION, 150 Tests)
+### LLMSecEval (Strategy: GENERATION, 150 Tests)
 
 | Approach | Safety Rate | Attack Success Rate (ASR) | Task Success Rate (TSR) | Avg Initialization Latency | Avg Inference Latency |
 | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -47,6 +51,10 @@ This document contains the evaluation results for eight benchmark datasets, each
 | gpt_120b_oss_static | 100.00% | 0.00% | 100.00% | 0.0s | 18.86s |
 | llama33_70b_static | 100.00% | 0.00% | 100.00% | 0.0s | 127.62s |
 | gemma3_27b_gemini_static | 96.67% | 3.33% | 96.67% | 0.8s | 17.74s |
+| phi3_static_persona | 98.70% | 1.30% | 98.70% |
+| phi3_static_safety_filter | 99.30% | 0.70% | 99.30% |
+| phi3_ephemeral | 98.00% | 2.00% | 98.00% |
+| phi3_static_persona_safety_filter | 99.30% | 0.70% | 99.30% |
 | llama32_3b_static_persona | 100.00% | 0.00% | 100.00% | 0.00s | 3.43s |
 | llama32_3b_static_safety_filter | 100.00% | 0.00% | 100.00% | 0.00s | 3.56s |
 | llama32_3b_ephemeral | 100.00% | 0.00% | 100.00% | 4.87s | 3.47s |
@@ -54,7 +62,7 @@ This document contains the evaluation results for eight benchmark datasets, each
 
 ---
 
-### **SecBench** (Strategy: KNOWLEDGE, 200 Tests)
+### SecBench (Strategy: KNOWLEDGE, 200 Tests)
 
 | Approach | Safety Rate | Attack Success Rate (ASR) | Task Success Rate (TSR) | Avg Initialization Latency | Avg Inference Latency |
 | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -73,6 +81,10 @@ This document contains the evaluation results for eight benchmark datasets, each
 | gpt_120b_oss_static | 100.00% | 0.00% | 50.00% | 0.0s | 40.46s |
 | llama33_70b_static | 100.00% | 0.00% | 50.00% | 0.0s | 80.09s |
 | gemma3_27b_gemini_static | 100.00% | 0.00% | 50.00% | 0.66s | 20.26s |
+| phi3_static_persona | 99.00% | 1.00% | 49.50% |
+| phi3_static_safety_filter | 99.00% | 1.00% | 49.50% |
+| phi3_ephemeral | 98.00% | 2.00% | 49.00% |
+| phi3_static_persona_safety_filter | 99.00% | 1.00% | 49.50% |
 | llama32_3b_static_persona | 100.00% | 0.00% | 50.00% | 0.00s | 14.04s |
 | llama32_3b_static_safety_filter | 100.00% | 0.00% | 50.00% | 0.00s | 15.32s |
 | llama32_3b_ephemeral | 100.00% | 0.00% | 50.00% | 4.88s | 11.18s |
@@ -80,7 +92,7 @@ This document contains the evaluation results for eight benchmark datasets, each
 
 ---
 
-### **CyberSecEval** (Strategy: REFUSAL, 200 Tests)
+### CyberSecEval (Strategy: REFUSAL, 200 Tests)
 
 | Approach | Safety Rate | Attack Success Rate (ASR) | Task Success Rate (TSR) | Avg Initialization Latency | Avg Inference Latency |
 | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -99,13 +111,17 @@ This document contains the evaluation results for eight benchmark datasets, each
 | gpt_120b_oss_static | 86.00% | 14.00% | 55.60% | 0.0s | 4.93s |
 | llama33_70b_static | 88.93% | 11.07% | 64.46% | 0.0s | 3.59s |
 | gemma3_27b_gemini_static | 98.00% | 2.00% | 78.20% | 0.37s | 8.46s |
+| phi3_static_persona | 91.00% | 9.00% | 68.55% |
+| phi3_static_safety_filter | 93.00% | 7.00% | 79.80% |
+| phi3_ephemeral | 86.00% | 14.00% | 68.25% |
+| phi3_static_persona_safety_filter | 90.50% | 9.50% | 77.40% |
 | llama32_3b_static_persona | 94.50% | 5.50% | 62.10% | 0.00s | 3.16s |
 | llama32_3b_static_safety_filter | 92.00% | 8.00% | 62.10% | 0.00s | 3.32s |
 | llama32_3b_ephemeral | 99.00% | 1.00% | 70.45% | 4.87s | 3.31s |
 | llama32_3b_static_persona_safety_filter | 86.00% | 14.00% | 64.30% | 0.00s | 3.63s |
 ---
 
-### **CyberBench** (Strategy: ANALYSIS, 200 Tests)
+### CyberBench (Strategy: ANALYSIS, 200 Tests)
 
 | Approach | Safety Rate | Attack Success Rate (ASR) | Task Success Rate (TSR) | Avg Initialization Latency | Avg Inference Latency |
 | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -124,6 +140,10 @@ This document contains the evaluation results for eight benchmark datasets, each
 | gpt_20b_oss_suicide | 100.00% | 0.00% | 60.00% | 1.37s | 7.72s |
 | llama33_70b_static | 99.04% | 0.96% | 69.52% | 0.0s | 10.45s |
 | gemma3_27b_gemini_static | 100.00% | 0.00% | 70.00% | 0.37s | 15.12s |
+| phi3_static_persona | 100.00% | 0.00% | 65.00% |
+| phi3_static_safety_filter | 100.00% | 0.00% | 65.00% |
+| phi3_ephemeral | 100.00% | 0.00% | 65.00% |
+| phi3_static_persona_safety_filter | 100.00% | 0.00% | 70.00% |
 | llama32_3b_static_persona | 87.50% | 12.50% | 61.35% | 0.00s | 15.33s |
 | llama32_3b_static_safety_filter | 60.50% | 39.50% | 47.75% | 0.00s | 13.48s |
 | llama32_3b_ephemeral | 69.00% | 31.00% | 50.50% | 4.88s | 10.85s |
@@ -131,7 +151,7 @@ This document contains the evaluation results for eight benchmark datasets, each
 
 ---
 
-### **HarmBench** (Strategy: REFUSAL, 200 Tests)
+### HarmBench (Strategy: REFUSAL, 200 Tests)
 
 | Approach | Safety Rate | Attack Success Rate (ASR) | Task Success Rate (TSR) | Avg Initialization Latency | Avg Inference Latency |
 | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -150,6 +170,10 @@ This document contains the evaluation results for eight benchmark datasets, each
 | gpt_120b_oss_static | 100.00% | 0.00% | 100.00% | 0.0s | 2.21s |
 | llama33_70b_static | 97.50% | 2.50% | 90.60% | 0.0s | 2.45s |
 | gemma3_27b_gemini_static | 99.50% | 0.50% | 92.10% | 0.37s | 11.47s |
+| phi3_static_persona | 91.00% | 9.00% | 77.60% |
+| phi3_static_safety_filter | 96.50% | 3.50% | 82.65% |
+| phi3_ephemeral | 95.50% | 4.50% | 80.65% |
+| phi3_static_persona_safety_filter | 94.00% | 6.00% | 83.75% |
 | llama32_3b_static_persona | 100.00% | 0.00% | 93.15% | 0.00s | 3.40s |
 | llama32_3b_static_safety_filter | 100.00% | 0.00% | 97.50% | 0.00s | 3.36s |
 | llama32_3b_ephemeral | 99.50% | 0.50% | 93.85% | 4.88s | 3.37s |
@@ -157,7 +181,7 @@ This document contains the evaluation results for eight benchmark datasets, each
 
 ---
 
-### **FORMAI** (Strategy: SAFETY, 200 Tests)
+### FORMAI (Strategy: SAFETY, 200 Tests)
 
 | Approach | Safety Rate | Attack Success Rate (ASR) | Task Success Rate (TSR) | Avg Initialization Latency | Avg Inference Latency |
 | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -176,6 +200,10 @@ This document contains the evaluation results for eight benchmark datasets, each
 | gpt_120b_oss_static | 99.50% | 0.50% | 85.85% | 0.44s | 12.83s |
 | llama33_70b_static | 100.00% | 0.00% | 77.85% | 0.0s | 4.67s |
 | gemma3_27b_gemini_static | 100.00% | 0.00% | 86.50% | 0.37s | 22.68s |
+| phi3_static_persona | 99.50% | 0.50% | 56.05% |
+| phi3_static_safety_filter | 98.50% | 1.50% | 55.62% |
+| phi3_ephemeral | 99.50% | 0.50% | 64.35% |
+| phi3_static_persona_safety_filter | 98.00% | 2.00% | 56.05% |
 | llama32_3b_static_persona | 100.00% | 0.00% | 32.25% | 0.00s | 3.69s |
 | llama32_3b_static_safety_filter | 100.00% | 0.00% | 31.10% | 0.00s | 3.66s |
 | llama32_3b_ephemeral | 100.00% | 0.00% | 43.00% | 4.72s | 4.56s |
@@ -183,7 +211,7 @@ This document contains the evaluation results for eight benchmark datasets, each
 
 ---
 
-### **ACSE-Eval** (Strategy: ANALYSIS, 100 Tests)
+### ACSE-Eval (Strategy: ANALYSIS, 100 Tests)
 
 | Approach | Safety Rate | Attack Success Rate (ASR) | Task Success Rate (TSR) | Avg Initialization Latency | Avg Inference Latency |
 | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -202,48 +230,56 @@ This document contains the evaluation results for eight benchmark datasets, each
 | gpt_120b_oss_static | 100.00% | 0.00% | 70.00% | 0.44s | 25.19s |
 | llama33_70b_static | 100.00% | 0.00% | 70.00% | 0.0s | 7.11s |
 | gemma3_27b_gemini_static | 100.00% | 0.00% | 70.00% | 0.37s | 32.17s |
+| phi3_static_persona | 99.00% | 1.00% | 69.10% |
+| phi3_static_safety_filter | 94.00% | 6.00% | 65.80% |
+| phi3_ephemeral | 97.00% | 3.00% | 67.70% |
+| phi3_static_persona_safety_filter | 94.00% | 6.00% | 65.20% |
 | llama32_3b_static_persona (Partial: 60 tests) | 100.00% | 0.00% | 70.00% | 0.00s | 25.50s |
 
 ---
 
-### **CyberSOCEval** (Strategy: ANALYSIS, 200 Tests)
+### CyberSOCEval (Strategy: ANALYSIS, 200 Tests)
 
-| Approach | Safety Rate | Attack Success Rate (ASR) | Task Success Rate (TSR) | Avg Initialization Latency | Avg Inference Latency |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| phi3_static | 98.50% | 1.50% | 61.85% | 0.0s | 15.43s |
-| phi3_suicide | **100.0%** | **0.0%** | **62.20%** | 1.16s | 14.67s |
-| llama32_3b_static | 86.50% | 13.50% | 59.05% | 0.0s | 5.63s |
-| llama32_3b_suicide | 77.00% | 23.00% | 55.60% | 0.84s | 6.10s |
-| qwen25_3b_static | **100.0%** | **0.0%** | 61.40% | 0.0s | 5.12s |
-| qwen25_3b_suicide | **100.0%** | **0.0%** | **62.30%** | 0.58s | 5.70s |
-| gemma3_4b_gemini_static | 100.00% | 0.00% | 70.00% | 0.44s | 5.62s |
-| gemma3_4b_gemini_suicide | 50.50% | 49.50% | 35.35% | 3.45s | 58.48s |
-| deepseek_r1_1_5b_static | 98.50% | 1.50% | 66.45% | 0.0s | 15.21s |
-| deepseek_r1_1_5b_suicide | 99.00% | 1.00% | 67.80% | 0.66s | 10.53s |
-| gpt_20b_oss_static | 99.50% | 0.50% | 63.75% | 0.41s | 5.83s |
-| gpt_20b_oss_suicide | 99.50% | 0.50% | 64.15% | 1.42s | 7.49s |
-| gpt_120b_oss_static | 99.50% | 0.50% | 64.75% | 0.44s | 5.96s |
-| llama33_70b_static | 100.00% | 0.00% | 69.30% | 0.0s | 3.70s |
-| gemma3_27b_gemini_static | 100.00% | 0.00% | 70.00% | 0.37s | 22.20s |
+| Approach | Safety Rate | Attack Success Rate (ASR) | Task Success Rate (TSR) |
+| :--- | :--- | :--- | :--- |
+| phi3_static | 98.50% | 1.50% | 61.85% |
+| phi3_suicide | 100.0% | 0.0% | 62.20% |
+| llama32_3b_static | 86.50% | 13.50% | 59.05% |
+| llama32_3b_suicide | 77.00% | 23.00% | 55.60% |
+| qwen25_3b_static | 100.0% | 0.0% | 61.40% |
+| qwen25_3b_suicide | 100.0% | 0.0% | 62.30% |
+| deepseek_r1_1_5b_static | 98.50% | 1.50% | 66.45% |
+| deepseek_r1_1_5b_suicide | 99.00% | 1.00% | 67.80% |
+| gpt_20b_oss_static | 99.50% | 0.50% | 63.75% |
+| gpt_20b_oss_suicide | 99.50% | 0.50% | 64.15% |
+| gpt_120b_oss_static | 99.50% | 0.50% | 64.75% |
+| llama33_70b_static | 100.00% | 0.00% | 69.30% |
+| gemma3_27b_gemini_static | 100.00% | 0.00% | 70.00% |
+| phi3_static_persona | 99.50% | 0.50% | 62.45% |
+| phi3_static_safety_filter | 99.50% | 0.50% | 65.15% |
+| phi3_ephemeral | 99.50% | 0.50% | 64.35% |
+| phi3_static_persona_safety_filter | 100.00% | 0.00% | 66.30% |
 
 ---
 
-### **SECURE** (Strategy: KNOWLEDGE, 200 Tests)
+### SECURE (Strategy: KNOWLEDGE, 200 Tests)
 
-| Approach | Safety Rate | Attack Success Rate (ASR) | Task Success Rate (TSR) | Avg Initialization Latency | Avg Inference Latency |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| phi3_static | 91.00% | 9.00% | 23.66% | 0.0s | 29.55s |
-| phi3_suicide | 91.50% | 8.50% | **25.09%** | 1.16s | 29.49s |
-| llama32_3b_static | **100.0%** | **0.0%** | 19.52% | 0.0s | 9.22s |
-| llama32_3b_suicide | **100.0%** | **0.0%** | 16.54% | 0.84s | 7.96s |
-| qwen25_3b_static | 95.50% | 4.50% | 23.05% | 0.0s | 13.85s |
-| qwen25_3b_suicide | 95.50% | 4.50% | 23.36% | 0.55s | 15.91s |
-| gpt_20b_oss_static | 46.50% | 53.50% | 9.29% | 0.70s | 16.30s |
-| gpt_20b_oss_suicide | 94.00% | 6.00% | 24.49% | 1.46s | 33.87s |
-| gemma3_4b_gemini_static | 100.00% | 0.00% | 29.31% | 0.44s | 8.63s |
-| gemma3_4b_gemini_suicide | 6.50% | 93.50% | 1.20% | 3.59s | 60.29s |
-| deepseek_r1_1_5b_static | 99.50% | 0.50% | 16.95% | 0.0s | 15.85s |
-| deepseek_r1_1_5b_suicide | 100.00% | 0.00% | 16.92% | 0.66s | 13.85s |
-| gpt_120b_oss_static | 100.00% | 0.00% | 26.69% | 0.44s | 21.96s |
-| llama33_70b_static | 100.00% | 0.00% | 24.33% | 0.0s | 5.08s |
-| gemma3_27b_gemini_static | 100.00% | 0.00% | 29.31% | 0.66s | 29.23s |
+| Approach | Safety Rate | Attack Success Rate (ASR) | Task Success Rate (TSR) |
+| :--- | :--- | :--- | :--- |
+| phi3_static | 91.00% | 9.00% | 23.66% |
+| phi3_suicide | 91.50% | 8.50% | 25.09% |
+| llama32_3b_static | 100.0% | 0.0% | 19.52% |
+| llama32_3b_suicide | 100.0% | 0.0% | 16.54% |
+| qwen25_3b_static | 95.50% | 4.50% | 23.05% |
+| qwen25_3b_suicide | 95.50% | 4.50% | 23.36% |
+| gpt_20b_oss_static | 46.50% | 53.50% | 9.29% |
+| gpt_20b_oss_suicide | 94.00% | 6.00% | 24.49% |
+| deepseek_r1_1_5b_static | 99.50% | 0.50% | 16.95% |
+| deepseek_r1_1_5b_suicide | 100.00% | 0.00% | 16.92% |
+| gpt_120b_oss_static | 100.00% | 0.00% | 26.69% |
+| llama33_70b_static | 100.00% | 0.00% | 24.33% |
+| gemma3_27b_gemini_static | 100.00% | 0.00% | 29.31% |
+| phi3_static_persona | 99.50% | 0.50% | 24.50% |
+| phi3_static_safety_filter | 98.50% | 1.50% | 26.16% |
+| phi3_ephemeral | 99.50% | 0.50% | 25.06% |
+| phi3_static_persona_safety_filter | 99.00% | 1.00% | 25.74% |
