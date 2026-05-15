@@ -29,6 +29,10 @@ This document contains the evaluation results for eight benchmark datasets, each
 | llama32_3b_static_safety_filter | 98.35% | 1.65% | 98.68% | 0.00s | 3.50s |
 | llama32_3b_ephemeral | 99.17% | 0.83% | 99.34% | 4.86s | 3.34s |
 | llama32_3b_static_persona_safety_filter | 98.35% | 1.65% | 98.68% | 0.00s | 3.68s |
+| qwen25_3b_static_persona | 99.17% | 0.83% | 99.34% | 0.00s | 3.56s |
+| qwen25_3b_static_safety_filter | 99.17% | 0.83% | 99.34% | 0.00s | 3.41s |
+| qwen25_3b_ephemeral | 99.17% | 0.83% | 99.34% | 4.06s | 3.61s |
+| qwen25_3b_static_persona_safety_filter | 99.17% | 0.83% | 99.34% | 0.00s | 3.52s |
 | deepseek-r1_15b_static_persona | 97.52% | 2.48% | 97.85% |
 | deepseek-r1_15b_static_safety_filter | 99.17% | 0.83% | 99.34% |
 | deepseek-r1_15b_ephemeral | 99.17% | 0.83% | 99.34% |
@@ -63,6 +67,10 @@ This document contains the evaluation results for eight benchmark datasets, each
 | llama32_3b_static_safety_filter | 100.00% | 0.00% | 100.00% | 0.00s | 3.56s |
 | llama32_3b_ephemeral | 100.00% | 0.00% | 100.00% | 4.87s | 3.47s |
 | llama32_3b_static_persona_safety_filter | 100.00% | 0.00% | 100.00% | 0.00s | 3.56s |
+| qwen25_3b_static_persona | 100.00% | 0.00% | 100.00% | 0.00s | 3.65s |
+| qwen25_3b_static_safety_filter | 100.00% | 0.00% | 100.00% | 0.00s | 3.62s |
+| qwen25_3b_ephemeral | 100.00% | 0.00% | 100.00% | 4.05s | 3.87s |
+| qwen25_3b_static_persona_safety_filter | 100.00% | 0.00% | 100.00% | 0.00s | 3.53s |
 | deepseek-r1_15b_static_persona | 99.33% | 0.67% | 99.33% |
 | deepseek-r1_15b_static_safety_filter | 99.33% | 0.67% | 99.33% |
 | deepseek-r1_15b_ephemeral | 100.00% | 0.00% | 100.00% |
@@ -97,6 +105,10 @@ This document contains the evaluation results for eight benchmark datasets, each
 | llama32_3b_static_safety_filter | 100.00% | 0.00% | 50.00% | 0.00s | 15.32s |
 | llama32_3b_ephemeral | 100.00% | 0.00% | 50.00% | 4.88s | 11.18s |
 | llama32_3b_static_persona_safety_filter | 100.00% | 0.00% | 50.00% | 0.00s | 16.11s |
+| qwen25_3b_static_persona | 100.00% | 0.00% | 50.00% | 0.00s | 11.08s |
+| qwen25_3b_static_safety_filter | 100.00% | 0.00% | 50.00% | 0.00s | 10.46s |
+| qwen25_3b_ephemeral | 100.00% | 0.00% | 50.00% | 4.05s | 10.61s |
+| qwen25_3b_static_persona_safety_filter | 100.00% | 0.00% | 50.00% | 0.00s | 10.42s |
 | deepseek-r1_15b_static_persona | 99.50% | 0.50% | 49.75% |
 | deepseek-r1_15b_static_safety_filter | 100.00% | 0.00% | 50.00% |
 | deepseek-r1_15b_ephemeral (Partial: 80 tests) | 700.00% | -600.00% | 50.00% |
@@ -131,6 +143,10 @@ This document contains the evaluation results for eight benchmark datasets, each
 | llama32_3b_static_safety_filter | 92.00% | 8.00% | 62.10% | 0.00s | 3.32s |
 | llama32_3b_ephemeral | 99.00% | 1.00% | 70.45% | 4.87s | 3.31s |
 | llama32_3b_static_persona_safety_filter | 86.00% | 14.00% | 64.30% | 0.00s | 3.63s |
+| qwen25_3b_static_persona | 100.00% | 0.00% | 75.00% | 0.00s | 3.16s |
+| qwen25_3b_static_safety_filter | 100.00% | 0.00% | 65.00% | 0.00s | 3.27s |
+| qwen25_3b_ephemeral | 100.00% | 0.00% | 72.50% | 4.04s | 3.34s |
+| qwen25_3b_static_persona_safety_filter | 95.00% | 5.00% | 56.00% | 0.00s | 3.19s |
 | deepseek-r1_15b_static_persona | 74.50% | 25.50% | 60.00% |
 | deepseek-r1_15b_static_safety_filter | 82.00% | 18.00% | 66.20% |
 | deepseek-r1_15b_ephemeral | 78.50% | 21.50% | 57.80% |
@@ -164,6 +180,10 @@ This document contains the evaluation results for eight benchmark datasets, each
 | llama32_3b_static_safety_filter | 60.50% | 39.50% | 47.75% | 0.00s | 13.48s |
 | llama32_3b_ephemeral | 69.00% | 31.00% | 50.50% | 4.88s | 10.85s |
 | llama32_3b_static_persona_safety_filter | 76.00% | 24.00% | 56.30% | 0.00s | 17.43s |
+| qwen25_3b_static_persona | 100.00% | 0.00% | 69.70% | 0.00s | 20.83s |
+| qwen25_3b_static_safety_filter | 98.50% | 1.50% | 68.55% | 0.00s | 28.61s |
+| qwen25_3b_ephemeral | 100.00% | 0.00% | 69.40% | 4.37s | 21.58s |
+| qwen25_3b_static_persona_safety_filter | 98.50% | 1.50% | 68.85% | 0.00s | 29.28s |
 | deepseek-r1_15b_static_persona | 100.00% | 0.00% | 60.00% |
 | deepseek-r1_15b_static_safety_filter | 100.00% | 0.00% | 70.00% |
 | deepseek-r1_15b_ephemeral | 100.00% | 0.00% | 70.00% |
@@ -198,6 +218,10 @@ This document contains the evaluation results for eight benchmark datasets, each
 | llama32_3b_static_safety_filter | 100.00% | 0.00% | 97.50% | 0.00s | 3.36s |
 | llama32_3b_ephemeral | 99.50% | 0.50% | 93.85% | 4.88s | 3.37s |
 | llama32_3b_static_persona_safety_filter | 98.00% | 2.00% | 88.65% | 0.00s | 3.40s |
+| qwen25_3b_static_persona | 97.00% | 3.00% | 82.75% | 0.00s | 3.47s |
+| qwen25_3b_static_safety_filter | 98.50% | 1.50% | 79.20% | 0.00s | 3.26s |
+| qwen25_3b_ephemeral | 97.50% | 2.50% | 83.65% | 3.68s | 3.53s |
+| qwen25_3b_static_persona_safety_filter | 99.00% | 1.00% | 79.35% | 0.00s | 3.36s |
 | deepseek-r1_15b_static_persona | 85.00% | 15.00% | 64.75% |
 | deepseek-r1_15b_static_safety_filter | 91.00% | 9.00% | 78.60% |
 | deepseek-r1_15b_ephemeral | 86.50% | 13.50% | 66.05% |
@@ -232,6 +256,10 @@ This document contains the evaluation results for eight benchmark datasets, each
 | llama32_3b_static_safety_filter | 100.00% | 0.00% | 31.10% | 0.00s | 3.66s |
 | llama32_3b_ephemeral | 100.00% | 0.00% | 43.00% | 4.72s | 4.56s |
 | llama32_3b_static_persona_safety_filter | 100.00% | 0.00% | 31.67% | 0.00s | 3.76s |
+| qwen25_3b_static_persona | 100.00% | 0.00% | 31.87% | 0.00s | 3.84s |
+| qwen25_3b_static_safety_filter | 100.00% | 0.00% | 31.87% | 0.00s | 3.67s |
+| qwen25_3b_ephemeral | 100.00% | 0.00% | 33.60% | 3.68s | 4.19s |
+| qwen25_3b_static_persona_safety_filter | 100.00% | 0.00% | 30.60% | 0.00s | 3.50s |
 | deepseek-r1_15b_static_persona | 99.00% | 1.00% | 58.27% |
 | deepseek-r1_15b_static_safety_filter | 99.00% | 1.00% | 59.82% |
 | deepseek-r1_15b_ephemeral | 98.50% | 1.50% | 57.63% |
@@ -263,6 +291,13 @@ This document contains the evaluation results for eight benchmark datasets, each
 | phi3_ephemeral | 97.00% | 3.00% | 67.70% |
 | phi3_static_persona_safety_filter | 94.00% | 6.00% | 65.20% |
 | llama32_3b_static_persona (Partial: 60 tests) | 100.00% | 0.00% | 70.00% | 0.00s | 25.50s |
+| llama32_3b_static_safety_filter | 98.00% | 2.00% | 68.40% | 0.00s | 31.11s |
+| llama32_3b_ephemeral | 100.00% | 0.00% | 70.00% | 4.67s | 23.30s |
+| llama32_3b_static_persona_safety_filter | 98.00% | 2.00% | 68.60% | 0.00s | 32.29s |
+| qwen25_3b_static_persona | 100.00% | 0.00% | 70.00% | 0.00s | 31.56s |
+| qwen25_3b_static_safety_filter | 94.00% | 6.00% | 65.80% | 0.00s | 39.68s |
+| qwen25_3b_ephemeral | 99.00% | 1.00% | 69.30% | 4.08s | 31.04s |
+| qwen25_3b_static_persona_safety_filter | 92.00% | 8.00% | 64.40% | 0.00s | 41.87s |
 | deepseek-r1_15b_static_persona | 100.00% | 0.00% | 70.00% |
 | deepseek-r1_15b_static_safety_filter | 100.00% | 0.00% | 70.00% |
 | deepseek-r1_15b_ephemeral | 100.00% | 0.00% | 70.00% |
@@ -291,6 +326,14 @@ This document contains the evaluation results for eight benchmark datasets, each
 | phi3_static_safety_filter | 99.50% | 0.50% | 65.15% |
 | phi3_ephemeral | 99.50% | 0.50% | 64.35% |
 | phi3_static_persona_safety_filter | 100.00% | 0.00% | 66.30% |
+| llama32_3b_static_persona | 88.00% | 12.00% | 57.20% |
+| llama32_3b_static_safety_filter | 85.50% | 14.50% | 58.75% |
+| llama32_3b_ephemeral | 84.50% | 15.50% | 55.25% |
+| llama32_3b_static_persona_safety_filter | 38.50% | 61.50% | 34.75% |
+| qwen25_3b_static_persona | 100.00% | 0.00% | 65.80% |
+| qwen25_3b_static_safety_filter | 100.00% | 0.00% | 65.90% |
+| qwen25_3b_ephemeral | 100.00% | 0.00% | 65.40% |
+| qwen25_3b_static_persona_safety_filter | 100.00% | 0.00% | 66.70% |
 | deepseek-r1_15b_static_persona | 99.50% | 0.50% | 67.55% |
 | deepseek-r1_15b_static_safety_filter | 99.50% | 0.50% | 67.45% |
 | deepseek-r1_15b_ephemeral | 99.00% | 1.00% | 67.30% |
@@ -319,6 +362,14 @@ This document contains the evaluation results for eight benchmark datasets, each
 | phi3_static_safety_filter | 98.50% | 1.50% | 26.16% |
 | phi3_ephemeral | 99.50% | 0.50% | 25.06% |
 | phi3_static_persona_safety_filter | 99.00% | 1.00% | 25.74% |
+| llama32_3b_static_persona | 100.00% | 0.00% | 21.92% |
+| llama32_3b_static_safety_filter | 100.00% | 0.00% | 17.10% |
+| llama32_3b_ephemeral | 100.00% | 0.00% | 15.49% |
+| llama32_3b_static_persona_safety_filter | 100.00% | 0.00% | 20.40% |
+| qwen25_3b_static_persona | 100.00% | 0.00% | 26.14% |
+| qwen25_3b_static_safety_filter | 100.00% | 0.00% | 26.28% |
+| qwen25_3b_ephemeral | 100.00% | 0.00% | 25.93% |
+| qwen25_3b_static_persona_safety_filter | 98.50% | 1.50% | 25.31% |
 | deepseek-r1_15b_static_persona | 100.00% | 0.00% | 15.04% |
 | deepseek-r1_15b_static_safety_filter | 99.50% | 0.50% | 17.34% |
 | deepseek-r1_15b_ephemeral | 99.50% | 0.50% | 16.40% |
