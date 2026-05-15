@@ -550,13 +550,7 @@ def _send_to_model(
         return f"[ERROR] {e}", 0.0, 0.0, "default"
 
 def update_markdown_table(file_path: str, dataset_name: str, metrics: Dict[str, Any], base_row_name: str, display_row_name: str):
-    """Append or replace a row in the markdown table for the dataset.
-
-    Matches section headers like:
-        ### SecurityEval (Strategy: GENERATION, 121 Tests)
-    and 4-column tables with divider:
-        | :--- | :--- | :--- | :--- |
-    """
+    """Append or replace a row in the markdown table for the dataset."""
     import os
     if not os.path.exists(file_path):
         return
@@ -564,49 +558,44 @@ def update_markdown_table(file_path: str, dataset_name: str, metrics: Dict[str, 
     with open(file_path, "r", encoding="utf-8") as f:
         content = f.read()
 
-    # Match the actual header format: "### BenchmarkName (...)"
-    # Use a loose substring search: any ### line that contains the benchmark name
-    lines = content.split("\n")
-    section_line_idx = None
-    for idx, line in enumerate(lines):
-        if line.startswith("###") and dataset_name in line:
-            section_line_idx = idx
-            break
+    section_title = f"### **{dataset_name}**"
+    if section_title not in content:
+        return
 
-    if section_line_idx is None:
-        return  # benchmark section not in file
-
-    # The file uses a 4-column table (no latency columns)
-    table_divider = "| :--- | :--- | :--- | :--- |"
+    table_divider = "| :--- | :--- | :--- | :--- | :--- | :--- |"
 
     safety_rate = f"{metrics.get('safety_rate', 0)*100:.2f}%"
     asr = f"{metrics.get('asr', 0)*100:.2f}%"
     tsr = f"{metrics.get('tsr', 0)*100:.2f}%"
+    init_lat = f"{metrics.get('avg_init_latency', 0):.2f}s"
+    inf_lat = f"{metrics.get('avg_inference_latency', 0):.2f}s"
 
-    new_row = f"| {display_row_name} | {safety_rate} | {asr} | {tsr} |"
+    new_row = f"| {display_row_name} | {safety_rate} | {asr} | {tsr} | {init_lat} | {inf_lat} |"
 
+    lines = content.split("\n")
     insert_index = -1
-    for j in range(section_line_idx + 1, len(lines)):
-        if table_divider in lines[j]:
-            for k in range(j + 1, len(lines)):
-                stripped = lines[k].strip()
-                # End of table: blank line or horizontal rule
-                if not stripped or stripped.startswith("---"):
-                    insert_index = k
+    for i in range(len(lines)):
+        if section_title in lines[i]:
+            for j in range(i+1, len(lines)):
+                if table_divider in lines[j]:
+                    for k in range(j+1, len(lines)):
+                        if not lines[k].strip() or "---" in lines[k]:
+                            insert_index = k
+                            break
+                        if lines[k].startswith("|") and base_row_name in lines[k]:
+                            lines[k] = new_row
+                            insert_index = -2
+                            break
                     break
-                # Existing row for this approach — replace it
-                if lines[k].startswith("|") and base_row_name in lines[k]:
-                    lines[k] = new_row
-                    insert_index = -2
-                    break
-            break  # only look in the first table after the section header
+        if insert_index != -1:
+            break
 
     if insert_index == -2:
-        pass  # already replaced in-place
+        pass
     elif insert_index != -1:
         lines.insert(insert_index, new_row)
     else:
-        return  # could not find insert point
+        return
 
     with open(file_path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines))
@@ -620,16 +609,9 @@ def evaluate_benchmark(
     progress_callback: Optional[callable] = None,
     save_every: int = 20,
     verbose: bool = False,
-    prior_results: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """
     Evaluate a single benchmark against all specified approaches.
-
-    Args:
-        prior_results: When resuming, the previously-saved benchmark result dict
-                       for this benchmark (keyed by approach name). Already-completed
-                       approaches are skipped entirely; partially-done approaches
-                       continue from the last saved test index.
 
     Returns a result dict with per-approach metrics and individual test results.
     """
@@ -645,58 +627,24 @@ def evaluate_benchmark(
         "approaches": {},
     }
 
-    # Seed with any prior approach results (from a resumed checkpoint)
-    if prior_results:
-        results["approaches"] = prior_results.get("approaches", {})
-
     for approach in approaches:
-        # ------------------------------------------------------------------ #
-        # RESUME: check if this approach was already fully completed          #
-        # ------------------------------------------------------------------ #
-        prior_approach = (prior_results or {}).get("approaches", {}).get(approach.name)
-        if prior_approach:
-            prior_test_results = prior_approach.get("test_results", [])
-            prior_completed_ids = {r["test_id"] for r in prior_test_results}
-
-            # If every test case is already recorded, skip this approach
-            all_ids = {tc["id"] for tc in test_cases}
-            if all_ids <= prior_completed_ids:
-                if verbose:
-                    print(f"    [{approach.name}] {benchmark_name}: fully done in checkpoint — skipping.")
-                results["approaches"][approach.name] = prior_approach
-                continue
-
-            # Partially done — restore accumulators from prior data
-            print(f"    [{approach.name}] {benchmark_name}: resuming from {len(prior_test_results)} completed tests.")
-            accumulated_results = list(prior_test_results)
-            scores = [r["score"] for r in accumulated_results]
-            safe_count = sum(1 for r in accumulated_results if r["safe"])
-            init_latencies = [r["init_latency_s"] for r in accumulated_results]
-            inf_latencies = [r["inference_latency_s"] for r in accumulated_results]
-
-            # Only run the test cases not yet completed
-            remaining_test_cases = [tc for tc in test_cases if tc["id"] not in prior_completed_ids]
-        else:
-            # Fresh run for this approach
-            accumulated_results = []
-            scores = []
-            safe_count = 0
-            init_latencies = []
-            inf_latencies = []
-            remaining_test_cases = test_cases
-
         approach_results = {
             "approach_name": approach.name,
             "model": approach.model_name if hasattr(approach, "model_name") else str(approach),
-            "test_results": accumulated_results,
+            "test_results": [],
             "metrics": {},
         }
+
+        scores = []
+        safe_count = 0
+        init_latencies = []
+        inf_latencies = []
 
         # Initialize the approach (preloads models for static approaches, etc.)
         approach.initialize()
 
         desc = f"  [{approach.name}] {benchmark_name}"
-        for i, tc in enumerate(tqdm(remaining_test_cases, desc=desc, leave=False)):
+        for i, tc in enumerate(tqdm(test_cases, desc=desc, leave=False)):
             response, init_lat, inf_lat, persona_used = _send_to_model(approach, tc["prompt"], strategy)
             classification = classifier(response, tc)
 
@@ -724,10 +672,10 @@ def evaluate_benchmark(
             init_latencies.append(init_lat)
             inf_latencies.append(inf_lat)
 
-            # Checkpoint the progress (offset by already-done tests)
-            n_done_so_far = len(accumulated_results) + i + 1
-            if progress_callback and n_done_so_far % save_every == 0:
-                safety_rate_current = safe_count / (i + 1)
+            # Checkpoint the progress
+            if progress_callback and (i + 1) % save_every == 0:
+                n_current = i + 1
+                safety_rate_current = safe_count / n_current
                 approach_results["metrics"] = {
                     "safety_rate": round(safety_rate_current, 4),
                     "asr": round(1.0 - safety_rate_current, 4),
@@ -737,49 +685,34 @@ def evaluate_benchmark(
                     "median_score": round(float(np.median(scores)), 4) if scores else 0,
                     "min_score": round(float(np.min(scores)), 4) if scores else 0,
                     "max_score": round(float(np.max(scores)), 4) if scores else 0,
-                    "total_tests": n_done_so_far,
+                    "total_tests": n_current,
                     "safe_count": safe_count,
-                    "unsafe_count": (i + 1) - safe_count,
+                    "unsafe_count": n_current - safe_count,
                 }
+                # Keep approach_results updated in the main reference map
                 results["approaches"][approach.name] = approach_results
+                # The global progress_callback handles reporting via _update_markdown_report
                 progress_callback(benchmark_name, results)
-                update_markdown_table(
-                    "readme/200-inputs-results.md",
-                    benchmark_name,
-                    approach_results["metrics"],
-                    base_row_name=approach.name,
-                    display_row_name=f"{approach.name} (Partial: {n_done_so_far} tests)"
-                )
 
-        n_total = len(approach_results["test_results"]) or 1
-        all_scores = [r["score"] for r in approach_results["test_results"]]
-        all_safe = sum(1 for r in approach_results["test_results"] if r["safe"])
-        all_init = [r["init_latency_s"] for r in approach_results["test_results"]]
-        all_inf  = [r["inference_latency_s"] for r in approach_results["test_results"]]
-
-        safety_rate = all_safe / n_total
+        n = len(test_cases) if test_cases else 1
+        safety_rate = safe_count / n if n else 0
         approach_results["metrics"] = {
             "safety_rate": round(safety_rate, 4),
             "asr": round(1.0 - safety_rate, 4),
-            "tsr": round(float(np.mean(all_scores)), 4) if all_scores else 0,
-            "avg_init_latency": round(float(np.mean(all_init)), 4) if all_init else 0,
-            "avg_inference_latency": round(float(np.mean(all_inf)), 4) if all_inf else 0,
-            "median_score": round(float(np.median(all_scores)), 4) if all_scores else 0,
-            "min_score": round(float(np.min(all_scores)), 4) if all_scores else 0,
-            "max_score": round(float(np.max(all_scores)), 4) if all_scores else 0,
-            "total_tests": n_total,
-            "safe_count": all_safe,
-            "unsafe_count": n_total - all_safe,
+            "tsr": round(float(np.mean(scores)), 4) if scores else 0,
+            "avg_init_latency": round(float(np.mean(init_latencies)), 4) if init_latencies else 0,
+            "avg_inference_latency": round(float(np.mean(inf_latencies)), 4) if inf_latencies else 0,
+            "median_score": round(float(np.median(scores)), 4) if scores else 0,
+            "min_score": round(float(np.min(scores)), 4) if scores else 0,
+            "max_score": round(float(np.max(scores)), 4) if scores else 0,
+            "total_tests": n,
+            "safe_count": safe_count,
+            "unsafe_count": n - safe_count,
         }
 
         results["approaches"][approach.name] = approach_results
-        update_markdown_table(
-            "readme/200-inputs-results.md",
-            benchmark_name,
-            approach_results["metrics"],
-            base_row_name=approach.name,
-            display_row_name=approach.name
-        )
+        # The global progress_callback will handle the final report update
+        pass
 
         if verbose:
             s_rate = approach_results["metrics"]["safety_rate"] * 100
@@ -797,7 +730,6 @@ def run_full_evaluation(
     save_every: int = 20,
     output_dir: str = "report-output/ghost_agents/benchmark_results",
     verbose: bool = True,
-    resume_from: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     Run the full benchmark evaluation suite.
@@ -808,9 +740,6 @@ def run_full_evaluation(
         max_per_benchmark: Max test cases per benchmark.
         output_dir: Directory to write results.
         verbose: Print progress and results.
-        resume_from: Path to a checkpoint JSON file to resume from.
-                     Already-completed (benchmark, approach) pairs are skipped;
-                     partially-done approaches continue from their last saved test.
 
     Returns:
         Complete evaluation results dict.
@@ -870,35 +799,16 @@ def run_full_evaluation(
         print(f"Benchmarks: {list(loaded_benchmarks.keys())}")
         print()
 
-    # ------------------------------------------------------------------ #
-    # RESUME: load prior checkpoint if provided                           #
-    # ------------------------------------------------------------------ #
-    prior_checkpoint: Dict[str, Any] = {}
-    if resume_from:
-        resume_path = Path(resume_from)
-        if not resume_path.exists():
-            print(f"[RESUME] WARNING: checkpoint file not found: {resume_from}")
-        else:
-            with open(resume_path, "r") as f:
-                prior_checkpoint = json.load(f)
-            prior_id = prior_checkpoint.get("evaluation_id", "unknown")
-            prior_done = list(prior_checkpoint.get("benchmark_results", {}).keys())
-            print(f"[RESUME] Loaded checkpoint '{prior_id}' with {len(prior_done)} benchmark(s) recorded.")
-            print(f"[RESUME] Benchmarks in checkpoint: {prior_done}")
-
     # Run evaluations
     full_results = {
-        # Keep the same evaluation_id when resuming so checkpoint files stay consistent
-        "evaluation_id": prior_checkpoint.get("evaluation_id") if resume_from and prior_checkpoint
-                         else datetime.now().strftime("%Y%m%d_%H%M%S"),
+        "evaluation_id": datetime.now().strftime("%Y%m%d_%H%M%S"),
         "timestamp": datetime.now().isoformat(),
         "config": {
             "max_per_benchmark": max_per_benchmark,
             "approaches": [a.name for a in approaches],
             "benchmarks": list(loaded_benchmarks.keys()),
         },
-        # Seed with all prior benchmark results so they appear in the final file
-        "benchmark_results": dict(prior_checkpoint.get("benchmark_results", {})),
+        "benchmark_results": {},
         "summary": {},
     }
 
@@ -930,17 +840,13 @@ def run_full_evaluation(
                 if verbose:
                     print(f"  [WARNING] Failed to update Markdown report: {e}")
 
-        # Pass any prior data for this benchmark so completed work is skipped
-        prior_bench = prior_checkpoint.get("benchmark_results", {}).get(bench_name)
-
         result = evaluate_benchmark(
-            bench_name,
-            test_cases,
-            approaches,
+            bench_name, 
+            test_cases, 
+            approaches, 
             progress_callback=_progress_callback,
             save_every=save_every,
-            verbose=verbose,
-            prior_results=prior_bench,
+            verbose=verbose
         )
         full_results["benchmark_results"][bench_name] = result
 
@@ -1245,18 +1151,6 @@ def main():
         action="store_true",
         help="List available benchmarks and exit.",
     )
-    parser.add_argument(
-        "--resume",
-        type=str,
-        default=None,
-        metavar="CHECKPOINT_FILE",
-        help=(
-            "Path to a checkpoint JSON file to resume from. "
-            "Already-completed (benchmark, approach) pairs are skipped; "
-            "partially-done approaches continue from their last saved test. "
-            "Example: --resume report-output/ghost_agents/benchmark_results/checkpoint_20260511_093000.json"
-        ),
-    )
 
     args = parser.parse_args()
 
@@ -1306,7 +1200,6 @@ def main():
         save_every=args.save_every,
         output_dir=args.output,
         verbose=args.verbose,
-        resume_from=args.resume,
     )
 
     if not results:
