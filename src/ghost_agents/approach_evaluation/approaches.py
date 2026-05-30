@@ -707,51 +707,6 @@ class DeepseekSuicideApproach(Approach):
 # Helper to clean model name for display (e.g., "llama3.2:3b" -> "llama32_3b")
 _CLEAN_MODEL_NAME = COMPONENT_COMPARISON_MODEL.replace(".", "").replace(":", "_")
 
-class ComponentComparisonStaticPersonaApproach(Approach):
-    """(a) Static + Persona assigned at start, No Safety Filter."""
-    name = f"{_CLEAN_MODEL_NAME}_static_persona"
-    models = [COMPONENT_COMPARISON_MODEL]
-    suicide_mode = False
-
-    def initialize(self) -> float:
-        self.persona = random.choice(CYBERSECURITY_PERSONAS)
-        return preload_model(self.models[0])
-
-    def execute_plan(self, plan: Dict[str, Any]) -> Dict[str, Any]:
-        model = self.models[0]
-        prompt = _build_component_comparison_prompt(plan["action"], plan["target"], persona=self.persona, include_safety=False)
-        t_start = time.perf_counter()
-        result = _call_ollama(model, prompt)
-        result["init_time"] = 0.0
-        result["processing_time"] = time.perf_counter() - t_start
-        result["model_used"] = model
-        result["persona_used"] = self.persona["name"]
-        return result
-
-    def teardown(self):
-        pass
-
-class ComponentComparisonStaticSafetyApproach(Approach):
-    """(b) Static + Safety Filter, No Persona."""
-    name = f"{_CLEAN_MODEL_NAME}_static_safety_filter"
-    models = [COMPONENT_COMPARISON_MODEL]
-    suicide_mode = False
-
-    def initialize(self) -> float:
-        return preload_model(self.models[0])
-
-    def execute_plan(self, plan: Dict[str, Any]) -> Dict[str, Any]:
-        model = self.models[0]
-        prompt = _build_component_comparison_prompt(plan["action"], plan["target"], include_safety=True)
-        t_start = time.perf_counter()
-        result = _call_ollama(model, prompt)
-        result["init_time"] = 0.0
-        result["processing_time"] = time.perf_counter() - t_start
-        result["model_used"] = model
-        return result
-
-    def teardown(self):
-        pass
 
 class ComponentComparisonSuicideBaseApproach(Approach):
     """(c) Ephemeral Only, No Persona, No Safety Filter."""
@@ -818,8 +773,6 @@ ALL_APPROACHES = {
     "deepseek_r1_1_5b_static": DeepseekStaticApproach,
     "deepseek_r1_1_5b_suicide": DeepseekSuicideApproach,
     # Component Comparison Study Approaches (Generic names)
-    "component_comparison_static_persona": ComponentComparisonStaticPersonaApproach,
-    "component_comparison_static_safety": ComponentComparisonStaticSafetyApproach,
     "component_comparison_suicide_base": ComponentComparisonSuicideBaseApproach,
     "component_comparison_static_persona_and_safety_filter": ComponentComparisonStaticPersonaAndSafetyFilterApproach,
 }

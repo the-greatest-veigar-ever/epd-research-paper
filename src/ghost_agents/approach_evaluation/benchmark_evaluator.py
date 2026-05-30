@@ -771,8 +771,6 @@ def run_full_evaluation(
         for name in approach_names:
             if name == "component_comparison":
                 expanded_names.extend([
-                    f"{_CLEAN_MODEL_NAME}_static_persona",
-                    f"{_CLEAN_MODEL_NAME}_static_safety_filter",
                     f"{_CLEAN_MODEL_NAME}_ephemeral",
                     f"{_CLEAN_MODEL_NAME}_static_persona_safety_filter"
                 ])
@@ -1142,8 +1140,6 @@ def main():
     # Apply component_comparison model override if provided
     if args.component_comparison_model:
         from src.ghost_agents.approach_evaluation.approaches import (
-            ComponentComparisonStaticPersonaApproach,
-            ComponentComparisonStaticSafetyApproach,
             ComponentComparisonSuicideBaseApproach,
             ComponentComparisonStaticPersonaAndSafetyFilterApproach
         )
@@ -1155,16 +1151,11 @@ def main():
         _CLEAN_MODEL_NAME = clean_name
         
         # Update the classes dynamically
-        for cls in [ComponentComparisonStaticPersonaApproach, ComponentComparisonStaticSafetyApproach, 
-                    ComponentComparisonSuicideBaseApproach, ComponentComparisonStaticPersonaAndSafetyFilterApproach]:
+        for cls in [ComponentComparisonSuicideBaseApproach, ComponentComparisonStaticPersonaAndSafetyFilterApproach]:
             cls.models = [args.component_comparison_model]
             # Update the display name to match the new model
             if "static_persona_safety_filter" in cls.name:
                 cls.name = f"{clean_name}_static_persona_safety_filter"
-            elif "static_persona" in cls.name:
-                cls.name = f"{clean_name}_static_persona"
-            elif "static_safety_filter" in cls.name:
-                cls.name = f"{clean_name}_static_safety_filter"
             elif "ephemeral" in cls.name:
                 cls.name = f"{clean_name}_ephemeral"
 
