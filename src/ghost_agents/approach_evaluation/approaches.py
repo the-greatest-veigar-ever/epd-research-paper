@@ -8,8 +8,6 @@ Ghost Agent Approach Definitions
 4. Llama Suicide (ephemeral single model)
 5. Qwen Static (persistent single model)
 6. Qwen Suicide (ephemeral single model)
-7. Multimodal Static (random selection, all pre-loaded)
-8. Multimodal Suicide (random selection, load on demand)
 """
 
 import random
@@ -28,18 +26,18 @@ from src.ghost_agents.approach_evaluation.ollama_manager import (
 OLLAMA_URL = "http://localhost:11434/api/generate"
 
 # ===========================================================================
-# GLOBAL CONFIGURATION FOR ABLATION STUDIES
+# GLOBAL CONFIGURATION FOR COMPONENT COMPARISON STUDIES
 # ===========================================================================
 # Change this model to test (a), (b), (c), and (d) with different SLMs
 # This does NOT affect your original Phi/Llama/Qwen classes.
-ABLATION_MODEL = "llama3.2:3b" 
+COMPONENT_COMPARISON_MODEL = "llama3.2:3b" 
 
 # ===========================================================================
-# GLOBAL CONFIGURATION FOR ABLATION STUDIES
+# GLOBAL CONFIGURATION FOR COMPONENT COMPARISON STUDIES
 # ===========================================================================
 # Change this model to test (a), (b), (c), and (d) with different SLMs
 # This does NOT affect your original Phi/Llama/Qwen classes.
-ABLATION_MODEL = "llama3.2:3b" 
+COMPONENT_COMPARISON_MODEL = "llama3.2:3b" 
 
 # ---------------------------------------------------------------------------
 # Cybersecurity Personas for Suicide (Ephemeral) Model Rotation
@@ -307,12 +305,12 @@ def _build_prompt(action: str, target: str, persona: dict = None) -> str:
 
 
 # ===========================================================================
-# ABLATION STUDY HELPERS (Separated to protect original logic)
+# COMPONENT COMPARISON STUDY HELPERS (Separated to protect original logic)
 # ===========================================================================
 
-def _build_ablation_prompt(action: str, target: str, persona: dict = None, include_safety: bool = True) -> str:
+def _build_component_comparison_prompt(action: str, target: str, persona: dict = None, include_safety: bool = True) -> str:
     """
-    Dedicated prompt builder for ablation studies.
+    Dedicated prompt builder for component comparison studies.
     Maintains the EXACT same Role, Task, and Refusal logic as the original _build_prompt,
     but allows toggling the Persona and the 6 Safety Constraints.
     """
@@ -573,131 +571,6 @@ class QwenSuicideApproach(Approach):
 
 
 # ===========================================================================
-# 4. Gemma Approaches
-# ===========================================================================
-
-class GemmaStaticApproach(Approach):
-    """Single gemma3:4b model, kept loaded throughout the evaluation."""
-
-    name = "gemma_static"
-    models = ["gemma3:4b"]
-    suicide_mode = False
-
-    def initialize(self) -> float:
-        print(f"[{self.name}] Preloading {self.models[0]}...")
-        return preload_model(self.models[0])
-
-    def execute_plan(self, plan: Dict[str, Any]) -> Dict[str, Any]:
-        model = self.models[0]
-        prompt = _build_prompt(plan["action"], plan["target"])
-        t_start = time.perf_counter()
-        result = _call_ollama(model, prompt)
-        processing_time = time.perf_counter() - t_start
-        result["init_time"] = 0.0
-        result["processing_time"] = processing_time
-        result["model_used"] = model
-        return result
-
-    def teardown(self):
-        pass
-
-
-class GemmaSuicideApproach(Approach):
-    """Single gemma3:4b model, loaded on demand and unloaded after each execution."""
-
-    name = "gemma3_4b_gemini_suicide"
-    models = ["gemma3:4b"]
-    suicide_mode = True
-
-    def initialize(self) -> float:
-        print(f"[{self.name}] Suicide mode — no preload.")
-        unload_all_models()
-        return 0.0
-
-    def execute_plan(self, plan: Dict[str, Any]) -> Dict[str, Any]:
-        model = self.models[0]
-        persona = random.choice(CYBERSECURITY_PERSONAS)
-        prompt = _build_prompt(plan["action"], plan["target"], persona=persona)
-        init_time = preload_model(model)
-        t_proc_start = time.perf_counter()
-        result = _call_ollama(model, prompt)
-        processing_time = time.perf_counter() - t_proc_start
-        unload_model(model)
-        result["init_time"] = init_time
-        result["processing_time"] = processing_time
-        result["model_used"] = model
-        result["persona_used"] = persona["name"]
-        return result
-
-    def teardown(self):
-        unload_all_models()
-
-
-# ===========================================================================
-# 5. Multi-Model Approaches
-# ===========================================================================
-
-class MultimodalStaticApproach(Approach):
-    """3 models pre-loaded, randomly selected per execution."""
-
-    name = "multimodal_static"
-    models = ["phi3:mini", "llama3.2:3b", "qwen2.5:3b"]
-    suicide_mode = False
-
-    def initialize(self) -> float:
-        total_time = 0.0
-        for model in self.models:
-            print(f"[{self.name}] Preloading {model}...")
-            total_time += preload_model(model)
-        return total_time
-
-    def execute_plan(self, plan: Dict[str, Any]) -> Dict[str, Any]:
-        model = random.choice(self.models)
-        prompt = _build_prompt(plan["action"], plan["target"])
-        t_start = time.perf_counter()
-        result = _call_ollama(model, prompt)
-        processing_time = time.perf_counter() - t_start
-        result["init_time"] = 0.0
-        result["processing_time"] = processing_time
-        result["model_used"] = model
-        return result
-
-    def teardown(self):
-        pass
-
-
-class MultimodalSuicideApproach(Approach):
-    """3 models, randomly selected per execution, loaded on demand and unloaded after."""
-
-    name = "multimodal_suicide"
-    models = ["phi3:mini", "llama3.2:3b", "qwen2.5:3b"]
-    suicide_mode = True
-
-    def initialize(self) -> float:
-        print(f"[{self.name}] Suicide mode — no preload.")
-        unload_all_models()
-        return 0.0
-
-    def execute_plan(self, plan: Dict[str, Any]) -> Dict[str, Any]:
-        model = random.choice(self.models)
-        persona = random.choice(CYBERSECURITY_PERSONAS)
-        prompt = _build_prompt(plan["action"], plan["target"], persona=persona)
-        init_time = preload_model(model)
-        t_proc_start = time.perf_counter()
-        result = _call_ollama(model, prompt)
-        processing_time = time.perf_counter() - t_proc_start
-        unload_model(model)
-        result["init_time"] = init_time
-        result["processing_time"] = processing_time
-        result["model_used"] = model
-        result["persona_used"] = persona["name"]
-        return result
-
-    def teardown(self):
-        unload_all_models()
-
-
-# ===========================================================================
 # 6. GPT OSS Approaches
 # ===========================================================================
 
@@ -823,16 +696,16 @@ class DeepseekSuicideApproach(Approach):
 # ---------------------------------------------------------------------------
 
 # ===========================================================================
-# 8. Ablation Study Approaches (Parallel Implementation)
+# 8. Component Comparison Study Approaches (Parallel Implementation)
 # ===========================================================================
 
 # Helper to clean model name for display (e.g., "llama3.2:3b" -> "llama32_3b")
-_CLEAN_MODEL_NAME = ABLATION_MODEL.replace(".", "").replace(":", "_")
+_CLEAN_MODEL_NAME = COMPONENT_COMPARISON_MODEL.replace(".", "").replace(":", "_")
 
-class AblationStaticPersonaApproach(Approach):
+class ComponentComparisonStaticPersonaApproach(Approach):
     """(a) Static + Persona assigned at start, No Safety Filter."""
     name = f"{_CLEAN_MODEL_NAME}_static_persona"
-    models = [ABLATION_MODEL]
+    models = [COMPONENT_COMPARISON_MODEL]
     suicide_mode = False
 
     def initialize(self) -> float:
@@ -841,7 +714,7 @@ class AblationStaticPersonaApproach(Approach):
 
     def execute_plan(self, plan: Dict[str, Any]) -> Dict[str, Any]:
         model = self.models[0]
-        prompt = _build_ablation_prompt(plan["action"], plan["target"], persona=self.persona, include_safety=False)
+        prompt = _build_component_comparison_prompt(plan["action"], plan["target"], persona=self.persona, include_safety=False)
         t_start = time.perf_counter()
         result = _call_ollama(model, prompt)
         result["init_time"] = 0.0
@@ -853,10 +726,10 @@ class AblationStaticPersonaApproach(Approach):
     def teardown(self):
         pass
 
-class AblationStaticSafetyApproach(Approach):
+class ComponentComparisonStaticSafetyApproach(Approach):
     """(b) Static + Safety Filter, No Persona."""
     name = f"{_CLEAN_MODEL_NAME}_static_safety_filter"
-    models = [ABLATION_MODEL]
+    models = [COMPONENT_COMPARISON_MODEL]
     suicide_mode = False
 
     def initialize(self) -> float:
@@ -864,7 +737,7 @@ class AblationStaticSafetyApproach(Approach):
 
     def execute_plan(self, plan: Dict[str, Any]) -> Dict[str, Any]:
         model = self.models[0]
-        prompt = _build_ablation_prompt(plan["action"], plan["target"], include_safety=True)
+        prompt = _build_component_comparison_prompt(plan["action"], plan["target"], include_safety=True)
         t_start = time.perf_counter()
         result = _call_ollama(model, prompt)
         result["init_time"] = 0.0
@@ -875,10 +748,10 @@ class AblationStaticSafetyApproach(Approach):
     def teardown(self):
         pass
 
-class AblationSuicideBaseApproach(Approach):
+class ComponentComparisonSuicideBaseApproach(Approach):
     """(c) Ephemeral Only, No Persona, No Safety Filter."""
     name = f"{_CLEAN_MODEL_NAME}_ephemeral"
-    models = [ABLATION_MODEL]
+    models = [COMPONENT_COMPARISON_MODEL]
     suicide_mode = True
 
     def initialize(self) -> float:
@@ -887,7 +760,7 @@ class AblationSuicideBaseApproach(Approach):
 
     def execute_plan(self, plan: Dict[str, Any]) -> Dict[str, Any]:
         model = self.models[0]
-        prompt = _build_ablation_prompt(plan["action"], plan["target"], include_safety=False)
+        prompt = _build_component_comparison_prompt(plan["action"], plan["target"], include_safety=False)
         init_time = preload_model(model)
         t_proc_start = time.perf_counter()
         result = _call_ollama(model, prompt)
@@ -901,10 +774,10 @@ class AblationSuicideBaseApproach(Approach):
     def teardown(self):
         unload_all_models()
 
-class AblationStaticFullApproach(Approach):
+class ComponentComparisonStaticPersonaAndSafetyFilterApproach(Approach):
     """(d) Static + Persona assigned at start + Safety Filter."""
     name = f"{_CLEAN_MODEL_NAME}_static_persona_safety_filter"
-    models = [ABLATION_MODEL]
+    models = [COMPONENT_COMPARISON_MODEL]
     suicide_mode = False
 
     def initialize(self) -> float:
@@ -913,7 +786,7 @@ class AblationStaticFullApproach(Approach):
 
     def execute_plan(self, plan: Dict[str, Any]) -> Dict[str, Any]:
         model = self.models[0]
-        prompt = _build_ablation_prompt(plan["action"], plan["target"], persona=self.persona, include_safety=True)
+        prompt = _build_component_comparison_prompt(plan["action"], plan["target"], persona=self.persona, include_safety=True)
         t_start = time.perf_counter()
         result = _call_ollama(model, prompt)
         result["init_time"] = 0.0
@@ -934,16 +807,14 @@ ALL_APPROACHES = {
     "phi3_suicide": PhiSuicideApproach,
     "llama_suicide": LlamaSuicideApproach,
     "qwen_suicide": QwenSuicideApproach,
-    "gemma3_4b_gemini_suicide": GemmaSuicideApproach,
-    "multimodal_suicide": MultimodalSuicideApproach,
     "gpt_oss_20b_suicide": GptOss20bSuicideApproach,
     "gpt_120b_oss_static": GptOss120bStaticApproach,
     "llama33_70b_static": Llama33StaticApproach,
     "deepseek_r1_1_5b_static": DeepseekStaticApproach,
     "deepseek_r1_1_5b_suicide": DeepseekSuicideApproach,
-    # Ablation Study Approaches (Generic names)
-    "ablation_static_persona": AblationStaticPersonaApproach,
-    "ablation_static_safety": AblationStaticSafetyApproach,
-    "ablation_suicide_base": AblationSuicideBaseApproach,
-    "ablation_static_full": AblationStaticFullApproach,
+    # Component Comparison Study Approaches (Generic names)
+    "component_comparison_static_persona": ComponentComparisonStaticPersonaApproach,
+    "component_comparison_static_safety": ComponentComparisonStaticSafetyApproach,
+    "component_comparison_suicide_base": ComponentComparisonSuicideBaseApproach,
+    "component_comparison_static_persona_and_safety_filter": ComponentComparisonStaticPersonaAndSafetyFilterApproach,
 }

@@ -70,7 +70,7 @@ To replicate the primary results presented in the paper across all models and al
 python3 -m src.ghost_agents.approach_evaluation.benchmark_evaluator
 ```
 
-### Running Targeted Ablations
+### Running Targeted Component Comparisons
 To evaluate a specific subset of approaches or bound the test size for rapid verification:
 
 ```bash

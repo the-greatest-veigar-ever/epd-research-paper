@@ -773,7 +773,7 @@ def run_full_evaluation(
     if approach_names:
         expanded_names = []
         for name in approach_names:
-            if name == "ablation":
+            if name == "component_comparison":
                 expanded_names.extend([
                     f"{_CLEAN_MODEL_NAME}_static_persona",
                     f"{_CLEAN_MODEL_NAME}_static_safety_filter",
@@ -1116,10 +1116,10 @@ def main():
         help="Approaches to evaluate (default: all).",
     )
     parser.add_argument(
-        "--ablation-model",
+        "--component-comparison-model",
         type=str,
         default=None,
-        help="Override the model used for ablation approaches (e.g., llama3.2:1b).",
+        help="Override the model used for component comparison approaches (e.g., llama3.2:1b).",
     )
     parser.add_argument(
         "--max-per-benchmark",
@@ -1152,25 +1152,25 @@ def main():
 
     args = parser.parse_args()
 
-    # Apply ablation model override if provided
-    if args.ablation_model:
+    # Apply component_comparison model override if provided
+    if args.component_comparison_model:
         from src.ghost_agents.approach_evaluation.approaches import (
-            AblationStaticPersonaApproach,
-            AblationStaticSafetyApproach,
-            AblationSuicideBaseApproach,
-            AblationStaticFullApproach
+            ComponentComparisonStaticPersonaApproach,
+            ComponentComparisonStaticSafetyApproach,
+            ComponentComparisonSuicideBaseApproach,
+            ComponentComparisonStaticPersonaAndSafetyFilterApproach
         )
         # Clean the name for the table labels
-        clean_name = args.ablation_model.replace(".", "").replace(":", "_")
+        clean_name = args.component_comparison_model.replace(".", "").replace(":", "_")
         
         # Update the global clean name used for shortcut expansion
         global _CLEAN_MODEL_NAME
         _CLEAN_MODEL_NAME = clean_name
         
         # Update the classes dynamically
-        for cls in [AblationStaticPersonaApproach, AblationStaticSafetyApproach, 
-                    AblationSuicideBaseApproach, AblationStaticFullApproach]:
-            cls.models = [args.ablation_model]
+        for cls in [ComponentComparisonStaticPersonaApproach, ComponentComparisonStaticSafetyApproach, 
+                    ComponentComparisonSuicideBaseApproach, ComponentComparisonStaticPersonaAndSafetyFilterApproach]:
+            cls.models = [args.component_comparison_model]
             # Update the display name to match the new model
             if "static_persona_safety_filter" in cls.name:
                 cls.name = f"{clean_name}_static_persona_safety_filter"

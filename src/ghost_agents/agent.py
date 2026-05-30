@@ -121,7 +121,7 @@ class GhostAgentFactory:
     prior to agent instantiation.
     """
     # Real SLMs available via Ollama for baseline comparison
-    MODELS = ["llama3.2:3b", "phi3:mini", "gemma2:2b"]
+    MODELS = ["llama3.2:3b", "phi3:mini"]
     
     # Current model index for round-robin rotation
     _current_model_idx = 0

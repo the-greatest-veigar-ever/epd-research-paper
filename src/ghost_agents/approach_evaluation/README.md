@@ -4,10 +4,10 @@ This framework evaluates **8 execution approaches** for LLM-based security remed
 
 ## 🚀 The 8 Approaches
 
-| Strategy | Phi-3 Mini | Llama-3.2 3B | Qwen-2.5 3B | Multi-Model |
-| :--- | :--- | :--- | :--- | :--- |
-| **Static** | `phi_static` | `llama_static` | `qwen_static` | `multimodal_static` |
-| **Suicide (EPD)** | `phi_suicide` | `llama_suicide` | `qwen_suicide` | `multimodal_suicide` |
+| Strategy | Phi-3 Mini | Llama-3.2 3B | Qwen-2.5 3B |
+| :--- | :--- | :--- | :--- |
+| **Static** | `phi_static` | `llama_static` | `qwen_static` |
+| **Suicide (EPD)** | `phi_suicide` | `llama_suicide` | `qwen_suicide` |
 
 - **Static**: The model is initialized once and handles all requests in the same session.
 - **Suicide (EPD)**: A fresh model instance is spawned for every request and self-destructs immediately after completion to prevent persistent attacks.
