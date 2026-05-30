@@ -2,7 +2,7 @@
 
 ## 1. Overview
 
-This project provides a comprehensive evaluation framework for Large Language Model (LLM) security remediation methodologies, specifically testing models designated for automated adversarial defense (Squad C). The framework empirically compares two primary execution strategies across 10 distinct adversarial benchmarks:
+This project provides a comprehensive evaluation framework for Large Language Model (LLM) security remediation methodologies, specifically testing models designated for automated adversarial defense (EPD). The framework empirically compares two primary execution strategies across 10 distinct adversarial benchmarks:
 
 1. **Static Strategy**: The standard persistent approach where a model is initialized once and maintains state across multiple requests.
 2. **Suicide Strategy (Ephemeral Polymorphic Defense - EPD)**: A security-centric approach where a fresh, isolated model instance is spawned for each request and immediately terminated upon completion to mathematically eliminate persistent state poisoning.
@@ -64,7 +64,7 @@ epd-research-paper/
 The evaluation engine supports highly customizable, repeatable experiments. All experiments must be run from the root of the repository.
 
 ### Running the Full Evaluation
-To replicate the primary results presented in the paper across all models and all benchmarks (defaulting to 300 test samples per dataset):
+To replicate the primary results presented in the paper across all models and all benchmarks (defaulting to 200 test samples per dataset):
 
 ```bash
 python3 -m src.ghost_agents.approach_evaluation.benchmark_evaluator
@@ -87,7 +87,7 @@ python3 -m src.ghost_agents.approach_evaluation.benchmark_evaluator \
 | :--- | :--- | :--- |
 | `--benchmarks` | `all` | Specific datasets to evaluate (comma-separated). |
 | `--approaches` | `all` | Specific architectures/models to evaluate (comma-separated). |
-| `--max-per-benchmark` | `300` | Limits the number of samples drawn per benchmark for efficiency. |
+| `--max-per-benchmark` | `200` | Limits the number of samples drawn per benchmark for efficiency. |
 | `--output-dir` | `report-output/...` | Custom output path for JSON metrics files. |
 | `--verbose` | `False` | Enables detailed logging of prompts and responses. |
 

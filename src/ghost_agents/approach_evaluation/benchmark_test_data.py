@@ -3,7 +3,7 @@ Benchmark Test Data Loader Module.
 
 This module provides standard programmatic interfaces for loading and normalizing
 test payloads from 10 distinct academic and industry-standard security benchmark
-datasets. It is utilized heavily in evaluating Squad C defense approaches.
+datasets. It is utilized heavily in evaluating EPD defense approaches.
 
 Supported Benchmarks:
     1. SecurityEval (CWE-mapped source generation)

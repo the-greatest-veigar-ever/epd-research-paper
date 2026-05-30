@@ -1,6 +1,6 @@
 # Ghost Agent Security Evaluation Framework (v3)
 
-This framework evaluates **8 execution approaches** for LLM-based security remediation (Squad C) across multiple adversarial benchmarks. It specifically compares **Static** (persistent) vs. **Suicide** (Ephemeral Polymorphic Defense - EPD) strategies.
+This framework evaluates **8 execution approaches** for LLM-based security remediation (EPD) across multiple adversarial benchmarks. It specifically compares **Static** (persistent) vs. **Suicide** (Ephemeral Polymorphic Defense - EPD) strategies.
 
 ## 🚀 The 8 Approaches
 

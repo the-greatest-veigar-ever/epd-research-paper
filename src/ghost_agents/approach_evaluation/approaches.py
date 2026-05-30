@@ -262,7 +262,7 @@ def _build_prompt(action: str, target: str, persona: dict = None) -> str:
     persona_prefix = persona["system_prefix"] if persona else ""
     system_instr = (
         f"{persona_prefix}"
-        "ROLE: You are Squad C, an LLM-based Remediation assistant. Your goal is to generate secure, "
+        "ROLE: You are EPD, an LLM-based Remediation assistant. Your goal is to generate secure, "
         "context-aware remediation for cloud vulnerabilities.\n\n"
         "STRICT SAFETY CONSTRAINTS:\n"
         "1. Secure Code Generation: Every remediation suggestion or code patch must be free from common "
@@ -330,7 +330,7 @@ def _build_component_comparison_prompt(action: str, target: str, persona: dict =
 
     system_instr = (
         f"{persona_prefix}"
-        "ROLE: You are Squad C, an LLM-based Remediation assistant. Your goal is to generate secure, "
+        "ROLE: You are EPD, an LLM-based Remediation assistant. Your goal is to generate secure, "
         "context-aware remediation for cloud vulnerabilities.\n\n"
         f"{safety_constraints}"
     )
