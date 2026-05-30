@@ -1,30 +1,23 @@
 """
-Benchmark Test Data Loader for Ghost Agent Evaluation
+Benchmark Test Data Loader Module.
 
-Loads test cases from all 10 academic/industry benchmark datasets
-for comprehensive security evaluation of Squad C approaches.
+This module provides standard programmatic interfaces for loading and normalizing
+test payloads from 10 distinct academic and industry-standard security benchmark
+datasets. It is utilized heavily in evaluating Squad C defense approaches.
 
-Benchmarks:
-1.  SecurityEval      -- CWE-based code generation security (121 prompts, 69 CWEs)
-2.  LLMSecEval        -- NL prompt security evaluation (18/25 CWEs)
-3.  SecBench          -- Multi-domain cybersecurity knowledge (44,823 MCQs + 3,087 SAQs)
-4.  CyberSecEval      -- Prompt injection, insecure code, autonomous ops
-5.  CyberBench        -- NLP tasks on cyber data (NER, summarization, classification)
-6.  HarmBench         -- Automated red teaming and robust refusal
-7.  FORMAI            -- Formally verified AI-generated code (331K C programs)
-8.  ACSE-Eval         -- AWS CDK threat modeling (100 scenarios)
-9.  CyberSOCEval      -- SOC malware analysis and threat intel
-10. SECURE            -- ICS cybersecurity advisory (6 tasks)
+Supported Benchmarks:
+    1. SecurityEval (CWE-mapped source generation)
+    2. LLMSecEval (Natural language security prompts)
+    3. SecBench (Multi-domain cybersecurity evaluation)
+    4. CyberSecEval (Prompt injection and autonomous operations)
+    5. CyberBench (Cyber-telemetry NLP tasks)
+    6. HarmBench (Red teaming and robust refusal evaluation)
+    7. FORMAI (Formally verified C vulnerability remediation)
+    8. ACSE-Eval (Cloud architecture threat modeling)
+    9. CyberSOCEval (SOC intelligence and log triage)
+    10. SECURE (ICS advisory scenarios)
 
-Each loader returns a list of dicts with at minimum:
-    {
-        "id": str,
-        "benchmark": str,
-        "category": str,
-        "prompt": str,           # the test input
-        "expected_behavior": str, # what the model SHOULD do
-        "metadata": dict,
-    }
+The interfaces guarantee a standardized Dictionary structure for telemetry routing.
 """
 
 import csv
@@ -65,8 +58,15 @@ BENCHMARK_CITATIONS = {
 
 def load_security_eval(max_samples: int = 50) -> List[Dict[str, Any]]:
     """
-    Load SecurityEval dataset -- CWE-mapped code generation prompts.
-    Tests whether the agent generates code free from common weaknesses.
+    Retrieves and formats test cases from the SecurityEval dataset.
+
+    Args:
+        max_samples (int, optional): The maximum number of samples to process.
+            Defaults to 50.
+
+    Returns:
+        List[Dict[str, Any]]: A collection of normalized test case dictionaries
+            structured for execution engine consumption.
     """
     dataset_path = _BENCHMARK_DIR / "SecurityEval" / "dataset.jsonl"
     if not dataset_path.exists():
@@ -105,8 +105,14 @@ def load_security_eval(max_samples: int = 50) -> List[Dict[str, Any]]:
 
 def load_llmseceval(max_samples: int = 50) -> List[Dict[str, Any]]:
     """
-    Load LLMSecEval dataset -- NL prompts for security-sensitive code generation.
-    Tests if the model generates secure code from natural language descriptions.
+    Retrieves and formats natural language prompts from the LLMSecEval dataset.
+
+    Args:
+        max_samples (int, optional): The maximum number of samples to process.
+            Defaults to 50.
+
+    Returns:
+        List[Dict[str, Any]]: A collection of normalized test case dictionaries.
     """
     dataset_dir = _BENCHMARK_DIR / "LLMSecEval" / "Dataset"
     if not dataset_dir.exists():
@@ -153,11 +159,16 @@ def load_llmseceval(max_samples: int = 50) -> List[Dict[str, Any]]:
 
 def load_secbench(max_samples: int = 50, domain_filter: str = None) -> List[Dict[str, Any]]:
     """
-    Load SecBench dataset -- multi-domain cybersecurity MCQs and SAQs.
-    Tests knowledge retention and logical reasoning in security domains.
+    Retrieves knowledge assessment queries from the SecBench dataset.
 
     Args:
-        domain_filter: Optional filter like "D9" for Cloud Security only.
+        max_samples (int, optional): The maximum number of samples to process.
+            Defaults to 50.
+        domain_filter (str, optional): A prefix to filter queries by specific
+            security domains (e.g., 'D9' for Cloud). Defaults to None.
+
+    Returns:
+        List[Dict[str, Any]]: A collection of normalized test case dictionaries.
     """
     data_dir = _BENCHMARK_DIR / "SecBench" / "data"
     if not data_dir.exists():
@@ -237,8 +248,14 @@ def load_secbench(max_samples: int = 50, domain_filter: str = None) -> List[Dict
 
 def load_cyberseceval(max_samples: int = 50) -> List[Dict[str, Any]]:
     """
-    Load CyberSecEval datasets from PurpleLlama -- prompt injection,
-    instruct (insecure code), and autonomous uplift test cases.
+    Retrieves adversarial payload cases from the CyberSecEval framework.
+
+    Args:
+        max_samples (int, optional): The maximum number of samples to process.
+            Defaults to 50.
+
+    Returns:
+        List[Dict[str, Any]]: A collection of normalized test case dictionaries.
     """
     datasets_dir = _BENCHMARK_DIR / "PurpleLlama" / "CybersecurityBenchmarks" / "datasets"
     if not datasets_dir.exists():
@@ -322,8 +339,14 @@ def load_cyberseceval(max_samples: int = 50) -> List[Dict[str, Any]]:
 
 def load_cyberbench(max_samples: int = 50) -> List[Dict[str, Any]]:
     """
-    Load CyberBench -- NLP tasks for cybersecurity (NER, summarization,
-    multiple choice, text classification).
+    Retrieves telemetry processing tasks from the CyberBench dataset.
+
+    Args:
+        max_samples (int, optional): The maximum number of samples to process.
+            Defaults to 50.
+
+    Returns:
+        List[Dict[str, Any]]: A collection of normalized test case dictionaries.
     """
     bench_dir = _BENCHMARK_DIR / "CyberBench"
     if not bench_dir.exists():
@@ -414,7 +437,14 @@ def load_cyberbench(max_samples: int = 50) -> List[Dict[str, Any]]:
 
 def load_harmbench(max_samples: int = 50) -> List[Dict[str, Any]]:
     """
-    Load HarmBench -- red teaming behaviors for robust refusal evaluation.
+    Retrieves adversarial safety bypass tasks from the HarmBench dataset.
+
+    Args:
+        max_samples (int, optional): The maximum number of samples to process.
+            Defaults to 50.
+
+    Returns:
+        List[Dict[str, Any]]: A collection of normalized test case dictionaries.
     """
     behavior_dir = _BENCHMARK_DIR / "HarmBench" / "data" / "behavior_datasets"
     if not behavior_dir.exists():
@@ -462,9 +492,14 @@ def load_harmbench(max_samples: int = 50) -> List[Dict[str, Any]]:
 
 def load_formai(max_samples: int = 50) -> List[Dict[str, Any]]:
     """
-    Load FORMAI v2 -- formally verified AI-generated C programs.
-    Tests whether the agent can identify and remediate verified vulnerabilities.
-    Prioritizes memory-efficient loading from pre-processed JSONL.
+    Retrieves formally verified vulnerability scenarios from the FORMAI dataset.
+
+    Args:
+        max_samples (int, optional): The maximum number of samples to process.
+            Defaults to 50.
+
+    Returns:
+        List[Dict[str, Any]]: A collection of normalized test case dictionaries.
     """
     formai_dir = _BENCHMARK_DIR / "FormAI"
     if not formai_dir.exists():
@@ -570,8 +605,14 @@ def load_formai(max_samples: int = 50) -> List[Dict[str, Any]]:
 
 def load_acse_eval(max_samples: int = 50) -> List[Dict[str, Any]]:
     """
-    Load ACSE-Eval -- AWS CDK threat modeling scenarios.
-    Tests cloud-native architectural reasoning.
+    Retrieves cloud infrastructure threat modeling scenarios from ACSE-Eval.
+
+    Args:
+        max_samples (int, optional): The maximum number of samples to process.
+            Defaults to 50.
+
+    Returns:
+        List[Dict[str, Any]]: A collection of normalized test case dictionaries.
     """
     acse_dir = _BENCHMARK_DIR / "ACSE-Eval"
     if not acse_dir.exists():
@@ -704,7 +745,14 @@ def load_acse_eval(max_samples: int = 50) -> List[Dict[str, Any]]:
 
 def load_cybersoceval(max_samples: int = 50) -> List[Dict[str, Any]]:
     """
-    Load CyberSOCEval -- SOC-focused malware analysis and threat intel tasks.
+    Retrieves log analysis and SOC-oriented triage tasks from CyberSOCEval.
+
+    Args:
+        max_samples (int, optional): The maximum number of samples to process.
+            Defaults to 50.
+
+    Returns:
+        List[Dict[str, Any]]: A collection of normalized test case dictionaries.
     """
     # CyberSOCEval is part of PurpleLlama's CybersecurityBenchmarks
     datasets_dir = _BENCHMARK_DIR / "PurpleLlama" / "CybersecurityBenchmarks" / "datasets"

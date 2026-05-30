@@ -1,8 +1,10 @@
 """
-Ollama Model Lifecycle Manager
+Ollama Model Lifecycle Manager.
 
-Handles loading/unloading models for the suicide mechanism evaluation.
-Uses the Ollama REST API to control model lifecycle.
+This module provides the core interface for managing the local Ollama execution
+environment. It facilitates the explicit preloading and unloading of model
+weights from system memory, which is critical for enforcing the isolation
+properties required by the Ephemeral Polymorphic Defense (EPD) strategy.
 """
 
 import requests
@@ -14,10 +16,22 @@ OLLAMA_BASE_URL = "http://localhost:11434"
 
 def preload_model(model: str, timeout: int = 120) -> float:
     """
-    Warm-load a model into Ollama memory by sending a minimal prompt.
-    
+    Initializes a model within the Ollama execution environment.
+
+    This function transmits a minimal payload to the Ollama REST API to force
+    the allocation of model weights into system memory.
+
+    Args:
+        model (str): The specific model identifier to be loaded.
+        timeout (int, optional): The maximum duration, in seconds, to wait for
+            the loading operation to complete. Defaults to 120.
+
     Returns:
-        float: Time in seconds to load the model.
+        float: The duration of the initialization process in seconds.
+        
+    Raises:
+        requests.exceptions.RequestException: If the communication with the
+            Ollama API fails.
     """
     t_start = time.perf_counter()
     try:
@@ -41,10 +55,22 @@ def preload_model(model: str, timeout: int = 120) -> float:
 
 def unload_model(model: str, timeout: int = 30) -> float:
     """
-    Unload a model from Ollama memory using keep_alive=0.
-    
+    Terminates a model instance and deallocates its memory footprint.
+
+    This function enforces the ephemeral isolation constraints by issuing a
+    keep_alive=0 directive to the Ollama API, purging the specified model.
+
+    Args:
+        model (str): The specific model identifier to be terminated.
+        timeout (int, optional): The maximum duration, in seconds, to wait for
+            the deallocation operation to complete. Defaults to 30.
+
     Returns:
-        float: Time in seconds to unload the model.
+        float: The duration of the deallocation process in seconds.
+
+    Raises:
+        requests.exceptions.RequestException: If the communication with the
+            Ollama API fails.
     """
     t_start = time.perf_counter()
     try:
@@ -68,10 +94,13 @@ def unload_model(model: str, timeout: int = 30) -> float:
 
 def get_running_models() -> list:
     """
-    Get list of currently loaded models in Ollama.
-    
+    Retrieves the registry of currently active models in the execution environment.
+
+    Queries the Ollama process state endpoint to determine which models
+    are currently occupying system memory.
+
     Returns:
-        list: List of model name strings currently in memory.
+        list: A collection of string identifiers representing the active models.
     """
     try:
         response = requests.get(f"{OLLAMA_BASE_URL}/api/ps", timeout=10)
@@ -84,7 +113,15 @@ def get_running_models() -> list:
 
 
 def is_model_loaded(model: str) -> bool:
-    """Check if a specific model is currently loaded in memory."""
+    """
+    Determines whether a specified model is active in system memory.
+
+    Args:
+        model (str): The identifier of the model to query.
+
+    Returns:
+        bool: True if the model is currently active, False otherwise.
+    """
     running = get_running_models()
     # Ollama sometimes appends ":latest" to model names
     return any(model in r or r in model for r in running)
@@ -92,10 +129,13 @@ def is_model_loaded(model: str) -> bool:
 
 def unload_all_models() -> float:
     """
-    Unload all currently loaded models from memory.
-    
+    Executes a complete purge of the execution environment.
+
+    Iterates through the registry of active models and sequentially terminates
+    each instance to guarantee a zero-state environment.
+
     Returns:
-        float: Total time to unload all models.
+        float: The cumulative duration of the purge operations in seconds.
     """
     total_time = 0.0
     running = get_running_models()

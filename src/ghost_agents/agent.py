@@ -6,9 +6,12 @@ from typing import Dict, Any
 
 class GhostAgent:
     """
-    Group 3: EPD Remediation Agents (The Ghost Agents)
-    Status: REAL AI (Ollama - Multiple SLMs with rotation).
-    Logic: Ephemeral, Polymorphic, Powered by Generative AI.
+    Represents an Ephemeral Polymorphic Defense (EPD) Remediation Agent.
+
+    This class encapsulates the execution logic for an isolated, temporary
+    AI process designated to perform a specific security remediation task.
+    It relies on an external generative model backend (e.g., Ollama) to
+    dynamically interpret polymorphic instructions.
     """
     def __init__(self, model: str, mutated_prompt: str):
         self.session_id = str(uuid.uuid4())
@@ -20,6 +23,17 @@ class GhostAgent:
         print(f"[Ghost-{self.session_id[:8]}] Instructions: {self.prompt}")
 
     def execute_remediation(self, plan: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Executes a targeted security remediation plan using the assigned model.
+
+        Args:
+            plan (Dict[str, Any]): A dictionary containing the 'action' to be
+                performed and the 'target' entity.
+
+        Returns:
+            Dict[str, Any]: A dictionary detailing the execution outcome, including
+                the 'status', generated 'command', 'tool_used', and any 'error'.
+        """
         result = {
             "status": "failed",
             "command": None,
@@ -86,7 +100,10 @@ class GhostAgent:
 
     def cleanup(self):
         """
-        Suicide Mechanism: Wipes memory and destroys instance.
+        Executes the ephemeral termination protocol (Suicide Mechanism).
+
+        Nullifies the internal state variables to explicitly enforce memory
+        isolation and prevent instance reuse.
         """
         print(f"[Ghost-{self.session_id[:8]}] Self-destruct sequence initiated...")
         self.model = None
@@ -97,7 +114,11 @@ class GhostAgent:
 
 class GhostAgentFactory:
     """
-    Factory to spin up EPD agents with polymorphism and model rotation.
+    Provides factory methods for instantiating GhostAgent objects.
+
+    This class manages the architectural complexities of Ephemeral Polymorphic
+    Defense (EPD) by applying model rotation and dynamic prompt mutation
+    prior to agent instantiation.
     """
     # Real SLMs available via Ollama for baseline comparison
     MODELS = ["llama3.2:3b", "phi3:mini", "gemma2:2b"]
@@ -108,11 +129,15 @@ class GhostAgentFactory:
     @staticmethod
     def create_agent(base_instructions: str, rotate_model: bool = True) -> GhostAgent:
         """
-        Create a new GhostAgent with optional model rotation.
-        
+        Instantiates a new GhostAgent with polymorphic instruction mutations.
+
         Args:
-            base_instructions: The base task instruction
-            rotate_model: If True, rotate between models. If False, use first model only.
+            base_instructions (str): The standard, unmodified task instruction.
+            rotate_model (bool, optional): Indicates whether to cyclically assign
+                the backend model from the available pool. Defaults to True.
+
+        Returns:
+            GhostAgent: A fully configured, ephemeral agent instance.
         """
         # 1. Model Rotation (Round-robin for consistent distribution)
         if rotate_model:
@@ -129,7 +154,17 @@ class GhostAgentFactory:
     @staticmethod
     def _mutate_prompt(base: str) -> str:
         """
-        True AI Polymorphism: Asks the LLM to rewrite the instruction using a specific persona/style.
+        Applies algorithmic polymorphism to a standard instruction.
+
+        Utilizes a secondary generative process to semantically mutate the base
+        instruction into a randomized persona format, preserving intent while
+        altering structural syntax.
+
+        Args:
+            base (str): The standard instruction to be mutated.
+
+        Returns:
+            str: The polymorphically mutated instruction string.
         """
         ollama_url = "http://localhost:11434/api/generate"
         model = "llama3.2:3b"  # Use smallest model for prompt mutation (speed)

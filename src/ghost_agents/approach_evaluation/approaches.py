@@ -130,7 +130,19 @@ CYBERSECURITY_PERSONAS = [
 
 
 class Approach(ABC):
-    """Base class for all evaluation approaches."""
+    """
+    Abstract base class defining the standard interface for all evaluation architectures.
+
+    This interface enforces a strict lifecycle for models, requiring explicitly
+    defined initialization, execution, and teardown phases to support both
+    Static (persistent) and Suicide (ephemeral) execution strategies.
+
+    Attributes:
+        name (str): The unique identifier for the specific approach instance.
+        models (List[str]): A collection of model identifiers utilized by the approach.
+        suicide_mode (bool): A boolean flag indicating whether the approach enforces
+            Ephemeral Polymorphic Defense (EPD) constraints.
+    """
 
     name: str
     models: List[str]
@@ -139,28 +151,34 @@ class Approach(ABC):
     @abstractmethod
     def initialize(self) -> float:
         """
-        Pre-flight initialization (e.g. preload models).
-        Returns time in seconds.
+        Executes pre-flight environment configuration and resource allocation.
+
+        Returns:
+            float: The precise duration of the initialization phase in seconds.
         """
         ...
 
     @abstractmethod
     def execute_plan(self, plan: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Execute a single remediation plan and return results with timing.
+        Processes a single remediation instruction through the configured architecture.
 
         Args:
-            plan: dict with 'action' and 'target' keys.
+            plan (Dict[str, Any]): A structured dictionary detailing the 'action'
+                and 'target' directives for the execution engine.
 
         Returns:
-            dict with keys: status, command, tool_used, init_time,
-                            processing_time, model_used
+            Dict[str, Any]: An execution telemetry payload containing 'status',
+                'command', 'tool_used', 'init_time', 'processing_time', and 'model_used'.
         """
         ...
 
     @abstractmethod
     def teardown(self):
-        """Cleanup after evaluation run."""
+        """
+        Executes post-evaluation cleanup, enforcing resource deallocation and
+        state nullification.
+        """
         ...
 
 
@@ -170,10 +188,17 @@ class Approach(ABC):
 
 def _call_ollama(model: str, prompt: str, timeout: int = 60) -> Dict[str, Any]:
     """
-    Send a prompt to an Ollama model and return the parsed result.
+    Transmits an execution payload to the local Ollama inference engine.
+
+    Args:
+        model (str): The specific identifier of the target model.
+        prompt (str): The fully constructed, contextually grounded instruction payload.
+        timeout (int, optional): Maximum execution duration in seconds before aborting.
+            Defaults to 60.
 
     Returns:
-        dict with 'status', 'command', 'tool_used'
+        Dict[str, Any]: A structured response containing the 'status', raw 'command',
+            'tool_used', and any operational 'error' encountered during generation.
     """
     result = {
         "status": "failed",
@@ -221,15 +246,20 @@ def _call_ollama(model: str, prompt: str, timeout: int = 60) -> Dict[str, Any]:
 
 def _build_prompt(action: str, target: str, persona: dict = None) -> str:
     """
-    Build the remediation prompt for Squad C, incorporating the 6 safety constraints.
-    Maps to expectations from the 10 benchmark datasets.
+    Constructs a hardened remediation instruction payload for the evaluation engine.
+
+    Integrates six core security and behavioral constraints required for benchmarking
+    against standardized datasets (e.g., SecurityEval, HarmBench). It dynamically
+    supports polymorphic identity injection when operating under EPD constraints.
 
     Args:
-        action: The task action string.
-        target: The task target string.
-        persona: Optional persona dict with 'name' and 'system_prefix' keys.
-                 When provided (suicide models), the persona prefix is injected
-                 before the safety constraints.
+        action (str): The specific security mitigation directive.
+        target (str): The designated entity or infrastructure target.
+        persona (dict, optional): A dictionary containing 'name' and 'system_prefix'
+            to enforce structural polymorphism. Defaults to None.
+
+    Returns:
+        str: The fully assembled, constrained instruction string ready for inference.
     """
     persona_prefix = persona["system_prefix"] if persona else ""
     system_instr = (
@@ -403,6 +433,32 @@ class LlamaStaticApproach(Approach):
 
     name = "llama_static"
     models = ["llama3.2:3b"]
+    suicide_mode = False
+
+    def initialize(self) -> float:
+        print(f"[{self.name}] Preloading {self.models[0]}...")
+        return preload_model(self.models[0])
+
+    def execute_plan(self, plan: Dict[str, Any]) -> Dict[str, Any]:
+        model = self.models[0]
+        prompt = _build_prompt(plan["action"], plan["target"])
+        t_start = time.perf_counter()
+        result = _call_ollama(model, prompt)
+        processing_time = time.perf_counter() - t_start
+        result["init_time"] = 0.0
+        result["processing_time"] = processing_time
+        result["model_used"] = model
+        return result
+
+    def teardown(self):
+        pass
+
+
+class Llama33StaticApproach(Approach):
+    """Single llama3.3:70b model, kept loaded throughout the evaluation."""
+
+    name = "llama33_70b_static"
+    models = ["llama3.3:70b"]
     suicide_mode = False
 
     def initialize(self) -> float:
@@ -645,6 +701,32 @@ class MultimodalSuicideApproach(Approach):
 # 6. GPT OSS Approaches
 # ===========================================================================
 
+class GptOss120bStaticApproach(Approach):
+    """Single gpt-oss:120b model, kept loaded throughout the evaluation."""
+
+    name = "gpt_120b_oss_static"
+    models = ["gpt-oss:120b"]
+    suicide_mode = False
+
+    def initialize(self) -> float:
+        print(f"[{self.name}] Preloading {self.models[0]}...")
+        return preload_model(self.models[0])
+
+    def execute_plan(self, plan: Dict[str, Any]) -> Dict[str, Any]:
+        model = self.models[0]
+        prompt = _build_prompt(plan["action"], plan["target"])
+        t_start = time.perf_counter()
+        result = _call_ollama(model, prompt)
+        processing_time = time.perf_counter() - t_start
+        result["init_time"] = 0.0
+        result["processing_time"] = processing_time
+        result["model_used"] = model
+        return result
+
+    def teardown(self):
+        pass
+
+
 class GptOss20bSuicideApproach(Approach):
     """Single gpt-oss:20b model, loaded on demand and unloaded after each execution."""
 
@@ -679,6 +761,32 @@ class GptOss20bSuicideApproach(Approach):
 # ---------------------------------------------------------------------------
 # 7. Deepseek Approaches
 # ---------------------------------------------------------------------------
+
+class DeepseekStaticApproach(Approach):
+    """Single deepseek-r1:1.5b model, kept loaded throughout the evaluation."""
+
+    name = "deepseek_r1_1_5b_static"
+    models = ["deepseek-r1:1.5b"]
+    suicide_mode = False
+
+    def initialize(self) -> float:
+        print(f"[{self.name}] Preloading {self.models[0]}...")
+        return preload_model(self.models[0])
+
+    def execute_plan(self, plan: Dict[str, Any]) -> Dict[str, Any]:
+        model = self.models[0]
+        prompt = _build_prompt(plan["action"], plan["target"])
+        t_start = time.perf_counter()
+        result = _call_ollama(model, prompt)
+        processing_time = time.perf_counter() - t_start
+        result["init_time"] = 0.0
+        result["processing_time"] = processing_time
+        result["model_used"] = model
+        return result
+
+    def teardown(self):
+        pass
+
 
 class DeepseekSuicideApproach(Approach):
     """Single deepseek-r1:1.5b model, loaded on demand and unloaded after each execution."""
@@ -829,6 +937,9 @@ ALL_APPROACHES = {
     "gemma3_4b_gemini_suicide": GemmaSuicideApproach,
     "multimodal_suicide": MultimodalSuicideApproach,
     "gpt_oss_20b_suicide": GptOss20bSuicideApproach,
+    "gpt_120b_oss_static": GptOss120bStaticApproach,
+    "llama33_70b_static": Llama33StaticApproach,
+    "deepseek_r1_1_5b_static": DeepseekStaticApproach,
     "deepseek_r1_1_5b_suicide": DeepseekSuicideApproach,
     # Ablation Study Approaches (Generic names)
     "ablation_static_persona": AblationStaticPersonaApproach,
