@@ -707,7 +707,6 @@ class DeepseekSuicideApproach(Approach):
 # Helper to clean model name for display (e.g., "llama3.2:3b" -> "llama32_3b")
 _CLEAN_MODEL_NAME = COMPONENT_COMPARISON_MODEL.replace(".", "").replace(":", "_")
 
-
 class ComponentComparisonSuicideBaseApproach(Approach):
     """(c) Ephemeral Only, No Persona, No Safety Filter."""
     name = f"{_CLEAN_MODEL_NAME}_ephemeral"
