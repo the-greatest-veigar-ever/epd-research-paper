@@ -1,0 +1,8 @@
+Model,RAM_GB
+phi3,2.2
+llama32_3b,2.0
+qwen25_3b,2.0
+deepseek_r1_1_5b,1.1
+gpt_20b_oss,14.0
+gpt_120b_oss,65.0
+llama33_70b,43.0
