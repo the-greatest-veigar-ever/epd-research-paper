@@ -97,5 +97,12 @@ Upon completion, the framework generates detailed JSON reports in the `report-ou
 
 Results are evaluated using three primary metrics:
 
-1. **Attack Success Rate (ASR)**: The percentage of adversarial attempts that successfully bypass the model's defensive constraints. Lower is better (Target: 0%).
+1. **Attack Success Rate (ASR)**: The percentage of adversarial attempts that successfully bypass the model's defensive constraints. Lower is better.
+
 2. **Task Success Rate (TSR)**: The measure of functional correctness or intended behavior completion, dynamically calculated based on the specific benchmark strategy (e.g., semantic correctness in code generation vs. absolute refusal in HarmBench).
+
+## 6. Generating Performance Charts
+
+If you wish to visualize the performance metrics (such as the SLM vs EPD comparisons or memory usage charts), you can generate PNG charts using the scripts provided in the `performance_archive` directory.
+
+Please refer to the [Performance Archive README](performance_archive/README.md) for detailed instructions on dependencies and how to run the chart generation scripts.

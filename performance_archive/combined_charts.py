@@ -14,7 +14,7 @@ plt.rcParams['legend.fontsize'] = 40
 plt.rcParams['xtick.labelsize'] = 40
 plt.rcParams['ytick.labelsize'] = 40
 
-base_path = "/EDP Research/epd-research-paper/performance_archive/"
+base_path = os.path.dirname(os.path.abspath(__file__))
 
 # --- 1. Load Data for Chart 1 (Overall) ---
 df_overall = pd.read_csv(os.path.join(base_path, "leading_overall.csv"))

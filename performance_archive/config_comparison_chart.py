@@ -15,7 +15,7 @@ plt.rcParams['legend.fontsize'] = 18
 plt.rcParams['xtick.labelsize'] = 16
 plt.rcParams['ytick.labelsize'] = 18
 
-base_path = "/EDP Research/epd-research-paper/performance_archive/"
+base_path = os.path.dirname(os.path.abspath(__file__))
 csv_path = os.path.join(base_path, "deployment_comparison.csv")
 
 # Load data
