@@ -47,7 +47,7 @@ The repository is structured to separate benchmark data from evaluation logic an
 
 ```text
 epd-research-paper/
-├── ai/data/ghost_agents/benchmarks/    # Standardized security benchmark datasets
+├── benchmarks/                         # Standardized security benchmark datasets
 ├── report-output/                      # Output directory for evaluation JSON metrics
 ├── src/ghost_agents/
 │   └── approach_evaluation/
