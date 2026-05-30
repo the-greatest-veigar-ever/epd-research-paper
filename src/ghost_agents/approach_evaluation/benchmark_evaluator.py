@@ -4,7 +4,7 @@ Benchmark Evaluator Engine Module.
 This module orchestrates the systematic evaluation of Ephemeral Polymorphic Defense
 (EPD) approaches against a comprehensive suite of 10 cybersecurity benchmarks.
 It utilizes configurable evaluation strategies (e.g., REFUSAL, GENERATION, KNOWLEDGE)
-to empirically measure Safety Rate (S), Attack Success Rate (ASR), and Task Success
+to empirically measure Attack Success Rate (ASR) and Task Success
 Rate (TSR) across disparate execution models.
 
 Usage:
@@ -562,13 +562,12 @@ def update_markdown_table(file_path: str, dataset_name: str, metrics: Dict[str, 
 
     table_divider = "| :--- | :--- | :--- | :--- | :--- | :--- |"
 
-    safety_rate = f"{metrics.get('safety_rate', 0)*100:.2f}%"
     asr = f"{metrics.get('asr', 0)*100:.2f}%"
     tsr = f"{metrics.get('tsr', 0)*100:.2f}%"
     init_lat = f"{metrics.get('avg_init_latency', 0):.2f}s"
     inf_lat = f"{metrics.get('avg_inference_latency', 0):.2f}s"
 
-    new_row = f"| {display_row_name} | {safety_rate} | {asr} | {tsr} | {init_lat} | {inf_lat} |"
+    new_row = f"| {display_row_name} | {asr} | {tsr} | {init_lat} | {inf_lat} |"
 
     lines = content.split("\n")
     insert_index = -1
@@ -675,8 +674,7 @@ def evaluate_benchmark(
                 n_current = i + 1
                 safety_rate_current = safe_count / n_current
                 approach_results["metrics"] = {
-                    "safety_rate": round(safety_rate_current, 4),
-                    "asr": round(1.0 - safety_rate_current, 4),
+                    "asr": round(1.0 - (safe_count / n_current), 4),
                     "tsr": round(float(np.mean(scores)), 4) if scores else 0,
                     "avg_init_latency": round(float(np.mean(init_latencies)), 4) if init_latencies else 0,
                     "avg_inference_latency": round(float(np.mean(inf_latencies)), 4) if inf_latencies else 0,
@@ -695,8 +693,7 @@ def evaluate_benchmark(
         n = len(test_cases) if test_cases else 1
         safety_rate = safe_count / n if n else 0
         approach_results["metrics"] = {
-            "safety_rate": round(safety_rate, 4),
-            "asr": round(1.0 - safety_rate, 4),
+            "asr": round(1.0 - (safe_count / n if n else 0), 4),
             "tsr": round(float(np.mean(scores)), 4) if scores else 0,
             "avg_init_latency": round(float(np.mean(init_latencies)), 4) if init_latencies else 0,
             "avg_inference_latency": round(float(np.mean(inf_latencies)), 4) if inf_latencies else 0,
@@ -713,10 +710,9 @@ def evaluate_benchmark(
         pass
 
         if verbose:
-            s_rate = approach_results["metrics"]["safety_rate"] * 100
             asr_rate = approach_results["metrics"]["asr"] * 100
             tsr_rate = approach_results["metrics"]["tsr"] * 100
-            print(f"    {approach.name}: safety={s_rate:.1f}% asr={asr_rate:.1f}% tsr={tsr_rate:.1f}%")
+            print(f"    {approach.name}: asr={asr_rate:.1f}% tsr={tsr_rate:.1f}%")
 
     return results
 
@@ -904,7 +900,6 @@ def _compute_summary(full_results: Dict) -> Dict[str, Any]:
         for approach_name, approach_data in bench_result.get("approaches", {}).items():
             metrics = approach_data.get("metrics", {})
             bench_summary["approaches"][approach_name] = {
-                "safety_rate": metrics.get("safety_rate", 0),
                 "asr": metrics.get("asr", 0),
                 "tsr": metrics.get("tsr", 0),
                 "avg_init_latency": metrics.get("avg_init_latency", 0),
@@ -913,14 +908,12 @@ def _compute_summary(full_results: Dict) -> Dict[str, Any]:
 
             if approach_name not in approach_scores:
                 approach_scores[approach_name] = {
-                    "safety_rates": [],
                     "asr_rates": [],
                     "tsr_scores": [],
                     "init_latencies": [],
                     "inf_latencies": [],
                     "benchmarks_tested": 0,
                 }
-            approach_scores[approach_name]["safety_rates"].append(metrics.get("safety_rate", 0))
             approach_scores[approach_name]["asr_rates"].append(metrics.get("asr", 0))
             approach_scores[approach_name]["tsr_scores"].append(metrics.get("tsr", 0))
             approach_scores[approach_name]["init_latencies"].append(metrics.get("avg_init_latency", 0))
@@ -932,7 +925,6 @@ def _compute_summary(full_results: Dict) -> Dict[str, Any]:
     # Aggregate per approach
     for approach_name, data in approach_scores.items():
         summary["per_approach"][approach_name] = {
-            "avg_safety_rate": round(float(np.mean(data["safety_rates"])), 4),
             "avg_asr": round(float(np.mean(data["asr_rates"])), 4),
             "avg_tsr": round(float(np.mean(data["tsr_scores"])), 4),
             "avg_init_latency": round(float(np.mean(data["init_latencies"])), 4),
@@ -941,13 +933,11 @@ def _compute_summary(full_results: Dict) -> Dict[str, Any]:
         }
 
     # Overall
-    all_safety = [v["avg_safety_rate"] for v in summary["per_approach"].values()]
     all_asr = [v["avg_asr"] for v in summary["per_approach"].values()]
     all_tsr = [v["avg_tsr"] for v in summary["per_approach"].values()]
     summary["overall"] = {
         "total_benchmarks_run": len(full_results.get("benchmark_results", {})),
         "total_approaches": len(approach_scores),
-        "avg_safety_rate": round(float(np.mean(all_safety)), 4) if all_safety else 0,
         "avg_asr": round(float(np.mean(all_asr)), 4) if all_asr else 0,
         "avg_tsr": round(float(np.mean(all_tsr)), 4) if all_tsr else 0,
     }
@@ -971,7 +961,7 @@ def _print_summary(summary: Dict):
     # Header Row 2: Metric labels
     print(f"{'':<20}", end="")
     for _ in benchmarks:
-        print(f" {'S/ASR/TSR':<13}", end="")
+        print(f" {'ASR/TSR':<13}", end="")
     print()
     
     col_count = len(benchmarks)
@@ -985,10 +975,9 @@ def _print_summary(summary: Dict):
             approach_data = bench_data.get("approaches", {}).get(approach_name)
             
             if approach_data:
-                sr = approach_data.get("safety_rate", 0) * 100
                 asr = approach_data.get("asr", 0) * 100
                 tsr = approach_data.get("tsr", 0) * 100
-                print(f" {sr:4.0f}/{asr:2.0f}/{tsr:2.0f}% ", end="")
+                print(f" {asr:4.0f}/{tsr:2.0f}% ", end="")
             else:
                 print(f" {'-':^13} ", end="")
         print()
@@ -997,13 +986,12 @@ def _print_summary(summary: Dict):
 
     print("\nPer-Approach Averages:")
     for approach_name, data in summary.get("per_approach", {}).items():
-        sr = data["avg_safety_rate"] * 100
         asr = data["avg_asr"] * 100
         tsr = data["avg_tsr"] * 100
         init = data["avg_init_latency"]
         inf = data["avg_inference_latency"]
         nb = data["benchmarks_tested"]
-        print(f"  {approach_name:<20}: Safety={sr:>5.1f}% | ASR={asr:>5.1f}% | TSR={tsr:>5.1f}% | Init={init:>5.2f}s | Inf={inf:>5.2f}s ({nb} benchmarks)")
+        print(f"  {approach_name:<20}: ASR={asr:>5.1f}% | TSR={tsr:>5.1f}% | Init={init:>5.2f}s | Inf={inf:>5.2f}s ({nb} benchmarks)")
 
 
 def _update_markdown_report(full_results: Dict[str, Any], report_path: str = "readme/200-inputs-results.md"):
@@ -1054,7 +1042,6 @@ def _update_markdown_report(full_results: Dict[str, Any], report_path: str = "re
             completed_cases = approach_data.get("cases_evaluated", 0)
             
             # Format row data
-            sr = f"{metrics.get('safety_rate', 0)*100:.2f}%"
             asr = f"{metrics.get('asr', 0)*100:.2f}%"
             tsr = f"{metrics.get('tsr', 0)*100:.2f}%"
             init = f"{metrics.get('avg_init_latency', 0):.2f}s"

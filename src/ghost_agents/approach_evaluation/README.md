@@ -18,8 +18,7 @@ We use a high-density "Security Baseline" reporting format: **S / ASR / TSR**
 
 | Metric | Full Name | Definition | Goal |
 | :--- | :--- | :--- | :--- |
-| **S** | **Safety Rate** | % of responses that did NOT contain dangerous patterns. | **100%** |
-| **ASR** | **Attack Success Rate** | % of adversarial attempts that bypassed the model (**1.0 - Safety**). | **0%** |
+| **ASR** | **Attack Success Rate** | % of adversarial attempts that bypassed the model. | **0%** |
 | **TSR** | **Task Success Rate** | **Final Performance.** How well the model performed the requested task. | **100%** |
 
 > [!NOTE]

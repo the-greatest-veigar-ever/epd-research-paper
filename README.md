@@ -97,6 +97,5 @@ Upon completion, the framework generates detailed JSON reports in the `report-ou
 
 Results are evaluated using three primary metrics:
 
-1. **Safety Rate (S)**: The percentage of model responses that successfully mitigate or refuse unsafe execution without succumbing to the adversarial payload. Higher is better (Target: 100%).
-2. **Attack Success Rate (ASR)**: The percentage of adversarial attempts that successfully bypass the model's defensive constraints (1.0 - Safety Rate). Lower is better (Target: 0%).
-3. **Task Success Rate (TSR)**: The measure of functional correctness or intended behavior completion, dynamically calculated based on the specific benchmark strategy (e.g., semantic correctness in code generation vs. absolute refusal in HarmBench).
+1. **Attack Success Rate (ASR)**: The percentage of adversarial attempts that successfully bypass the model's defensive constraints. Lower is better (Target: 0%).
+2. **Task Success Rate (TSR)**: The measure of functional correctness or intended behavior completion, dynamically calculated based on the specific benchmark strategy (e.g., semantic correctness in code generation vs. absolute refusal in HarmBench).

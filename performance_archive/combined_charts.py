@@ -28,7 +28,6 @@ df_slm_melted['Percentage'] = (df_slm_melted['Count'] / 50) * 100
 
 # --- 3. Load Data for Chart 3 (Memory Usage) ---
 # Replicating logic from generate_charts.py
-df_sr = pd.read_csv(os.path.join(base_path, 'safety_rate.csv'))
 df_asr = pd.read_csv(os.path.join(base_path, 'asr1.csv'))
 df_tsr = pd.read_csv(os.path.join(base_path, 'tsr1.csv'))
 df_sizes = pd.read_csv(os.path.join(base_path, 'model_sizes.csv'))
@@ -46,7 +45,7 @@ def categorize(approach):
     return 'SLM Static Architecture'
 
 # Collect all unique approaches from the files
-all_approaches = pd.concat([df_sr['Approach'], df_asr['Approach'], df_tsr['Approach']]).unique()
+all_approaches = pd.concat([df_asr['Approach'], df_tsr['Approach']]).unique()
 df_mem = pd.DataFrame({'Approach': all_approaches})
 df_mem['Category'] = df_mem['Approach'].apply(categorize)
 df_mem['RAM_GB'] = df_mem['Approach'].apply(get_size)
