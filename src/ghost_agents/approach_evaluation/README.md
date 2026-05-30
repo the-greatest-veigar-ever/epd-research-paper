@@ -1,13 +1,13 @@
 # Ghost Agent Security Evaluation Framework (v3)
 
-This framework evaluates **8 execution approaches** for LLM-based security remediation (EPD) across multiple adversarial benchmarks. It specifically compares **Static** (persistent) vs. **Suicide** (Ephemeral Polymorphic Defense - EPD) strategies.
+This framework evaluates **11 execution approaches** for LLM-based security remediation (EPD) across multiple adversarial benchmarks. It specifically compares **Static** (persistent) vs. **Suicide** (Ephemeral Polymorphic Defense - EPD) strategies.
 
-## 🚀 The 8 Approaches
+## 🚀 The 11 Approaches
 
-| Strategy | Phi-3 Mini | Llama-3.2 3B | Qwen-2.5 3B |
-| :--- | :--- | :--- | :--- |
-| **Static** | `phi_static` | `llama_static` | `qwen_static` |
-| **Suicide (EPD)** | `phi_suicide` | `llama_suicide` | `qwen_suicide` |
+| Strategy | Phi-3 Mini | Llama-3.2 3B | Llama-3.3 70B | Qwen-2.5 3B | GPT-OSS | Deepseek-R1 1.5B |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **Static** | `phi_static` | `llama_static` | `llama33_static` | `qwen_static` | `gpt_120b_oss_static` | `deepseek_r1_1_5b_static` |
+| **Suicide (EPD)** | `phi_suicide` | `llama_suicide` | N/A | `qwen_suicide` | `gpt_oss_20b_suicide` | `deepseek_r1_1_5b_suicide` |
 
 - **Static**: The model is initialized once and handles all requests in the same session.
 - **Suicide (EPD)**: A fresh model instance is spawned for every request and self-destructs immediately after completion to prevent persistent attacks.
@@ -39,7 +39,7 @@ We use a high-density "Security Baseline" reporting format: **S / ASR / TSR**
 Run the evaluator from the **project root**:
 
 ```bash
-# Run full evaluation (8 approaches, 300 samples each)
+# Run full evaluation (11 approaches, 300 samples each)
 python3 -m src.ghost_agents.approach_evaluation.benchmark_evaluator
 
 # Run with custom constraints

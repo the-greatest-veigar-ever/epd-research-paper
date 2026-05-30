@@ -1,13 +1,18 @@
 """
 Ghost Agent Approach Definitions
 
-8 approaches for comparative evaluation:
+11 approaches for comparative evaluation:
 1. Phi Static (persistent single model)
 2. Phi Suicide (ephemeral single model)
 3. Llama Static (persistent single model)
-4. Llama Suicide (ephemeral single model)
-5. Qwen Static (persistent single model)
-6. Qwen Suicide (ephemeral single model)
+4. Llama 3.3 Static (persistent single model)
+5. Llama Suicide (ephemeral single model)
+6. Qwen Static (persistent single model)
+7. Qwen Suicide (ephemeral single model)
+8. GPT OSS 120b Static (persistent single model)
+9. GPT OSS 20b Suicide (ephemeral single model)
+10. Deepseek R1 1.5b Static (persistent single model)
+11. Deepseek R1 1.5b Suicide (ephemeral single model)
 """
 
 import random
