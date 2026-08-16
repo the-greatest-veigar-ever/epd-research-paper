@@ -1,0 +1,35 @@
+# System Files
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+.env
+.venv/
+env/
+venv/
+
+# Logs and Reports
+*.log
+eval_results_ollama.json
+eval_results_batch.json
+Simulation_History.xlsx
+
+# Data (Large files)
+ai/data/
+ai/models/
+
+# Legacy/Old
+old-data/
+#reports/
+#src/qlora-hugging-face/output/
+
+# Benchmark Outputs
+#report-output/
+benchmarks/

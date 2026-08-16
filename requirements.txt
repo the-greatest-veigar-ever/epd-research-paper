@@ -1,0 +1,20 @@
+# Requirements for the EPD Ghost Agent evaluation framework.
+# Install with: pip install -r requirements.txt
+#
+# Note: this file previously listed QLoRA/Hugging Face fine-tuning
+# dependencies (torch, transformers, peft, trl, bitsandbytes...) that are
+# not imported anywhere in src/. This project calls a local Ollama server
+# over HTTP; it does not load or fine-tune model weights in-process.
+
+# Core evaluation engine
+requests>=2.31.0
+numpy>=1.24.0
+tqdm>=4.66.0
+
+# Runtime resource monitoring (CPU/RAM sampling during each call)
+psutil>=5.9.0
+
+# Analysis / reporting (multi-seed aggregation, ablation report, chart generation)
+pandas>=2.0.0
+matplotlib>=3.7.0
+seaborn>=0.12.0
