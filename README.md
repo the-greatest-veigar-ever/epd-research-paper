@@ -88,7 +88,7 @@ To run the full 2x2x2 factorial ablation (ephemeral x persona x safety, 8 cells 
 ```bash
 python3 -m src.ghost_agents.approach_evaluation.benchmark_evaluator \
     --seeds 42 43 44 \
-    --max-per-benchmark 100 \
+    --max-per-benchmark 200 \
     --verbose
 ```
 
@@ -152,37 +152,37 @@ Every approach's results are written to their own folder, `report-output/ghost_a
 
 A per-model CLI shortcut (`--approaches <model_key>`) expands to that model's full 8-cell ablation flow, so you don't have to hand-list approach names. Run `--list-approaches` to confirm the exact set on your machine.
 
-**Dataset size**: `--max-per-benchmark 0` disables sampling entirely and runs every test case in every benchmark — run `--list-benchmarks` to see current per-benchmark counts; as of this revision the 10 benchmarks total **9,712 test cases** (SECURE alone is 4,069; SecBench 3,000; CyberSOCEval 1,197 — a handful of benchmarks dominate the total). That's the entire dataset per **(benchmark, approach, seed)** cell, and each model has 8 approach cells, so one model's full 3-seed flow is `9,712 x 8 x 3 ≈ 233,000` inference calls — multi-day to multi-week per model on this hardware, not multi-hour. If that's more than you want to commit a machine to, `--max-per-benchmark 100` (the original scoped-down flow) is roughly 10x cheaper per model and still meets the reviewer's 3-seed requirement, just on a capped sample. **Full flow per model, entire dataset, 3 seeds:**
+**Dataset size**: `--max-per-benchmark 200` disables sampling entirely and runs every test case in every benchmark — run `--list-benchmarks` to see current per-benchmark counts; as of this revision the 10 benchmarks total **9,712 test cases** (SECURE alone is 4,069; SecBench 3,000; CyberSOCEval 1,197 — a handful of benchmarks dominate the total). That's the entire dataset per **(benchmark, approach, seed)** cell, and each model has 8 approach cells, so one model's full 3-seed flow is `9,712 x 8 x 3 ≈ 233,000` inference calls — multi-day to multi-week per model on this hardware, not multi-hour. If that's more than you want to commit a machine to, `--max-per-benchmark 200` (the original scoped-down flow) is roughly 10x cheaper per model and still meets the reviewer's 3-seed requirement, just on a capped sample. **Full flow per model, entire dataset, 3 seeds:**
 
 ```bash
 # phi3_mini
 ollama pull phi3:mini
 python3 -m src.ghost_agents.approach_evaluation.benchmark_evaluator \
-    --approaches phi3_mini --seeds 42 43 44 --max-per-benchmark 0 \
+    --approaches phi3_mini --seeds 42 43 44 --max-per-benchmark 200 \
     --output report-output/ghost_agents/benchmark_results
 
 # llama32_3b
 ollama pull llama3.2:3b
 python3 -m src.ghost_agents.approach_evaluation.benchmark_evaluator \
-    --approaches llama32_3b --seeds 42 43 44 --max-per-benchmark 0 \
+    --approaches llama32_3b --seeds 42 43 44 --max-per-benchmark 200 \
     --output report-output/ghost_agents/benchmark_results
 
 # qwen25_3b
 ollama pull qwen2.5:3b
 python3 -m src.ghost_agents.approach_evaluation.benchmark_evaluator \
-    --approaches qwen25_3b --seeds 42 43 44 --max-per-benchmark 0 \
+    --approaches qwen25_3b --seeds 42 43 44 --max-per-benchmark 200 \
     --output report-output/ghost_agents/benchmark_results
 
 # deepseek_r1_1_5b
 ollama pull deepseek-r1:1.5b
 python3 -m src.ghost_agents.approach_evaluation.benchmark_evaluator \
-    --approaches deepseek_r1_1_5b --seeds 42 43 44 --max-per-benchmark 0 \
+    --approaches deepseek_r1_1_5b --seeds 42 43 44 --max-per-benchmark 200 \
     --output report-output/ghost_agents/benchmark_results
 
 # gpt_20b_oss (needs ~14GB RAM headroom)
 ollama pull gpt-oss:20b
 python3 -m src.ghost_agents.approach_evaluation.benchmark_evaluator \
-    --approaches gpt_20b_oss --seeds 42 43 44 --max-per-benchmark 0 \
+    --approaches gpt_20b_oss --seeds 42 43 44 --max-per-benchmark 200 \
     --output report-output/ghost_agents/benchmark_results
 ```
 
