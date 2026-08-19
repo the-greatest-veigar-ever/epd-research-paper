@@ -155,6 +155,17 @@ LEGACY_LLM_BASELINE_MODELS: Dict[str, str] = {
     "llama33_70b": "llama3.3:70b",
 }
 
+# Mid-scale LLM baselines: fit comfortably in 48GB (unlike the two above),
+# added as in-family "bigger" comparisons for the SLMs already in
+# ABLATION_MODELS (Qwen, DeepSeek). Static-only, same as the legacy LLM
+# baselines -- these represent a distinct "LLM baseline" experimental
+# category, not another cell in the 5-SLM ablation cube, so they stay out
+# of the default sweep too and are run by explicit name.
+MID_SCALE_LLM_BASELINE_MODELS: Dict[str, str] = {
+    "qwen25_32b": "qwen2.5:32b",
+    "deepseek_r1_32b": "deepseek-r1:32b",
+}
+
 # RAM footprint per model tag, used for the cost estimate (see
 # resource_monitor.estimate_cost_usd) and matching the paper's hardware table.
 MODEL_RAM_GB: Dict[str, float] = {
@@ -165,6 +176,8 @@ MODEL_RAM_GB: Dict[str, float] = {
     "deepseek-r1:1.5b": 1.1,
     "gpt-oss:120b": 65.0,
     "llama3.3:70b": 43.0,
+    "qwen2.5:32b": 20.0,
+    "deepseek-r1:32b": 20.0,
 }
 
 # Maps (model, ephemeral, persona, safety_filter) -> the approach name used
@@ -193,6 +206,9 @@ LEGACY_NAME_MAP = {
 
     ("gpt-oss:120b", False, False, True): "gpt_120b_oss_static",
     ("llama3.3:70b", False, False, True): "llama33_70b_static",
+
+    ("qwen2.5:32b", False, False, True): "qwen25_32b_static",
+    ("deepseek-r1:32b", False, False, True): "deepseek_r1_32b_static",
 }
 
 # The 4 cells per model that reproduce the original paper's rows (used to
@@ -490,25 +506,28 @@ def generate_ablation_matrix(models: Optional[Dict[str, str]] = None) -> Dict[st
 # ---------------------------------------------------------------------------
 
 # Every ablation cell for the 5 SLMs that receive the full sweep in this
-# revision, plus a single static-baseline cell per LLM baseline for
-# continuity (NOT the full cube — these models don't get re-run at all in
-# this revision, see LEGACY_LLM_BASELINE_MODELS docstring above).
+# revision, plus a single static-baseline cell per LLM baseline (both the
+# oversized legacy ones and the mid-scale replacements) for continuity --
+# NOT the full cube, see the two *_LLM_BASELINE_MODELS docstrings above.
 ALL_APPROACHES: Dict[str, functools.partial] = {
     **generate_ablation_matrix(ABLATION_MODELS),
 }
-for _model in LEGACY_LLM_BASELINE_MODELS.values():
+for _model in list(LEGACY_LLM_BASELINE_MODELS.values()) + list(MID_SCALE_LLM_BASELINE_MODELS.values()):
     _name = LEGACY_NAME_MAP[(_model, False, False, True)]
     ALL_APPROACHES[_name] = functools.partial(
         ConfigurableApproach, model=_model, ephemeral=False, persona=False, safety_filter=True, name=_name,
     )
 
-# Names to exclude when the evaluator resolves "all" approaches, since they
-# require more RAM than is available on the reference machine for this
-# revision. Still runnable by explicit name (`--approaches gpt_120b_oss_static`)
-# on hardware that has the memory for them.
+# Names to exclude when the evaluator resolves "all" approaches: the two
+# oversized legacy baselines don't fit in 48GB at all, and the mid-scale
+# baselines are a single static cell each, not part of the 5-SLM ablation
+# cube -- both stay opt-in, run by explicit name (`--approaches
+# qwen25_32b_static`, `--approaches gpt_120b_oss_static`, etc.).
 LEGACY_LLM_BASELINE_NAMES = set(LEGACY_NAME_MAP[(m, False, False, True)] for m in LEGACY_LLM_BASELINE_MODELS.values())
+MID_SCALE_LLM_BASELINE_NAMES = set(LEGACY_NAME_MAP[(m, False, False, True)] for m in MID_SCALE_LLM_BASELINE_MODELS.values())
+_OPT_IN_ONLY_NAMES = LEGACY_LLM_BASELINE_NAMES | MID_SCALE_LLM_BASELINE_NAMES
 
-DEFAULT_SWEEP_APPROACH_NAMES = [n for n in ALL_APPROACHES if n not in LEGACY_LLM_BASELINE_NAMES]
+DEFAULT_SWEEP_APPROACH_NAMES = [n for n in ALL_APPROACHES if n not in _OPT_IN_ONLY_NAMES]
 
 # Reverse lookup (Ollama tag -> folder-safe model key), used to route each
 # approach's output to a per-model folder so results from separate machines
@@ -517,6 +536,7 @@ DEFAULT_SWEEP_APPROACH_NAMES = [n for n in ALL_APPROACHES if n not in LEGACY_LLM
 MODEL_TAG_TO_KEY: Dict[str, str] = {
     **{tag: key for key, tag in ABLATION_MODELS.items()},
     **{tag: key for key, tag in LEGACY_LLM_BASELINE_MODELS.items()},
+    **{tag: key for key, tag in MID_SCALE_LLM_BASELINE_MODELS.items()},
 }
 
 

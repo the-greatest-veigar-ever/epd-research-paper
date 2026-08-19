@@ -573,6 +573,46 @@ def update_markdown_table(file_path: str, dataset_name: str, metrics: Dict[str, 
         f.write("\n".join(lines))
 
 
+_PREVIEW_KEYS = ("prompt_preview", "response_preview")
+
+
+def _checkpoint_view(mfr: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Build a lighter view of `mfr` for checkpointing: drops the verbose
+    prompt/response previews (kept only in the final benchmark_eval_*.json,
+    which is written once) since checkpoints are rewritten in full on every
+    save, and on a large full-dataset run those previews meaningfully bloat
+    a payload that's already being re-serialized thousands of times.
+    Does not mutate `mfr` itself -- the in-memory structures used for the
+    final save keep their previews.
+    """
+    view = dict(mfr)
+    view["benchmark_results"] = {}
+    for bench_name, bench_result in mfr.get("benchmark_results", {}).items():
+        new_bench = dict(bench_result)
+        new_bench["approaches"] = {}
+        for approach_name, approach_data in bench_result.get("approaches", {}).items():
+            new_approach = dict(approach_data)
+            new_approach["test_results"] = [
+                {k: v for k, v in tr.items() if k not in _PREVIEW_KEYS}
+                for tr in approach_data.get("test_results", [])
+            ]
+            new_bench["approaches"][approach_name] = new_approach
+        view["benchmark_results"][bench_name] = new_bench
+    return view
+
+
+def _write_checkpoint(path: str, mfr: Dict[str, Any]) -> None:
+    """Write a checkpoint as compact JSON (no pretty-print indent) with
+    previews stripped -- both cut the per-write cost substantially on large
+    runs, where this gets called every --save-every test cases and the
+    payload only grows over the run. Formatting doesn't matter here since
+    checkpoints are machine-read (for resume), not meant for humans to
+    browse -- the final benchmark_eval_*.json stays indent=2 and full."""
+    with open(path, "w") as f:
+        json.dump(_checkpoint_view(mfr), f, separators=(",", ":"), default=str)
+
+
 def _aggregate_metrics(
     scores: List[float],
     safe_count: int,
@@ -953,9 +993,8 @@ def _run_single_seed(
 
             def _progress_callback(b_name: str, partial_benchmark_result: Dict[str, Any], _mfr=model_full_results, _ckpt=checkpoint_file):
                 _mfr["benchmark_results"][b_name] = partial_benchmark_result
-                with open(_ckpt, "w") as f:
-                    _mfr["summary"] = _compute_summary(_mfr)
-                    json.dump(_mfr, f, indent=2, default=str)
+                _mfr["summary"] = _compute_summary(_mfr)
+                _write_checkpoint(_ckpt, _mfr)
                 try:
                     _update_markdown_report(_mfr)
                 except Exception as e:

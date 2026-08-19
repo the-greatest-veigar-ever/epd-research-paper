@@ -26,7 +26,7 @@ import os
 import glob
 import random
 from pathlib import Path
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional, Tuple
 
 # ============================================================================
 # Base paths
@@ -961,6 +961,9 @@ ALL_BENCHMARK_LOADERS = {
 }
 
 
+_FULL_DATASET_CACHE: Dict[Optional[Tuple[str, ...]], Dict[str, List[Dict[str, Any]]]] = {}
+
+
 def load_all_benchmarks(
     benchmarks: Optional[List[str]] = None,
     max_per_benchmark: int = 300,
@@ -978,7 +981,19 @@ def load_all_benchmarks(
 
     Returns:
         Dict mapping benchmark name -> list of test case dicts.
+
+    Note:
+        When `max_per_benchmark` is falsy (0/None), sampling is disabled
+        (see the individual loaders below) so the result is identical for
+        every seed. In that case this is memoized per benchmark selection,
+        so a multi-seed run parses each benchmark's files from disk once
+        instead of once per seed. Callers must treat the returned lists as
+        read-only, since they may be a shared reference across seeds.
     """
+    cache_key = tuple(sorted(benchmarks)) if benchmarks else None
+    if not max_per_benchmark and cache_key in _FULL_DATASET_CACHE:
+        return _FULL_DATASET_CACHE[cache_key]
+
     loaders = ALL_BENCHMARK_LOADERS
     if benchmarks and "all" not in benchmarks:
         loaders = {k: v for k, v in loaders.items() if k in benchmarks}
@@ -991,6 +1006,9 @@ def load_all_benchmarks(
         except Exception as e:
             results[name] = []
             print(f"[WARNING] Failed to load {name}: {e}")
+
+    if not max_per_benchmark:
+        _FULL_DATASET_CACHE[cache_key] = results
 
     return results
 

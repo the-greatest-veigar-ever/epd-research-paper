@@ -158,31 +158,49 @@ A per-model CLI shortcut (`--approaches <model_key>`) expands to that model's fu
 # phi3_mini
 ollama pull phi3:mini
 python3 -m src.ghost_agents.approach_evaluation.benchmark_evaluator \
-    --approaches phi3_mini --seeds 42 43 44 --max-per-benchmark 200 \
+    --approaches phi3_mini --seeds 42 43 44 --max-per-benchmark 10 \
     --output report-output/ghost_agents/benchmark_results
 
 # llama32_3b
 ollama pull llama3.2:3b
 python3 -m src.ghost_agents.approach_evaluation.benchmark_evaluator \
-    --approaches llama32_3b --seeds 42 43 44 --max-per-benchmark 200 \
+    --approaches llama32_3b --seeds 42 43 44 --max-per-benchmark 10 \
     --output report-output/ghost_agents/benchmark_results
 
 # qwen25_3b
 ollama pull qwen2.5:3b
 python3 -m src.ghost_agents.approach_evaluation.benchmark_evaluator \
-    --approaches qwen25_3b --seeds 42 43 44 --max-per-benchmark 200 \
+    --approaches qwen25_3b --seeds 42 43 44 --max-per-benchmark 10 \
     --output report-output/ghost_agents/benchmark_results
 
 # deepseek_r1_1_5b
 ollama pull deepseek-r1:1.5b
 python3 -m src.ghost_agents.approach_evaluation.benchmark_evaluator \
-    --approaches deepseek_r1_1_5b --seeds 42 43 44 --max-per-benchmark 200 \
+    --approaches deepseek_r1_1_5b --seeds 42 43 44 --max-per-benchmark 10 \
     --output report-output/ghost_agents/benchmark_results
 
 # gpt_20b_oss (needs ~14GB RAM headroom)
 ollama pull gpt-oss:20b
 python3 -m src.ghost_agents.approach_evaluation.benchmark_evaluator \
-    --approaches gpt_20b_oss --seeds 42 43 44 --max-per-benchmark 200 \
+    --approaches gpt_20b_oss --seeds 42 43 44 --max-per-benchmark 10 \
+    --output report-output/ghost_agents/benchmark_results
+```
+
+### Mid-scale LLM baselines (Qwen/DeepSeek 32B)
+
+`gpt-oss:120b`/`llama3.3:70b` don't fit in 48GB (Section 1); `qwen2.5:32b` and `deepseek-r1:32b` (~20GB each) do, and stay in-family with the `qwen2.5:3b`/`deepseek-r1:1.5b` SLMs already in the study, giving a "same family, bigger" LLM-tier comparison instead. These are registered as **static-only** — one baseline cell each (`ephemeral=False, persona=False, safety_filter=True`), not the 8-cell ablation the 5 SLMs get, since they represent a separate LLM-baseline category rather than another point in the SLM ablation cube. They're excluded from the default sweep for the same reason and run by explicit name. Each call still collects the full metric set (ASR/TSR, latency percentiles, CPU/RAM, throughput, cost estimate) automatically — nothing extra to configure for that.
+
+```bash
+# qwen25_32b (static baseline only)
+ollama pull qwen2.5:32b
+python3 -m src.ghost_agents.approach_evaluation.benchmark_evaluator \
+    --approaches qwen25_32b_static --seeds 42 43 44 --max-per-benchmark 10 \
+    --output report-output/ghost_agents/benchmark_results
+
+# deepseek_r1_32b (static baseline only)
+ollama pull deepseek-r1:32b
+python3 -m src.ghost_agents.approach_evaluation.benchmark_evaluator \
+    --approaches deepseek_r1_32b_static --seeds 42 43 44 --max-per-benchmark 10 \
     --output report-output/ghost_agents/benchmark_results
 ```
 
