@@ -1,0 +1,383 @@
+<style>
+  :root {
+    --paper: #ffffff;
+    --panel: #f3f5f8;
+    --panel-line: #dde1e7;
+    --ink: #161a21;
+    --ink-soft: #5a6472;
+    --ink-faint: #8991a0;
+    --accent: #a8641f;
+    --accent-ink: #7a4a18;
+    --warn: #a3402f;
+    --warn-ink: #7a2e21;
+    --warn-bg: #f7e6e1;
+    --data-blue: #3b6fa0;
+    --shadow: rgba(22, 26, 33, 0.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #14171c;
+      --panel: #1d2128;
+      --panel-line: rgba(255, 255, 255, 0.09);
+      --ink: #e9ebef;
+      --ink-soft: #9aa3b2;
+      --ink-faint: #6c7484;
+      --accent: #e0a559;
+      --accent-ink: #f0be80;
+      --warn: #e2726f;
+      --warn-ink: #f3a29e;
+      --warn-bg: #34201d;
+      --data-blue: #74a8db;
+      --shadow: rgba(0, 0, 0, 0.35);
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #14171c; --panel: #1d2128; --panel-line: rgba(255, 255, 255, 0.09);
+    --ink: #e9ebef; --ink-soft: #9aa3b2; --ink-faint: #6c7484;
+    --accent: #e0a559; --accent-ink: #f0be80;
+    --warn: #e2726f; --warn-ink: #f3a29e; --warn-bg: #34201d;
+    --data-blue: #74a8db; --shadow: rgba(0, 0, 0, 0.35);
+  }
+  :root[data-theme="light"] {
+    --paper: #ffffff; --panel: #f3f5f8; --panel-line: #dde1e7;
+    --ink: #161a21; --ink-soft: #5a6472; --ink-faint: #8991a0;
+    --accent: #a8641f; --accent-ink: #7a4a18;
+    --warn: #a3402f; --warn-ink: #7a2e21; --warn-bg: #f7e6e1;
+    --data-blue: #3b6fa0; --shadow: rgba(22, 26, 33, 0.06);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.6;
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .page { max-width: 900px; margin: 0 auto; padding: 3rem 1.5rem 5rem; }
+  .mono { font-family: ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", Menlo, Consolas, monospace; }
+  .tnum { font-variant-numeric: tabular-nums; }
+
+  .eyebrow {
+    font-family: ui-monospace, monospace;
+    font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--ink-soft); margin: 0 0 0.6rem;
+  }
+  h1 {
+    font-family: Georgia, "Iowan Old Style", "Palatino Linotype", "URW Palladio", serif;
+    font-weight: 600; font-size: clamp(1.8rem, 1.4rem + 1.6vw, 2.4rem);
+    line-height: 1.15; text-wrap: balance; margin: 0 0 0.5rem; letter-spacing: -0.01em;
+  }
+  .subtitle { font-size: 1.02rem; color: var(--ink-soft); max-width: 62ch; margin: 0 0 1.4rem; }
+  .meta-line {
+    display: flex; flex-wrap: wrap; gap: 0.5rem 0.9rem;
+    font-size: 0.8rem; color: var(--ink-faint);
+    padding-top: 1.1rem; border-top: 1px solid var(--panel-line);
+  }
+  .meta-line span:not(:last-child)::after { content: "·"; margin-left: 0.9rem; color: var(--panel-line); }
+  header.hero { margin-bottom: 2.6rem; }
+
+  .stats {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px;
+    background: var(--panel-line); border: 1px solid var(--panel-line);
+    border-radius: 10px; overflow: hidden; margin-bottom: 3rem;
+  }
+  .stat { background: var(--panel); padding: 1.15rem 1.15rem 1.3rem; display: flex; flex-direction: column; gap: 0.35rem; }
+  .stat .label { font-family: ui-monospace, monospace; font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
+  .stat .value { font-family: ui-monospace, monospace; font-weight: 600; font-size: 1.5rem; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .stat .caption { font-size: 0.76rem; color: var(--ink-faint); }
+  @media (max-width: 700px) { .stats { grid-template-columns: 1fr 1fr; } }
+
+  .checklist { display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 3rem; }
+  .checklist .item { display: grid; grid-template-columns: 20px 1fr; gap: 0.7rem; font-size: 0.92rem; }
+  .checklist .box { width: 15px; height: 15px; border: 1.5px solid var(--ink-faint); border-radius: 3px; margin-top: 0.3rem; }
+  .checklist b { color: var(--ink); }
+
+  .steps { display: flex; flex-direction: column; }
+  .step-block {
+    display: grid;
+    grid-template-columns: 44px 1fr;
+    gap: 1rem;
+    padding: 1.6rem 0;
+    border-bottom: 1px solid var(--panel-line);
+  }
+  .step-block:first-of-type { padding-top: 0; }
+  .step-num {
+    font-family: Georgia, serif; font-weight: 600; font-size: 1.4rem;
+    color: var(--accent-ink);
+    line-height: 1;
+  }
+  .step-content h2 {
+    font-family: Georgia, "Iowan Old Style", serif; font-weight: 600;
+    font-size: 1.18rem; margin: 0 0 0.35rem; letter-spacing: -0.005em;
+  }
+  .step-content .step-sub { font-size: 0.88rem; color: var(--ink-soft); margin: 0 0 0.8rem; max-width: 62ch; }
+  .step-content .step-sub:last-child { margin-bottom: 0; }
+
+  pre.code {
+    font-family: ui-monospace, "SF Mono", monospace;
+    font-size: 0.82rem;
+    background: var(--panel);
+    border: 1px solid var(--panel-line);
+    border-radius: 8px;
+    padding: 1rem 1.15rem;
+    overflow-x: auto;
+    color: var(--ink);
+    line-height: 1.6;
+    margin: 0 0 0.8rem;
+  }
+  pre.code:last-child { margin-bottom: 0; }
+  pre.code .comment { color: var(--ink-faint); }
+  pre.code .flag { color: var(--accent-ink); }
+
+  .callout {
+    display: flex; gap: 0.85rem;
+    background: var(--panel); border: 1px solid var(--panel-line); border-left: 3px solid var(--accent);
+    border-radius: 8px; padding: 0.95rem 1.1rem; font-size: 0.86rem; color: var(--ink-soft);
+    margin-top: 0.8rem;
+  }
+  .callout b { color: var(--ink); }
+
+  .warn-box {
+    display: flex; gap: 0.85rem;
+    background: var(--warn-bg); border: 1px solid var(--warn); border-left: 3px solid var(--warn);
+    border-radius: 8px; padding: 1rem 1.1rem; font-size: 0.9rem; color: var(--warn-ink);
+    margin-top: 0.8rem;
+  }
+  .warn-box b { color: var(--warn-ink); }
+  .warn-icon { font-size: 1.1rem; line-height: 1.2; }
+
+  .pill {
+    display: inline-block;
+    font-family: ui-monospace, monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    background: var(--panel);
+    border: 1px solid var(--panel-line);
+    color: var(--ink-soft);
+    margin-left: 0.5rem;
+    vertical-align: middle;
+  }
+
+  footer {
+    border-top: 1px solid var(--panel-line);
+    padding-top: 1.2rem;
+    margin-top: 1rem;
+    font-size: 0.78rem;
+    color: var(--ink-faint);
+  }
+  footer p { margin: 0 0 0.5rem; }
+  footer a { color: var(--ink-faint); }
+</style>
+
+<div class="page">
+
+  <header class="hero">
+    <p class="eyebrow">EPD Ghost Agent Evaluation — Handoff Runbook</p>
+    <h1>RunPod setup &amp; execution guide</h1>
+    <p class="subtitle">Everything needed to spin up the pod, pull the models, run the experiment, and send the results back — written for whoever's actually running it, not just the person who scoped it.</p>
+    <div class="meta-line">
+      <span>Prepared 2026-08-20</span>
+      <span>5 SLMs (parallel) + 2 legacy LLM baselines (sequential)</span>
+      <span>Seeds 42 · 43 · 44</span>
+    </div>
+  </header>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="label">GPU needed</div>
+      <div class="value" style="font-size:1.05rem;">A100 80GB</div>
+      <div class="caption">PCIe, Secure Cloud, $1.39/hr</div>
+    </div>
+    <div class="stat">
+      <div class="label">Est. cost</div>
+      <div class="value tnum">$9–24</div>
+      <div class="caption">budget $35 to be safe</div>
+    </div>
+    <div class="stat">
+      <div class="label">Est. runtime</div>
+      <div class="value tnum">7–17 hr</div>
+      <div class="caption">unattended, via tmux</div>
+    </div>
+    <div class="stat">
+      <div class="label">Disk needed</div>
+      <div class="value tnum">200 GB</div>
+      <div class="caption">~130GB is model weights alone</div>
+    </div>
+  </div>
+
+  <div class="checklist">
+    <div class="item"><div class="box"></div><div>A RunPod account with a payment method attached — either yours or your friend's; whoever's account gets billed should own the pod.</div></div>
+    <div class="item"><div class="box"></div><div>GitHub access to <span class="mono">the-greatest-veigar-ever/epd-research-paper</span> (clone/pull rights, and push if they're the one sending results back).</div></div>
+    <div class="item"><div class="box"></div><div>This doc, sent to whoever's running it — every command below is copy-paste ready.</div></div>
+  </div>
+
+  <div class="steps">
+
+    <div class="step-block">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <h2>Create the pod</h2>
+        <p class="step-sub">RunPod dashboard → Deploy → GPU Pod. Settings that matter:</p>
+        <p class="step-sub">
+          <b>GPU:</b> A100 PCIe 80GB, Secure Cloud ($1.39/hr — cheapest 80GB option; needed because gpt-oss:120b alone is ~65GB)<br>
+          <b>Template:</b> "RunPod PyTorch" (ships with CUDA + Python already set up)<br>
+          <b>Disk:</b> at least 200GB container/volume disk — the 7 model tags total ~130GB on disk before you add the repo and checkpoints
+        </p>
+      </div>
+    </div>
+
+    <div class="step-block">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <h2>Connect to the pod</h2>
+        <p class="step-sub">Once it's running, use the "Connect" button → Web Terminal, or SSH if you'd rather use your own terminal.</p>
+      </div>
+    </div>
+
+    <div class="step-block">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <h2>Install &amp; start Ollama</h2>
+        <pre class="code">curl -fsSL https://ollama.com/install.sh | sh
+ollama serve &gt; ~/ollama.log 2&gt;&amp;1 &amp;
+<span class="comment"># confirm it's up:</span>
+curl http://localhost:11434</pre>
+      </div>
+    </div>
+
+    <div class="step-block">
+      <div class="step-num">4</div>
+      <div class="step-content">
+        <h2>Get the code</h2>
+        <pre class="code">git clone https://github.com/the-greatest-veigar-ever/epd-research-paper.git
+cd epd-research-paper
+git checkout thach-23-mar-2026
+python3 -m venv .venv &amp;&amp; source .venv/bin/activate
+pip install -r requirements.txt</pre>
+        <div class="callout"><span>&#9432;</span><div><span class="mono">run_runpod_experiment.sh</span> is already in this branch and already executable — nothing to configure, just run it in Step 7.</div></div>
+      </div>
+    </div>
+
+    <div class="step-block">
+      <div class="step-num">5</div>
+      <div class="step-content">
+        <h2>Pull all 7 models</h2>
+        <p class="step-sub">~130GB total — this is the slowest setup step, budget real time for it depending on the pod's network.</p>
+        <pre class="code">ollama pull phi3:mini
+ollama pull llama3.2:3b
+ollama pull qwen2.5:3b
+ollama pull deepseek-r1:1.5b
+ollama pull gpt-oss:20b
+ollama pull gpt-oss:120b
+ollama pull llama3.3:70b</pre>
+      </div>
+    </div>
+
+    <div class="step-block">
+      <div class="step-num">6</div>
+      <div class="step-content">
+        <h2>Sanity check before the full run</h2>
+        <p class="step-sub">Confirms the GPU is visible, a fast and a slow SLM cell both work, and gpt-oss:120b actually fits in 80GB before committing 7–17 hours to it.</p>
+        <pre class="code">nvidia-smi   <span class="comment"># should show ~80GB total</span>
+
+python3 -m src.ghost_agents.approach_evaluation.benchmark_evaluator \
+    --approaches phi3_static deepseek_r1_1_5b_suicide \
+    --benchmarks SecurityEval --seeds 42 <span class="flag">--max-per-benchmark 3</span> --verbose
+
+python3 -m src.ghost_agents.approach_evaluation.benchmark_evaluator \
+    --approaches gpt_120b_oss_static --benchmarks SecurityEval \
+    --seeds 42 <span class="flag">--max-per-benchmark 1</span> --verbose</pre>
+      </div>
+    </div>
+
+    <div class="step-block">
+      <div class="step-num">7</div>
+      <div class="step-content">
+        <h2>Run the full experiment, inside tmux</h2>
+        <p class="step-sub">This runs 7–17 hours. tmux keeps it alive if the SSH/web terminal session drops — don't skip this part.</p>
+        <pre class="code">sudo apt-get install -y tmux   <span class="comment"># skip if already installed</span>
+tmux new -s epd
+./run_runpod_experiment.sh
+<span class="comment"># detach without killing it: Ctrl+B, then D
+# reattach any time:</span>
+tmux attach -t epd</pre>
+        <div class="callout"><span>&#9432;</span><div>The script itself runs the 5 SLMs concurrently, then the 2 LLM baselines sequentially, and exits non-zero if an SLM run fails before starting the LLM phase. If one model errors, re-run just that model's command — checkpointing means finished (benchmark, approach) cells aren't redone.</div></div>
+      </div>
+    </div>
+
+    <div class="step-block">
+      <div class="step-num">8</div>
+      <div class="step-content">
+        <h2>Check on it anytime</h2>
+        <pre class="code">tmux attach -t epd                                    <span class="comment"># see live output</span>
+tail -f report-output/ghost_agents/run_logs/*.log     <span class="comment"># per-model logs</span>
+nvidia-smi                                            <span class="comment"># confirm the GPU is actually busy</span></pre>
+      </div>
+    </div>
+
+    <div class="step-block">
+      <div class="step-num">9</div>
+      <div class="step-content">
+        <h2>Send the results back</h2>
+        <p class="step-sub">Results aren't gitignored, so pushing them is the simplest handoff — they're metrics JSON, not model weights.</p>
+        <pre class="code">git checkout -b runpod-results-2026-08-20
+git add report-output/
+git commit -m "RunPod run: 5 SLM (parallel) + 2 LLM baselines, seeds 42/43/44"
+git push origin runpod-results-2026-08-20</pre>
+        <p class="step-sub">Then just message the branch name over — no PR needed unless you want one.</p>
+      </div>
+    </div>
+
+    <div class="step-block">
+      <div class="step-num">10</div>
+      <div class="step-content">
+        <h2>Pause safely<span class="pill">if you'll be back</span></h2>
+        <p class="step-sub">tmux only protects against a dropped connection — closing the laptop or losing SSH doesn't stop the pod or its billing. Actually pausing needs RunPod's own Stop, and it's safe to do at any point: the evaluator checkpoints every 20 test cases (<span class="mono">--save-every</span>), so stopping mid-run loses at most a few in-flight test cases per model, never the whole run.</p>
+        <p class="step-sub"><b>How:</b> RunPod dashboard → the pod → <b>Stop</b> (not Terminate). Stop releases the GPU and pauses compute billing, but keeps the container disk exactly as it is — repo, venv, all 7 pulled models (~130GB), and every checkpoint JSON file already written.</p>
+        <div class="warn-box">
+          <span class="warn-icon">&#9888;</span>
+          <div>Stopped isn't free: RunPod bills a stopped pod's disk at its <b>idle</b> storage rate, roughly double the running rate. At ~200GB that's around $1.30/day sitting stopped — trivial for a pause of a few days, worth remembering if it sits stopped for weeks.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step-block">
+      <div class="step-num">11</div>
+      <div class="step-content">
+        <h2>Resume later</h2>
+        <p class="step-sub">RunPod dashboard → find the stopped pod → <b>Resume</b>. Reconnect from the Connect button — SSH port and other connection details can change on restart, so grab fresh ones rather than reusing the old command.</p>
+        <p class="step-sub">The disk is exactly as left: repo, venv, and all 7 models are still there — no re-cloning, no re-pulling 130GB. Two things do need restarting, since they were processes tied to the old container session, not files on disk:</p>
+        <pre class="code">source .venv/bin/activate            <span class="comment"># if not already active</span>
+ollama serve &gt; ~/ollama.log 2&gt;&amp;1 &amp;
+
+tmux new -s epd
+./run_runpod_experiment.sh</pre>
+        <div class="callout"><span>&#9432;</span><div>Safe to do even if some models finished before the pause and others didn't. The framework checkpoints per (benchmark, approach) pair — anything already complete prints <span class="mono">already complete ... skipped</span> and costs zero additional GPU time; anything partway through resumes from its last checkpoint instead of restarting.</div></div>
+      </div>
+    </div>
+
+    <div class="step-block">
+      <div class="step-num">12</div>
+      <div class="step-content">
+        <h2>Finished — shut down for good<span class="pill">only after results are pushed</span></h2>
+        <div class="warn-box">
+          <span class="warn-icon">&#9888;</span>
+          <div><b>RunPod dashboard → the pod → Terminate.</b> This deletes the pod <i>and</i> its disk entirely — repo, venv, all ~130GB of pulled models, everything. There's no resuming from a terminated pod, so only do this once Step 9's push is confirmed on GitHub. If there's any doubt, <b>Stop</b> instead and terminate later — the idle storage cost from Step 10 is a lot cheaper than re-downloading 130GB of models.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <footer>
+    <p>Cost and timing assumptions (GPU choice, the $9–24 estimate, why SLMs run concurrently and the LLMs don't) are worked through in the companion cost memo — worth a skim if something looks off during the run.</p>
+    <p>Model tags, disk footprint, and command names are read directly from <span class="mono">approaches.py</span> / <span class="mono">README.md</span> in the repo at commit time — if the branch has moved on, re-check <span class="mono">--list-approaches</span> before running.</p>
+  </footer>
+
+</div>
