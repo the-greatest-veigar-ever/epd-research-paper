@@ -2,26 +2,57 @@
 Runtime Resource Monitor.
 
 Addresses reviewer feedback that the efficiency analysis relied on static
-memory footprint alone. This module samples CPU and RAM utilization for the
-duration of a single model call, and provides a cost estimate derived from a
-documented, editable hardware-rate table.
+memory footprint alone. This module samples CPU, RAM, and (when available)
+GPU utilization for the duration of a single model call, and provides a
+cost estimate derived from a documented, editable hardware-rate table.
 
-GPU utilization is intentionally NOT sampled on this platform: the reference
-hardware is Apple Silicon (no NVIDIA GPU / no nvidia-smi), so any reported
-"GPU utilization" would be fabricated. `gpu_available` is exposed so callers
-and reports can label the field N/A instead of silently omitting it.
+GPU utilization is sampled via `nvidia-smi` when it's present on PATH
+(e.g. a CUDA host such as a RunPod pod). On platforms without an NVIDIA
+GPU (e.g. Apple Silicon), `gpu_available` is False and the GPU fields are
+reported as N/A rather than fabricated.
 """
 
 import platform
 import shutil
+import subprocess
 import threading
 import time
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 import psutil
 
 GPU_MONITORING_AVAILABLE = shutil.which("nvidia-smi") is not None
+
+
+def _sample_gpu() -> Optional[Dict[str, float]]:
+    """
+    Snapshots GPU utilization (%) and memory used (GB) via `nvidia-smi`,
+    averaged/summed across all visible GPUs. Returns None if unavailable
+    or the query fails (e.g. a transient driver hiccup) -- callers must
+    not treat a missing sample as 0% utilization.
+    """
+    if not GPU_MONITORING_AVAILABLE:
+        return None
+    try:
+        out = subprocess.run(
+            ["nvidia-smi", "--query-gpu=utilization.gpu,memory.used", "--format=csv,noheader,nounits"],
+            capture_output=True,
+            text=True,
+            timeout=2.0,
+            check=True,
+        )
+        rows = [line.split(",") for line in out.stdout.strip().splitlines() if line.strip()]
+        if not rows:
+            return None
+        utils = [float(r[0]) for r in rows]
+        mem_used_mb = [float(r[1]) for r in rows]
+        return {
+            "percent": sum(utils) / len(utils),
+            "mem_used_gb": sum(mem_used_mb) / 1024.0,
+        }
+    except Exception:
+        return None
 
 
 @dataclass
@@ -29,6 +60,8 @@ class ResourceSample:
     t: float
     cpu_percent: float
     ram_used_gb: float
+    gpu_percent: Optional[float] = None
+    gpu_mem_used_gb: Optional[float] = None
 
 
 @dataclass
@@ -43,6 +76,8 @@ class ResourceStats:
     gpu_available: bool = GPU_MONITORING_AVAILABLE
     gpu_percent_avg: Optional[float] = None
     gpu_percent_max: Optional[float] = None
+    gpu_mem_used_gb_avg: Optional[float] = None
+    gpu_mem_used_gb_max: Optional[float] = None
     platform: str = field(default_factory=lambda: f"{platform.system()} {platform.machine()}")
     sample_count: int = 0
 
@@ -53,8 +88,14 @@ class ResourceStats:
             "cpu_percent_max": round(self.cpu_percent_max, 2),
             "ram_used_gb_avg": round(self.ram_used_gb_avg, 3),
             "ram_used_gb_max": round(self.ram_used_gb_max, 3),
-            "gpu_percent_avg": self.gpu_percent_avg,
-            "gpu_percent_max": self.gpu_percent_max,
+            "gpu_percent_avg": round(self.gpu_percent_avg, 2) if self.gpu_percent_avg is not None else None,
+            "gpu_percent_max": round(self.gpu_percent_max, 2) if self.gpu_percent_max is not None else None,
+            "gpu_mem_used_gb_avg": (
+                round(self.gpu_mem_used_gb_avg, 3) if self.gpu_mem_used_gb_avg is not None else None
+            ),
+            "gpu_mem_used_gb_max": (
+                round(self.gpu_mem_used_gb_max, 3) if self.gpu_mem_used_gb_max is not None else None
+            ),
             "gpu_note": (
                 None
                 if self.gpu_available
@@ -93,7 +134,16 @@ class ResourceMonitor:
         while not self._stop_event.is_set():
             cpu = psutil.cpu_percent(interval=None)
             ram_used_gb = psutil.virtual_memory().used / (1024 ** 3)
-            self._samples.append(ResourceSample(t=time.perf_counter(), cpu_percent=cpu, ram_used_gb=ram_used_gb))
+            gpu = _sample_gpu()
+            self._samples.append(
+                ResourceSample(
+                    t=time.perf_counter(),
+                    cpu_percent=cpu,
+                    ram_used_gb=ram_used_gb,
+                    gpu_percent=gpu["percent"] if gpu else None,
+                    gpu_mem_used_gb=gpu["mem_used_gb"] if gpu else None,
+                )
+            )
             self._stop_event.wait(self.interval_s)
 
     def __enter__(self) -> "ResourceMonitor":
@@ -112,22 +162,33 @@ class ResourceMonitor:
         if self._samples:
             cpu_values = [s.cpu_percent for s in self._samples]
             ram_values = [s.ram_used_gb for s in self._samples]
+            gpu_values = [s.gpu_percent for s in self._samples if s.gpu_percent is not None]
+            gpu_mem_values = [s.gpu_mem_used_gb for s in self._samples if s.gpu_mem_used_gb is not None]
             self.stats = ResourceStats(
                 duration_s=duration,
                 cpu_percent_avg=sum(cpu_values) / len(cpu_values),
                 cpu_percent_max=max(cpu_values),
                 ram_used_gb_avg=sum(ram_values) / len(ram_values),
                 ram_used_gb_max=max(ram_values),
+                gpu_percent_avg=sum(gpu_values) / len(gpu_values) if gpu_values else None,
+                gpu_percent_max=max(gpu_values) if gpu_values else None,
+                gpu_mem_used_gb_avg=sum(gpu_mem_values) / len(gpu_mem_values) if gpu_mem_values else None,
+                gpu_mem_used_gb_max=max(gpu_mem_values) if gpu_mem_values else None,
                 sample_count=len(self._samples),
             )
         else:
             # Call was faster than one sampling interval; take a single point reading.
+            gpu = _sample_gpu()
             self.stats = ResourceStats(
                 duration_s=duration,
                 cpu_percent_avg=psutil.cpu_percent(interval=None),
                 cpu_percent_max=psutil.cpu_percent(interval=None),
                 ram_used_gb_avg=psutil.virtual_memory().used / (1024 ** 3),
                 ram_used_gb_max=psutil.virtual_memory().used / (1024 ** 3),
+                gpu_percent_avg=gpu["percent"] if gpu else None,
+                gpu_percent_max=gpu["percent"] if gpu else None,
+                gpu_mem_used_gb_avg=gpu["mem_used_gb"] if gpu else None,
+                gpu_mem_used_gb_max=gpu["mem_used_gb"] if gpu else None,
                 sample_count=0,
             )
         return False
