@@ -158,51 +158,52 @@ A per-model CLI shortcut (`--approaches <model_key>`) expands to that model's fu
 # phi3_mini
 ollama pull phi3:mini
 python3 -m src.ghost_agents.approach_evaluation.benchmark_evaluator \
-    --approaches phi3_mini --seeds 42 43 44 --max-per-benchmark 10 \
+    --approaches phi3_mini --seeds 42 43 44 --max-per-benchmark 5 \
     --output report-output/ghost_agents/benchmark_results
 
 # llama32_3b
 ollama pull llama3.2:3b
 python3 -m src.ghost_agents.approach_evaluation.benchmark_evaluator \
-    --approaches llama32_3b --seeds 42 43 44 --max-per-benchmark 10 \
+    --approaches llama32_3b --seeds 42 43 44 --max-per-benchmark 5 \
     --output report-output/ghost_agents/benchmark_results
 
 # qwen25_3b
 ollama pull qwen2.5:3b
 python3 -m src.ghost_agents.approach_evaluation.benchmark_evaluator \
-    --approaches qwen25_3b --seeds 42 43 44 --max-per-benchmark 10 \
+    --approaches qwen25_3b --seeds 42 43 44 --max-per-benchmark 5 \
     --output report-output/ghost_agents/benchmark_results
 
 # deepseek_r1_1_5b
 ollama pull deepseek-r1:1.5b
 python3 -m src.ghost_agents.approach_evaluation.benchmark_evaluator \
-    --approaches deepseek_r1_1_5b --seeds 42 43 44 --max-per-benchmark 10 \
+    --approaches deepseek_r1_1_5b --seeds 42 43 44 --max-per-benchmark 5 \
     --output report-output/ghost_agents/benchmark_results
 
 # gpt_20b_oss (needs ~14GB RAM headroom)
 ollama pull gpt-oss:20b
 python3 -m src.ghost_agents.approach_evaluation.benchmark_evaluator \
-    --approaches gpt_20b_oss --seeds 42 43 44 --max-per-benchmark 10 \
+    --approaches gpt_20b_oss --seeds 42 43 44 --max-per-benchmark 5 \
     --output report-output/ghost_agents/benchmark_results
 ```
 
-### Mid-scale LLM baselines (Qwen/DeepSeek 32B)
+### Running the LLM baselines: `run_runpod_experiment.sh`
 
-`gpt-oss:120b`/`llama3.3:70b` don't fit in 48GB (Section 1); `qwen2.5:32b` and `deepseek-r1:32b` (~20GB each) do, and stay in-family with the `qwen2.5:3b`/`deepseek-r1:1.5b` SLMs already in the study, giving a "same family, bigger" LLM-tier comparison instead. These are registered as **static-only** — one baseline cell each (`ephemeral=False, persona=False, safety_filter=True`), not the 8-cell ablation the 5 SLMs get, since they represent a separate LLM-baseline category rather than another point in the SLM ablation cube. They're excluded from the default sweep for the same reason and run by explicit name. Each call still collects the full metric set (ASR/TSR, latency percentiles, CPU/RAM, throughput, cost estimate) automatically — nothing extra to configure for that.
+The LLM-tier baselines are `llama3.3:70b` and `gpt-oss:120b`.
+
+`run_runpod_experiment.sh` runs the full two-phase experiment end to end and is the actual script used on the pod — the 5-SLM commands above are its Phase 1 spelled out individually; the script itself also runs Phase 2, the two LLM baselines, which is what most needs walking through here since it has real memory constraints the SLM phase doesn't:
 
 ```bash
-# qwen25_32b (static baseline only)
-ollama pull qwen2.5:32b
-python3 -m src.ghost_agents.approach_evaluation.benchmark_evaluator \
-    --approaches qwen25_32b_static --seeds 42 43 44 --max-per-benchmark 10 \
-    --output report-output/ghost_agents/benchmark_results
-
-# deepseek_r1_32b (static baseline only)
-ollama pull deepseek-r1:32b
-python3 -m src.ghost_agents.approach_evaluation.benchmark_evaluator \
-    --approaches deepseek_r1_32b_static --seeds 42 43 44 --max-per-benchmark 10 \
-    --output report-output/ghost_agents/benchmark_results
+./run_runpod_experiment.sh
 ```
+
+What it does, in order:
+
+1. **Preflight** — checks `ollama list` for `llama3.3:70b` and `gpt-oss:120b` before starting; fails fast with the exact `ollama pull` commands if either is missing, rather than burning the whole phase on calls against a model that isn't there. Pulling both needs **~108GB of disk**.
+2. **Phase 1** — the 5 SLMs, as above, concurrently.
+3. **Purge** — before Phase 2 starts, every model still resident from Phase 1 is explicitly unloaded via `keep_alive:0`. Static approaches (all of Phase 2) never unload on their own, so up to ~21GB of SLM weights would otherwise survive into Phase 2 — `gpt-oss:120b` (~65GB) plus that leftover would exceed the 80GB card.
+4. **Phase 2** — `llama3.3:70b` then `gpt-oss:120b`, sequentially (their combined weights alone are ~108GB, so they can never be resident together). Each is static-only — one baseline cell, not the 8-cell ablation — and gets a reduced `num_predict` (512 / 1024, see `MODEL_NUM_PREDICT` in `approaches.py`) tuned to cut wall-clock time; this is a reasoned starting point, not empirically calibrated on this pod, so check `truncated` counts in the small test run before trusting it at scale.
+
+`OLLAMA_MAX_LOADED_MODELS`/`OLLAMA_NUM_PARALLEL` exports in the script only take effect if `ollama serve` is (re)started after they're set — see the inline comments in the script for the exact restart sequence per phase.
 
 Each command is self-contained and can run on its own machine (or sequentially on one, if that's all you have — `--output` can stay the same path each time since every model writes to its own subfolder). If a run gets interrupted (crash, reboot, closed terminal), re-running the identical command resumes from the last `--save-every` checkpoint instead of starting over — it skips (benchmark, approach) cells that already finished and picks up mid-benchmark otherwise; only re-run with a different `--max-per-benchmark`/`--seeds` if you actually want to discard progress and start clean. Once every machine has finished, copy or `rsync` each machine's `report-output/ghost_agents/benchmark_results/` directory into one place and merge:
 

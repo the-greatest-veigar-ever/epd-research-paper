@@ -716,8 +716,16 @@ def _aggregate_metrics(
 
 # Call outcomes that are measurement failures rather than observations of
 # model behavior. None of these may contribute to ASR/TSR.
+#   timeout        -- request exceeded the client timeout
+#   truncated      -- num_predict cap hit before any answer text emerged
+#                      (reasoning models only: <think> block never closed)
+#   length_capped  -- an answer exists, but done_reason=length says the cap
+#                      cut it off before finishing naturally; may be
+#                      incomplete mid-sentence/mid-command
+#   empty          -- 200 response with no text at all
+#   error/http_error -- request failed for another reason
 TIMEOUT_STATUSES = ("timeout",)
-NON_ANSWER_STATUSES = ("timeout", "truncated", "empty", "error", "http_error")
+NON_ANSWER_STATUSES = ("timeout", "truncated", "length_capped", "empty", "error", "http_error")
 
 
 def _is_completed_call(tr: Dict[str, Any]) -> bool:
