@@ -196,6 +196,10 @@ The LLM-tier baselines are `llama3.3:70b` and `gpt-oss:120b`.
 ./run_runpod_experiment.sh
 ```
 
+**Before starting**, on the pod itself:
+- **Run it where an SSH drop can't kill it.** The full 7-model sequential flow is a multi-hour-to-multi-day run by design (see above); a plain foreground shell gets SIGHUP'd if the connection drops. Start a `tmux`/`screen` session first (`tmux new -s epd`), or launch both `ollama serve` and this script with `nohup ... &`, so the run survives a dropped connection. Checkpointing means you won't lose data either way, but an unnoticed kill can leave the pod idle and billing with nothing running.
+- **Size the volume before pulling models**, not after. Budget for the ~108GB of LLM weights, ~20GB of SLM weights, Ollama's own blob-store overhead, the benchmark data, and result output — comfortably more than the default RunPod volume size. A disk-full failure mid-pull can corrupt Ollama's model store, not just fail cleanly.
+
 What it does, in order:
 
 1. **Preflight** — checks `ollama list` for all 7 model tags before starting (the 5 SLMs plus `llama3.3:70b` and `gpt-oss:120b`); fails fast with the exact `ollama pull` commands if any is missing, rather than burning a whole model's worth of calls against something that isn't there. Pulling the two LLM tags needs **~108GB of disk**.
