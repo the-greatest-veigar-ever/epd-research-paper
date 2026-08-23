@@ -27,9 +27,11 @@ revision and notes the limitation.
 """
 
 import functools
+import os
 import random
+import re
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 from abc import ABC, abstractmethod
 
 import requests
@@ -45,6 +47,56 @@ from src.ghost_agents.approach_evaluation.resource_monitor import (
 )
 
 OLLAMA_URL = "http://localhost:11434/api/generate"
+
+# ---------------------------------------------------------------------------
+# Generation / request limits
+# ---------------------------------------------------------------------------
+# These were previously hardcoded, which caused a silent failure mode on the
+# RunPod A100 run: with no cap on generated tokens, "thinking" models
+# (gpt-oss:20b, deepseek-r1:1.5b) could generate far past the 60s client
+# timeout, and every timed-out call was then recorded as a successful empty
+# response -- corrupting ASR/TSR with what were really measurement failures.
+#
+# Every value here is env-tunable so a deployment can adjust it without
+# editing code, and every one of them is a documented experimental
+# parameter that must stay in sync with the configuration table in the
+# paper (main.tex, Table "Ollama experiment configuration").
+#
+#   EPD_TEMPERATURE   default 0.0  -- greedy decoding, as the paper states.
+#                     (Was hardcoded 0.7, contradicting the paper and
+#                     undermining the reproducibility the multi-seed
+#                     evaluation is meant to establish.)
+#   EPD_NUM_PREDICT   default 1024 -- generation cap. Reasoning models spend
+#                     part of this budget on <think> content before the
+#                     answer, so a tight cap can truncate the answer away
+#                     entirely; 1024 leaves room for both. See
+#                     MODEL_NUM_PREDICT below for per-model overrides.
+#   EPD_NUM_CTX       default 8192 -- context window, matching the paper.
+#                     Previously unset, so each model silently used its own
+#                     default (131k for several), contradicting the table.
+#   EPD_GENERATE_TIMEOUT / EPD_PRELOAD_TIMEOUT -- client wait limits.
+GENERATION_TEMPERATURE = float(os.environ.get("EPD_TEMPERATURE", "0.0"))
+GENERATION_NUM_PREDICT = int(os.environ.get("EPD_NUM_PREDICT", "1024"))
+GENERATION_NUM_CTX = int(os.environ.get("EPD_NUM_CTX", "8192"))
+GENERATION_TIMEOUT_S = int(os.environ.get("EPD_GENERATE_TIMEOUT", "300"))
+
+# Per-model generation caps. Reasoning models emit a <think> block before
+# their actual answer, consuming budget that non-reasoning models spend
+# entirely on the answer -- with a single shared cap they are far more
+# likely to be truncated mid-reasoning and never produce a scoreable
+# answer. Anything not listed uses GENERATION_NUM_PREDICT.
+MODEL_NUM_PREDICT: Dict[str, int] = {
+    "deepseek-r1:1.5b": 2048,
+    "deepseek-r1:32b": 2048,
+    "deepseek-r1:70b": 2048,
+    "gpt-oss:20b": 2048,
+    "gpt-oss:120b": 2048,
+}
+
+
+def num_predict_for(model: str) -> int:
+    """Generation cap for `model`, honoring per-model reasoning overrides."""
+    return MODEL_NUM_PREDICT.get(model, GENERATION_NUM_PREDICT)
 
 # ---------------------------------------------------------------------------
 # Cybersecurity Personas for randomized persona injection
@@ -255,29 +307,92 @@ class Approach(ABC):
 # Shared helpers
 # ---------------------------------------------------------------------------
 
-def _call_ollama(model: str, prompt: str, timeout: int = 60, seed: Optional[int] = None) -> Dict[str, Any]:
+_REASONING_BLOCK_RE = re.compile(r"<(think|thinking|reasoning)\b[^>]*>.*?</\1>", re.DOTALL | re.IGNORECASE)
+_UNCLOSED_REASONING_RE = re.compile(r"<(think|thinking|reasoning)\b[^>]*>.*\Z", re.DOTALL | re.IGNORECASE)
+
+
+def split_reasoning(raw: str) -> Tuple[str, str]:
+    """
+    Separate a reasoning model's internal monologue from its actual answer.
+
+    deepseek-r1 and gpt-oss emit a <think>...</think> block before their
+    real reply. Scoring the combined text is invalid: a model that
+    correctly REFUSES while reasoning "that would mean running rm -rf /,
+    so I must refuse" matches the destructive-command danger pattern and
+    is scored unsafe, even though its answer was a clean refusal. That
+    penalizes exactly the reasoning models in the lineup.
+
+    Returns (answer, reasoning). If generation was truncated mid-reasoning
+    the block never closes, so there is no answer at all -- that case
+    returns ("", reasoning) and the caller records it as truncated rather
+    than as an empty (and therefore "unsafe") reply.
+    """
+    if not raw:
+        return "", ""
+
+    reasoning_parts = [m.group(0) for m in _REASONING_BLOCK_RE.finditer(raw)]
+    answer = _REASONING_BLOCK_RE.sub("", raw).strip()
+
+    unclosed = _UNCLOSED_REASONING_RE.search(answer)
+    if unclosed:
+        reasoning_parts.append(unclosed.group(0))
+        answer = answer[: unclosed.start()].strip()
+
+    return answer, "\n".join(reasoning_parts).strip()
+
+
+def _call_ollama(
+    model: str,
+    prompt: str,
+    timeout: Optional[int] = None,
+    seed: Optional[int] = None,
+    num_predict: Optional[int] = None,
+) -> Dict[str, Any]:
     """
     Transmits an execution payload to the local Ollama inference engine.
 
     Args:
         model: The specific identifier of the target model.
         prompt: The fully constructed, contextually grounded instruction payload.
-        timeout: Maximum execution duration in seconds before aborting.
+        timeout: Maximum wait in seconds before aborting. Defaults to
+            GENERATION_TIMEOUT_S (env: EPD_GENERATE_TIMEOUT).
         seed: Optional generation seed (Ollama `options.seed`), set per
             evaluation seed so multi-seed runs are individually reproducible.
+        num_predict: Cap on generated tokens. Defaults to the per-model cap
+            (see num_predict_for). Without a cap Ollama generates until it
+            hits the context window, which is what made calls routinely
+            exceed the client timeout.
 
     Returns:
-        A structured response containing 'status', raw 'command', 'tool_used',
-        and any operational 'error' encountered during generation.
+        A structured response with 'status', 'command' (the answer, with any
+        reasoning block removed), 'raw_response', 'reasoning', 'tool_used',
+        and any 'error'. `status` is one of:
+            "success"   -- the model returned a scoreable answer
+            "timeout"   -- the request exceeded `timeout` (NOT a model answer)
+            "truncated" -- generation hit the token cap before an answer
+                           emerged (reasoning only); not a model answer
+            "empty"     -- the call succeeded but returned no text at all
+            "http_error" / "error" -- the call failed for another reason
+        Only "success" represents an actual observation of model behavior;
+        callers must not score the other statuses as if the model replied.
     """
+    timeout = GENERATION_TIMEOUT_S if timeout is None else timeout
+    num_predict = num_predict_for(model) if num_predict is None else num_predict
+
     result = {
-        "status": "failed",
+        "status": "error",
         "command": None,
+        "raw_response": None,
+        "reasoning": None,
         "tool_used": None,
         "error": None,
     }
 
-    options = {"temperature": 0.7}
+    options = {
+        "temperature": GENERATION_TEMPERATURE,
+        "num_predict": num_predict,
+        "num_ctx": GENERATION_NUM_CTX,
+    }
     if seed is not None:
         options["seed"] = seed
 
@@ -294,24 +409,49 @@ def _call_ollama(model: str, prompt: str, timeout: int = 60, seed: Optional[int]
         )
 
         if response.status_code == 200:
-            cmd = response.json().get("response", "").strip()
+            payload = response.json()
+            raw = (payload.get("response") or "").strip()
+            answer, reasoning = split_reasoning(raw)
 
-            clean_cmd = cmd
-            if "```" in clean_cmd:
-                clean_lines = [
-                    line for line in clean_cmd.split("\n") if "```" not in line
-                ]
-                clean_cmd = "\n".join(clean_lines).strip()
+            result["raw_response"] = raw
+            result["reasoning"] = reasoning or None
+            result["done_reason"] = payload.get("done_reason")
 
-            tool = clean_cmd.split()[0] if clean_cmd else "unknown"
+            if not raw:
+                # A 200 with no text is a failed measurement, not a model
+                # choosing to say nothing -- don't score it as an answer.
+                result["status"] = "empty"
+                result["error"] = "Model returned an empty response"
+            elif not answer:
+                # Budget was spent entirely on reasoning; the answer never
+                # arrived. Scoring the reasoning as the answer is invalid.
+                result["status"] = "truncated"
+                result["error"] = (
+                    f"Generation hit the {num_predict}-token cap during reasoning; "
+                    "no answer produced"
+                )
+            else:
+                clean_cmd = answer
+                if "```" in clean_cmd:
+                    clean_lines = [
+                        line for line in clean_cmd.split("\n") if "```" not in line
+                    ]
+                    clean_cmd = "\n".join(clean_lines).strip()
 
-            result["status"] = "success"
-            result["command"] = cmd
-            result["tool_used"] = tool
+                result["status"] = "success"
+                result["command"] = answer
+                result["tool_used"] = clean_cmd.split()[0] if clean_cmd else "unknown"
         else:
+            result["status"] = "http_error"
             result["error"] = f"HTTP {response.status_code}"
+    except requests.exceptions.Timeout as e:
+        # Explicitly distinct from a real response. Previously this was
+        # recorded as "simulated_success" with an empty command, which the
+        # classifiers then scored as a genuine unsafe/zero-score answer.
+        result["status"] = "timeout"
+        result["error"] = f"Request exceeded {timeout}s timeout: {e}"
     except Exception as e:
-        result["status"] = "simulated_success"
+        result["status"] = "error"
         result["error"] = str(e)
 
     return result
@@ -421,7 +561,17 @@ class ConfigurableApproach(Approach):
 
     def initialize(self) -> float:
         if self.ephemeral:
-            unload_all_models()
+            # Scoped to THIS approach's model, never unload_all_models().
+            #
+            # unload_all_models() purges every model on the Ollama server,
+            # which is shared by all concurrently-running model processes.
+            # One process starting an ephemeral cell would evict the four
+            # other models mid-benchmark, forcing repeated cold reloads --
+            # and, worse, breaking the experiment itself: a "static" cell is
+            # defined by its model staying resident, so having another
+            # process unload it silently converts static runs into
+            # ephemeral ones and destroys the ablation's central contrast.
+            unload_model(self.model)
             return 0.0
         if self.use_persona:
             # Static lifecycle has no re-instantiation event to rotate the
@@ -452,6 +602,7 @@ class ConfigurableApproach(Approach):
         result["init_time"] = init_time
         result["processing_time"] = processing_time
         result["model_used"] = self.model
+        result["num_predict"] = num_predict_for(self.model)
         result["persona_used"] = persona["name"] if persona else "none"
         result["resource_stats"] = mon.stats.to_dict()
         result["throughput_tasks_per_s"] = round(1.0 / processing_time, 4) if processing_time > 0 else None
@@ -464,7 +615,9 @@ class ConfigurableApproach(Approach):
 
     def teardown(self):
         if self.ephemeral:
-            unload_all_models()
+            # Own model only -- see initialize() for why the global purge is
+            # unsafe when several model processes share one Ollama server.
+            unload_model(self.model)
 
 
 def generate_ablation_matrix(models: Optional[Dict[str, str]] = None) -> Dict[str, "functools.partial"]:

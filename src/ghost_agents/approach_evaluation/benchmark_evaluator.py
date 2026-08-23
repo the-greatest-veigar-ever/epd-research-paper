@@ -516,6 +516,8 @@ def _send_to_model(approach: Approach, prompt: str, strategy: str) -> Dict[str, 
     except Exception as e:
         print(f"[ERROR] Model execution failed: {e}")
         return {
+            "status": "error",
+            "error": str(e),
             "command": f"[ERROR] {e}",
             "init_time": 0.0,
             "processing_time": 0.0,
@@ -622,12 +624,25 @@ def _aggregate_metrics(
     ram_samples: List[float],
     cost_samples: List[float],
     n: int,
+    timeout_count: int = 0,
+    error_count: int = 0,
 ) -> Dict[str, Any]:
-    """Shared metric aggregation used both at checkpoint saves and at the final tally."""
+    """Shared metric aggregation used both at checkpoint saves and at the final tally.
+
+    ASR/TSR are computed over *completed* calls only. A timed-out or errored
+    call is a measurement failure, not an observation of model behavior --
+    scoring it as a real (empty, therefore unsafe/zero) answer is what made
+    the earlier RunPod run report ~100% ASR / ~0% TSR across the board.
+    `timeout_count`/`error_count`/`completion_rate` are surfaced so a run
+    with substantial failures is visibly untrustworthy rather than silently
+    wrong.
+    """
     n = n if n else 1
+    completed = n - timeout_count - error_count
+    completed_divisor = completed if completed > 0 else 1
     total_wall_time = float(np.sum(init_latencies) + np.sum(inf_latencies)) if inf_latencies else 0.0
     metrics = {
-        "asr": round(1.0 - (safe_count / n), 4),
+        "asr": round(1.0 - (safe_count / completed_divisor), 4) if completed > 0 else None,
         "tsr": round(float(np.mean(scores)), 4) if scores else 0,
         "avg_init_latency": round(float(np.mean(init_latencies)), 4) if init_latencies else 0,
         "avg_inference_latency": round(float(np.mean(inf_latencies)), 4) if inf_latencies else 0,
@@ -637,8 +652,12 @@ def _aggregate_metrics(
         "min_score": round(float(np.min(scores)), 4) if scores else 0,
         "max_score": round(float(np.max(scores)), 4) if scores else 0,
         "total_tests": n,
+        "completed_tests": completed,
+        "timeout_count": timeout_count,
+        "error_count": error_count,
+        "completion_rate": round(completed / n, 4),
         "safe_count": safe_count,
-        "unsafe_count": n - safe_count,
+        "unsafe_count": max(completed - safe_count, 0),
         # --- Runtime efficiency metrics (reviewer point 2) ---
         "avg_cpu_percent": round(float(np.mean(cpu_samples)), 2) if cpu_samples else None,
         "avg_ram_gb": round(float(np.mean(ram_samples)), 3) if ram_samples else None,
@@ -646,21 +665,60 @@ def _aggregate_metrics(
         "total_cost_usd": round(float(np.sum(cost_samples)), 6) if cost_samples else None,
         "gpu_note": "GPU utilization unavailable on this platform (no nvidia-smi); reported as N/A.",
     }
+    if completed <= 0:
+        metrics["data_quality_warning"] = (
+            f"NO usable results: all {n} calls failed "
+            f"({timeout_count} timeout, {error_count} error). ASR/TSR are null."
+        )
+    elif (timeout_count + error_count) / n > 0.05:
+        metrics["data_quality_warning"] = (
+            f"{timeout_count + error_count}/{n} calls produced no scoreable answer "
+            f"({timeout_count} timeout, {error_count} truncated/empty/error); "
+            f"ASR/TSR cover only {completed} completed calls. Investigate before "
+            f"citing these numbers -- a high truncated count means the generation "
+            f"cap (EPD_NUM_PREDICT) is too low for this model."
+        )
     return metrics
 
 
-def _seed_metric_lists_from_prior(prior_test_results: List[Dict[str, Any]]) -> Tuple[List[float], int, List[float], List[float], List[float], List[float], List[float]]:
+# Call outcomes that are measurement failures rather than observations of
+# model behavior. None of these may contribute to ASR/TSR.
+TIMEOUT_STATUSES = ("timeout",)
+NON_ANSWER_STATUSES = ("timeout", "truncated", "empty", "error", "http_error")
+
+
+def _is_completed_call(tr: Dict[str, Any]) -> bool:
+    """True if this test result came from a call that actually returned a
+    scoreable model answer. Calls recorded as timeout/truncated/empty/error
+    are measurement failures, not observations of model behavior, and must
+    stay out of ASR/TSR. Records written before call_status existed are
+    treated as completed so old checkpoints still resume."""
+    return tr.get("call_status", "success") == "success"
+
+
+def _seed_metric_lists_from_prior(prior_test_results: List[Dict[str, Any]]) -> Tuple[List[float], int, List[float], List[float], List[float], List[float], List[float], int, int]:
     """Reconstruct the running metric-accumulator lists from already-completed
     test_results (loaded from a checkpoint), so a resumed run's aggregate
     metrics over the FULL test set are identical to a from-scratch run."""
-    scores = [tr["score"] for tr in prior_test_results]
-    safe_count = sum(1 for tr in prior_test_results if tr["safe"])
+    completed = [tr for tr in prior_test_results if _is_completed_call(tr)]
+    scores = [tr["score"] for tr in completed]
+    safe_count = sum(1 for tr in completed if tr["safe"])
+    # Latency/resource samples are kept for every attempt, including failed
+    # ones -- a timeout still consumed wall-clock time and is real
+    # efficiency data, even though it says nothing about model behavior.
     init_latencies = [tr["init_latency_s"] for tr in prior_test_results]
     inf_latencies = [tr["inference_latency_s"] for tr in prior_test_results]
     cpu_samples = [tr["cpu_percent_avg"] for tr in prior_test_results if tr.get("cpu_percent_avg") is not None]
     ram_samples = [tr["ram_used_gb_avg"] for tr in prior_test_results if tr.get("ram_used_gb_avg") is not None]
     cost_samples = [tr["cost_usd"] for tr in prior_test_results if tr.get("cost_usd") is not None]
-    return scores, safe_count, init_latencies, inf_latencies, cpu_samples, ram_samples, cost_samples
+    timeout_count = sum(1 for tr in prior_test_results if tr.get("call_status") in TIMEOUT_STATUSES)
+    error_count = sum(
+        1 for tr in prior_test_results
+        if tr.get("call_status") in NON_ANSWER_STATUSES
+        and tr.get("call_status") not in TIMEOUT_STATUSES
+    )
+    return (scores, safe_count, init_latencies, inf_latencies, cpu_samples,
+            ram_samples, cost_samples, timeout_count, error_count)
 
 
 def evaluate_benchmark(
@@ -671,6 +729,7 @@ def evaluate_benchmark(
     save_every: int = 20,
     verbose: bool = False,
     resume_data: Optional[Dict[str, Dict[str, Any]]] = None,
+    retry_failed: bool = True,
 ) -> Dict[str, Any]:
     """
     Evaluate a single benchmark against all specified approaches.
@@ -685,6 +744,10 @@ def evaluate_benchmark(
             by test_id) or they're discarded and that approach restarts
             from scratch, since a changed --max-per-benchmark/seed makes the
             old ordering invalid.
+        retry_failed: When True (default), records from the first
+            timeout/truncated/empty/error onward are dropped from the
+            resume data so those cases are re-attempted. Set False to keep
+            a previous run's failures as-is.
 
     Returns a result dict with per-approach metrics and individual test results.
     """
@@ -716,9 +779,32 @@ def evaluate_benchmark(
                           f"-- discarding and re-running from scratch.")
                 prior_test_results = []
 
+        if prior_test_results and retry_failed:
+            # Drop everything from the first non-answer onward so those cases
+            # are actually re-attempted. Without this, a checkpoint written
+            # during a bad run (e.g. before the timeout/generation-cap fixes)
+            # permanently bakes those failures in: resume treats a timed-out
+            # case as "already done" and never retries it, so re-running with
+            # a corrected config silently keeps the corrupt records.
+            # Truncating (rather than filtering out failures in place) keeps
+            # prior_test_results a true prefix of test_cases, which the
+            # ordering check above and the resume offset both depend on.
+            first_bad = next(
+                (i for i, tr in enumerate(prior_test_results) if not _is_completed_call(tr)),
+                None,
+            )
+            if first_bad is not None:
+                dropped = len(prior_test_results) - first_bad
+                if verbose:
+                    print(f"  [{approach.name}] {benchmark_name}: dropping {dropped} record(s) from the "
+                          f"first failed call onward so they are retried "
+                          f"(pass --keep-failed to score them as-is instead).")
+                prior_test_results = prior_test_results[:first_bad]
+
         if len(prior_test_results) >= len(test_cases) and test_cases:
             # Already fully evaluated in a prior run -- reuse as-is, no model load needed.
-            scores, safe_count, init_latencies, inf_latencies, cpu_samples, ram_samples, cost_samples = \
+            (scores, safe_count, init_latencies, inf_latencies, cpu_samples,
+             ram_samples, cost_samples, timeout_count, error_count) = \
                 _seed_metric_lists_from_prior(prior_test_results)
             results["approaches"][approach.name] = {
                 "approach_name": approach.name,
@@ -727,6 +813,7 @@ def evaluate_benchmark(
                 "metrics": _aggregate_metrics(
                     scores, safe_count, init_latencies, inf_latencies,
                     cpu_samples, ram_samples, cost_samples, len(test_cases),
+                    timeout_count, error_count,
                 ),
             }
             if verbose:
@@ -740,7 +827,8 @@ def evaluate_benchmark(
             "metrics": {},
         }
 
-        scores, safe_count, init_latencies, inf_latencies, cpu_samples, ram_samples, cost_samples = \
+        (scores, safe_count, init_latencies, inf_latencies, cpu_samples,
+         ram_samples, cost_samples, timeout_count, error_count) = \
             _seed_metric_lists_from_prior(prior_test_results)
 
         remaining_test_cases = test_cases[len(prior_test_results):]
@@ -755,6 +843,8 @@ def evaluate_benchmark(
         for local_i, tc in enumerate(progress_iter):
             i = len(prior_test_results) + local_i
             result = _send_to_model(approach, tc["prompt"], strategy)
+            call_status = result.get("status", "success")
+            call_completed = call_status == "success"
             response = result.get("command") or ""
             init_lat = result.get("init_time", 0.0)
             inf_lat = result.get("processing_time", 0.0)
@@ -763,7 +853,17 @@ def evaluate_benchmark(
             throughput = result.get("throughput_tasks_per_s")
             cost_info = result.get("cost_estimate") or {}
 
-            classification = classifier(response, tc)
+            if call_completed:
+                classification = classifier(response, tc)
+            else:
+                # Measurement failure, not model behavior -- excluded from
+                # ASR/TSR entirely rather than scored as an empty answer.
+                classification = {
+                    "classification": call_status,
+                    "safe": None,
+                    "score": None,
+                    "detail": result.get("error") or f"call {call_status}",
+                }
 
             cpu_avg = resource_stats.get("cpu_percent_avg")
             ram_avg = resource_stats.get("ram_used_gb_avg")
@@ -776,6 +876,9 @@ def evaluate_benchmark(
                 "safe": classification["safe"],
                 "score": classification["score"],
                 "detail": classification["detail"],
+                "call_status": call_status,
+                "had_reasoning": bool(result.get("reasoning")),
+                "reasoning_chars": len(result.get("reasoning") or ""),
                 "init_latency_s": round(init_lat, 3),
                 "inference_latency_s": round(inf_lat, 3),
                 "throughput_tasks_per_s": throughput,
@@ -787,13 +890,27 @@ def evaluate_benchmark(
             }
 
             if verbose:
-                test_result["prompt_preview"] = tc["prompt"][:200]
-                test_result["response_preview"] = response[:300]
+                # Wider previews, and the reasoning kept separately: with
+                # reasoning models a 300-char preview was often nothing but
+                # <think> preamble, making failures undiagnosable after the
+                # fact. `response` here is already reasoning-stripped.
+                test_result["prompt_preview"] = tc["prompt"][:400]
+                test_result["response_preview"] = response[:800]
+                if result.get("reasoning"):
+                    test_result["reasoning_preview"] = result["reasoning"][:800]
+                if result.get("error"):
+                    test_result["call_error"] = str(result["error"])[:300]
 
             approach_results["test_results"].append(test_result)
-            scores.append(classification["score"])
-            if classification["safe"]:
-                safe_count += 1
+            if call_completed:
+                scores.append(classification["score"])
+                if classification["safe"]:
+                    safe_count += 1
+            elif call_status in TIMEOUT_STATUSES:
+                timeout_count += 1
+            else:
+                # truncated / empty / http_error / error -- all non-answers
+                error_count += 1
             init_latencies.append(init_lat)
             inf_latencies.append(inf_lat)
             if cpu_avg is not None:
@@ -807,6 +924,7 @@ def evaluate_benchmark(
                 approach_results["metrics"] = _aggregate_metrics(
                     scores, safe_count, init_latencies, inf_latencies,
                     cpu_samples, ram_samples, cost_samples, i + 1,
+                    timeout_count, error_count,
                 )
                 results["approaches"][approach.name] = approach_results
                 progress_callback(benchmark_name, results)
@@ -814,6 +932,7 @@ def evaluate_benchmark(
         approach_results["metrics"] = _aggregate_metrics(
             scores, safe_count, init_latencies, inf_latencies,
             cpu_samples, ram_samples, cost_samples, len(test_cases),
+            timeout_count, error_count,
         )
 
         results["approaches"][approach.name] = approach_results
@@ -825,9 +944,14 @@ def evaluate_benchmark(
                 print(f"  [WARNING] teardown failed for {approach.name}: {e}")
 
         if verbose:
-            asr_rate = approach_results["metrics"]["asr"] * 100
-            tsr_rate = approach_results["metrics"]["tsr"] * 100
-            print(f"    {approach.name}: asr={asr_rate:.1f}% tsr={tsr_rate:.1f}%")
+            m = approach_results["metrics"]
+            if m.get("asr") is None:
+                print(f"    {approach.name}: NO USABLE RESULTS "
+                      f"({m.get('timeout_count', 0)} timeout, {m.get('error_count', 0)} error)")
+            else:
+                fail = m.get("timeout_count", 0) + m.get("error_count", 0)
+                suffix = f"  [{fail} failed call(s) excluded]" if fail else ""
+                print(f"    {approach.name}: asr={m['asr']*100:.1f}% tsr={m['tsr']*100:.1f}%{suffix}")
 
     return results
 
@@ -880,6 +1004,7 @@ def _run_single_seed(
     save_every: int,
     output_dir: str,
     verbose: bool,
+    retry_failed: bool = True,
 ) -> Dict[str, Any]:
     """
     Run one full sweep (all requested benchmarks x approaches) at a single
@@ -1007,6 +1132,7 @@ def _run_single_seed(
                 save_every=save_every,
                 verbose=verbose,
                 resume_data=resume_data,
+                retry_failed=retry_failed,
             )
             model_full_results["benchmark_results"][bench_name] = result
             _progress_callback(bench_name, result)
@@ -1082,6 +1208,7 @@ def run_full_evaluation(
     output_dir: str = "report-output/ghost_agents/benchmark_results",
     seeds: Optional[List[int]] = None,
     verbose: bool = True,
+    retry_failed: bool = True,
 ) -> Dict[str, Any]:
     """
     Run the full benchmark evaluation suite, once per seed, then aggregate
@@ -1120,6 +1247,7 @@ def run_full_evaluation(
             save_every=save_every,
             output_dir=output_dir,
             verbose=verbose,
+            retry_failed=retry_failed,
         )
 
     valid_seed_results = {s: r for s, r in per_seed_results.items() if r}
@@ -1251,8 +1379,11 @@ def _compute_summary(full_results: Dict) -> Dict[str, Any]:
         for approach_name, approach_data in bench_result.get("approaches", {}).items():
             metrics = approach_data.get("metrics", {})
             bench_summary["approaches"][approach_name] = {
-                "asr": metrics.get("asr", 0),
-                "tsr": metrics.get("tsr", 0),
+                "asr": metrics.get("asr"),
+                "tsr": metrics.get("tsr"),
+                "timeout_count": metrics.get("timeout_count", 0),
+                "error_count": metrics.get("error_count", 0),
+                "completion_rate": metrics.get("completion_rate"),
                 "avg_init_latency": metrics.get("avg_init_latency", 0),
                 "avg_inference_latency": metrics.get("avg_inference_latency", 0),
                 "avg_cpu_percent": metrics.get("avg_cpu_percent"),
@@ -1267,8 +1398,10 @@ def _compute_summary(full_results: Dict) -> Dict[str, Any]:
                     "init_latencies": [], "inf_latencies": [],
                     "benchmarks_tested": 0,
                 }
-            approach_scores[approach_name]["asr_rates"].append(metrics.get("asr", 0))
-            approach_scores[approach_name]["tsr_scores"].append(metrics.get("tsr", 0))
+            if metrics.get("asr") is not None:
+                approach_scores[approach_name]["asr_rates"].append(metrics["asr"])
+            if metrics.get("tsr") is not None:
+                approach_scores[approach_name]["tsr_scores"].append(metrics["tsr"])
             approach_scores[approach_name]["init_latencies"].append(metrics.get("avg_init_latency", 0))
             approach_scores[approach_name]["inf_latencies"].append(metrics.get("avg_inference_latency", 0))
             approach_scores[approach_name]["benchmarks_tested"] += 1
@@ -1277,15 +1410,15 @@ def _compute_summary(full_results: Dict) -> Dict[str, Any]:
 
     for approach_name, data in approach_scores.items():
         summary["per_approach"][approach_name] = {
-            "avg_asr": round(float(np.mean(data["asr_rates"])), 4),
-            "avg_tsr": round(float(np.mean(data["tsr_scores"])), 4),
+            "avg_asr": round(float(np.mean(data["asr_rates"])), 4) if data["asr_rates"] else None,
+            "avg_tsr": round(float(np.mean(data["tsr_scores"])), 4) if data["tsr_scores"] else None,
             "avg_init_latency": round(float(np.mean(data["init_latencies"])), 4),
             "avg_inference_latency": round(float(np.mean(data["inf_latencies"])), 4),
             "benchmarks_tested": data["benchmarks_tested"],
         }
 
-    all_asr = [v["avg_asr"] for v in summary["per_approach"].values()]
-    all_tsr = [v["avg_tsr"] for v in summary["per_approach"].values()]
+    all_asr = [v["avg_asr"] for v in summary["per_approach"].values() if v["avg_asr"] is not None]
+    all_tsr = [v["avg_tsr"] for v in summary["per_approach"].values() if v["avg_tsr"] is not None]
     summary["overall"] = {
         "total_benchmarks_run": len(full_results.get("benchmark_results", {})),
         "total_approaches": len(approach_scores),
@@ -1321,10 +1454,12 @@ def _print_summary(summary: Dict):
         for bench_name in benchmarks:
             bench_data = summary["per_benchmark"][bench_name]
             approach_data = bench_data.get("approaches", {}).get(approach_name)
-            if approach_data:
-                asr = approach_data.get("asr", 0) * 100
-                tsr = approach_data.get("tsr", 0) * 100
+            if approach_data and approach_data.get("asr") is not None:
+                asr = approach_data["asr"] * 100
+                tsr = (approach_data.get("tsr") or 0) * 100
                 print(f" {asr:4.0f}/{tsr:2.0f}% ", end="")
+            elif approach_data:
+                print(f" {'FAILED':^13} ", end="")
             else:
                 print(f" {'-':^13} ", end="")
         print()
@@ -1333,8 +1468,11 @@ def _print_summary(summary: Dict):
 
     print("\nPer-Approach Averages:")
     for approach_name, data in summary.get("per_approach", {}).items():
+        if data["avg_asr"] is None:
+            print(f"  {approach_name:<30}: NO USABLE RESULTS (all calls failed)")
+            continue
         asr = data["avg_asr"] * 100
-        tsr = data["avg_tsr"] * 100
+        tsr = (data["avg_tsr"] or 0) * 100
         init = data["avg_init_latency"]
         inf = data["avg_inference_latency"]
         nb = data["benchmarks_tested"]
@@ -1498,6 +1636,14 @@ def main():
         help="Print detailed progress (default: True).",
     )
     parser.add_argument(
+        "--keep-failed",
+        action="store_true",
+        help="When resuming, keep a previous run's failed calls (timeout / "
+             "truncated / empty / error) instead of retrying them. Default is "
+             "to retry, so re-running after a config fix actually re-attempts "
+             "the cases that failed.",
+    )
+    parser.add_argument(
         "--list-benchmarks",
         action="store_true",
         help="List available benchmarks and exit.",
@@ -1544,6 +1690,7 @@ def main():
         output_dir=args.output,
         seeds=args.seeds,
         verbose=args.verbose,
+        retry_failed=not args.keep_failed,
     )
 
     if not results:

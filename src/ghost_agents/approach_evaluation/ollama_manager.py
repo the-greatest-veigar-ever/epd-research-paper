@@ -7,14 +7,23 @@ weights from system memory, which is critical for enforcing the isolation
 properties required by the Ephemeral Polymorphic Defense (EPD) strategy.
 """
 
+import os
 import requests
 import time
 from typing import Optional
 
 OLLAMA_BASE_URL = "http://localhost:11434"
 
+# Env-tunable lifecycle timeouts (see approaches.py for the matching
+# generation limits). Under heavy concurrency a preload can legitimately
+# queue behind other in-flight work, so the default has real headroom --
+# the previous 120s default was routinely exceeded on the RunPod run,
+# producing a flood of "preload failed" warnings.
+PRELOAD_TIMEOUT_S = int(os.environ.get("EPD_PRELOAD_TIMEOUT", "600"))
+UNLOAD_TIMEOUT_S = int(os.environ.get("EPD_UNLOAD_TIMEOUT", "120"))
 
-def preload_model(model: str, timeout: int = 300) -> float:
+
+def preload_model(model: str, timeout: Optional[int] = None) -> float:
     """
     Initializes a model within the Ollama execution environment.
 
@@ -33,6 +42,7 @@ def preload_model(model: str, timeout: int = 300) -> float:
         requests.exceptions.RequestException: If the communication with the
             Ollama API fails.
     """
+    timeout = PRELOAD_TIMEOUT_S if timeout is None else timeout
     t_start = time.perf_counter()
     try:
         response = requests.post(
@@ -53,7 +63,7 @@ def preload_model(model: str, timeout: int = 300) -> float:
     return duration
 
 
-def unload_model(model: str, timeout: int = 30) -> float:
+def unload_model(model: str, timeout: Optional[int] = None) -> float:
     """
     Terminates a model instance and deallocates its memory footprint.
 
@@ -72,6 +82,7 @@ def unload_model(model: str, timeout: int = 30) -> float:
         requests.exceptions.RequestException: If the communication with the
             Ollama API fails.
     """
+    timeout = UNLOAD_TIMEOUT_S if timeout is None else timeout
     t_start = time.perf_counter()
     try:
         response = requests.post(

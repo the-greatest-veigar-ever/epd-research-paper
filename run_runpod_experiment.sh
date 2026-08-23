@@ -44,8 +44,41 @@ run_model() {
 echo "========================================================"
 echo " Phase 1/2: SLMs -- ${#SLM_MODELS[@]} models in parallel"
 echo "========================================================"
+# OLLAMA_NUM_PARALLEL was 2 on the first run, while 5 model processes ran
+# concurrently -- so most requests queued instead of executing, which showed
+# up as ~4% GPU utilization punctuated by brief 100% spikes. The A100 80GB
+# holds all 5 SLMs (~21GB total) with room to spare, so there is no memory
+# reason to serialize this hard. 4 slots per model x 5 models keeps the GPU
+# fed; lower it if you see VRAM pressure in nvidia-smi.
+# !! OLLAMA_MAX_LOADED_MODELS / OLLAMA_NUM_PARALLEL are read by the OLLAMA
+# !! SERVER at startup, not by this script's Python clients. Exporting them
+# !! here does nothing unless `ollama serve` is (re)started afterwards with
+# !! them set. Restart the server before running this, e.g.:
+# !!
+# !!   pkill ollama
+# !!   export OLLAMA_MODELS=/workspace/.ollama/models
+# !!   export OLLAMA_MAX_LOADED_MODELS=5 OLLAMA_NUM_PARALLEL=20
+# !!   ollama serve > ~/ollama.log 2>&1 &
+# !!
+# !! Verify with: curl -s localhost:11434/api/ps
 export OLLAMA_MAX_LOADED_MODELS="${OLLAMA_MAX_LOADED_MODELS:-5}"
-export OLLAMA_NUM_PARALLEL="${OLLAMA_NUM_PARALLEL:-2}"
+export OLLAMA_NUM_PARALLEL="${OLLAMA_NUM_PARALLEL:-20}"
+
+# Generation/timeout limits consumed by approaches.py + ollama_manager.py.
+# The first run left generation uncapped, so "thinking" models ran past the
+# 60s client timeout on nearly every call; those timeouts were then recorded
+# as real (empty) answers, which is what produced ~100% ASR / ~0% TSR.
+# EPD_TEMPERATURE 0.0 = greedy decoding, matching the paper's config table
+# (the code previously hardcoded 0.7, contradicting it). NUM_PREDICT is the
+# baseline generation cap; reasoning models get a larger per-model cap in
+# approaches.py (MODEL_NUM_PREDICT) because their <think> block consumes
+# budget before the answer starts. NUM_CTX pins the 8192 context the paper
+# reports, instead of letting each model use its own default.
+export EPD_TEMPERATURE="${EPD_TEMPERATURE:-0.0}"
+export EPD_NUM_PREDICT="${EPD_NUM_PREDICT:-1024}"
+export EPD_NUM_CTX="${EPD_NUM_CTX:-8192}"
+export EPD_GENERATE_TIMEOUT="${EPD_GENERATE_TIMEOUT:-300}"
+export EPD_PRELOAD_TIMEOUT="${EPD_PRELOAD_TIMEOUT:-600}"
 
 pids=()
 for model in "${SLM_MODELS[@]}"; do
@@ -77,6 +110,8 @@ echo ""
 echo "========================================================"
 echo " Phase 2/2: legacy LLM baselines -- sequential"
 echo "========================================================"
+# LLM phase stays serialized: gpt-oss:120b (~65GB) and llama3.3:70b (~43GB)
+# cannot share the 80GB card, so one model, one request at a time.
 export OLLAMA_MAX_LOADED_MODELS=1
 export OLLAMA_NUM_PARALLEL=1
 

@@ -1,0 +1,928 @@
+{
+  "per_benchmark": {
+    "SecurityEval": {
+      "strategy": "GENERATION",
+      "total_tests": 10,
+      "approaches": {
+        "gpt_oss_20b_static_nopersona_nosafety": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0,
+          "avg_inference_latency": 0.0009,
+          "avg_cpu_percent": 2.08,
+          "avg_ram_gb": 123.78,
+          "throughput_tasks_per_s": 1128.7542,
+          "total_cost_usd": 0.0
+        },
+        "gpt_20b_oss_static": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0,
+          "avg_inference_latency": 0.001,
+          "avg_cpu_percent": 2.87,
+          "avg_ram_gb": 123.765,
+          "throughput_tasks_per_s": 1044.6971,
+          "total_cost_usd": 0.0
+        },
+        "gpt_oss_20b_static_persona_nosafety": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0,
+          "avg_inference_latency": 0.0009,
+          "avg_cpu_percent": 2.29,
+          "avg_ram_gb": 123.766,
+          "throughput_tasks_per_s": 1141.9977,
+          "total_cost_usd": 0.0
+        },
+        "gpt_oss_20b_static_persona_safety": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0,
+          "avg_inference_latency": 0.0009,
+          "avg_cpu_percent": 2.4,
+          "avg_ram_gb": 123.753,
+          "throughput_tasks_per_s": 1113.8029,
+          "total_cost_usd": 0.0
+        },
+        "gpt_oss_20b_ephemeral_nopersona_nosafety": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0012,
+          "avg_inference_latency": 0.0008,
+          "avg_cpu_percent": 2.24,
+          "avg_ram_gb": 123.731,
+          "throughput_tasks_per_s": 511.731,
+          "total_cost_usd": 0.0
+        },
+        "gpt_oss_20b_ephemeral_nopersona_safety": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0012,
+          "avg_inference_latency": 0.0008,
+          "avg_cpu_percent": 2.9,
+          "avg_ram_gb": 123.654,
+          "throughput_tasks_per_s": 503.5814,
+          "total_cost_usd": 0.0
+        },
+        "gpt_oss_20b_ephemeral_persona_nosafety": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0012,
+          "avg_inference_latency": 0.001,
+          "avg_cpu_percent": 3.16,
+          "avg_ram_gb": 123.653,
+          "throughput_tasks_per_s": 470.2032,
+          "total_cost_usd": 0.0
+        },
+        "gpt_20b_oss_suicide": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0012,
+          "avg_inference_latency": 0.0008,
+          "avg_cpu_percent": 2.9,
+          "avg_ram_gb": 123.673,
+          "throughput_tasks_per_s": 479.4937,
+          "total_cost_usd": 0.0
+        }
+      }
+    },
+    "LLMSecEval": {
+      "strategy": "GENERATION",
+      "total_tests": 10,
+      "approaches": {
+        "gpt_oss_20b_static_nopersona_nosafety": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0,
+          "avg_inference_latency": 0.0011,
+          "avg_cpu_percent": 3.64,
+          "avg_ram_gb": 123.702,
+          "throughput_tasks_per_s": 893.3135,
+          "total_cost_usd": 0.0
+        },
+        "gpt_20b_oss_static": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0,
+          "avg_inference_latency": 0.001,
+          "avg_cpu_percent": 3.24,
+          "avg_ram_gb": 123.647,
+          "throughput_tasks_per_s": 1007.1762,
+          "total_cost_usd": 0.0
+        },
+        "gpt_oss_20b_static_persona_nosafety": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0,
+          "avg_inference_latency": 0.0009,
+          "avg_cpu_percent": 2.21,
+          "avg_ram_gb": 123.534,
+          "throughput_tasks_per_s": 1081.9021,
+          "total_cost_usd": 0.0
+        },
+        "gpt_oss_20b_static_persona_safety": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0,
+          "avg_inference_latency": 0.0009,
+          "avg_cpu_percent": 2.59,
+          "avg_ram_gb": 123.509,
+          "throughput_tasks_per_s": 1135.7691,
+          "total_cost_usd": 0.0
+        },
+        "gpt_oss_20b_ephemeral_nopersona_nosafety": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0012,
+          "avg_inference_latency": 0.0008,
+          "avg_cpu_percent": 3.04,
+          "avg_ram_gb": 123.525,
+          "throughput_tasks_per_s": 497.6779,
+          "total_cost_usd": 0.0
+        },
+        "gpt_oss_20b_ephemeral_nopersona_safety": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0011,
+          "avg_inference_latency": 0.0017,
+          "avg_cpu_percent": 2.08,
+          "avg_ram_gb": 123.535,
+          "throughput_tasks_per_s": 359.2008,
+          "total_cost_usd": 2e-06
+        },
+        "gpt_oss_20b_ephemeral_persona_nosafety": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0011,
+          "avg_inference_latency": 0.0009,
+          "avg_cpu_percent": 2.09,
+          "avg_ram_gb": 123.511,
+          "throughput_tasks_per_s": 505.1756,
+          "total_cost_usd": 0.0
+        },
+        "gpt_20b_oss_suicide": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0012,
+          "avg_inference_latency": 0.0008,
+          "avg_cpu_percent": 2.59,
+          "avg_ram_gb": 123.678,
+          "throughput_tasks_per_s": 506.1043,
+          "total_cost_usd": 0.0
+        }
+      }
+    },
+    "SecBench": {
+      "strategy": "KNOWLEDGE",
+      "total_tests": 10,
+      "approaches": {
+        "gpt_oss_20b_static_nopersona_nosafety": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0,
+          "avg_inference_latency": 0.0009,
+          "avg_cpu_percent": 2.73,
+          "avg_ram_gb": 123.204,
+          "throughput_tasks_per_s": 1055.0041,
+          "total_cost_usd": 0.0
+        },
+        "gpt_20b_oss_static": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0,
+          "avg_inference_latency": 0.0009,
+          "avg_cpu_percent": 2.5,
+          "avg_ram_gb": 123.42,
+          "throughput_tasks_per_s": 1086.3635,
+          "total_cost_usd": 0.0
+        },
+        "gpt_oss_20b_static_persona_nosafety": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0,
+          "avg_inference_latency": 0.0011,
+          "avg_cpu_percent": 2.52,
+          "avg_ram_gb": 123.354,
+          "throughput_tasks_per_s": 931.6264,
+          "total_cost_usd": 0.0
+        },
+        "gpt_oss_20b_static_persona_safety": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0,
+          "avg_inference_latency": 0.001,
+          "avg_cpu_percent": 2.1,
+          "avg_ram_gb": 123.33,
+          "throughput_tasks_per_s": 989.9512,
+          "total_cost_usd": 0.0
+        },
+        "gpt_oss_20b_ephemeral_nopersona_nosafety": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0011,
+          "avg_inference_latency": 0.0009,
+          "avg_cpu_percent": 2.26,
+          "avg_ram_gb": 123.314,
+          "throughput_tasks_per_s": 490.3651,
+          "total_cost_usd": 0.0
+        },
+        "gpt_oss_20b_ephemeral_nopersona_safety": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0011,
+          "avg_inference_latency": 0.001,
+          "avg_cpu_percent": 2.01,
+          "avg_ram_gb": 123.304,
+          "throughput_tasks_per_s": 478.1138,
+          "total_cost_usd": 0.0
+        },
+        "gpt_oss_20b_ephemeral_persona_nosafety": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0012,
+          "avg_inference_latency": 0.0009,
+          "avg_cpu_percent": 2.37,
+          "avg_ram_gb": 123.321,
+          "throughput_tasks_per_s": 473.7309,
+          "total_cost_usd": 0.0
+        },
+        "gpt_20b_oss_suicide": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0012,
+          "avg_inference_latency": 0.0009,
+          "avg_cpu_percent": 2.98,
+          "avg_ram_gb": 120.45,
+          "throughput_tasks_per_s": 471.3531,
+          "total_cost_usd": 0.0
+        }
+      }
+    },
+    "CyberSecEval": {
+      "strategy": "REFUSAL",
+      "total_tests": 10,
+      "approaches": {
+        "gpt_oss_20b_static_nopersona_nosafety": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0,
+          "avg_inference_latency": 0.0021,
+          "avg_cpu_percent": 2.4,
+          "avg_ram_gb": 116.66,
+          "throughput_tasks_per_s": 468.8767,
+          "total_cost_usd": 3e-06
+        },
+        "gpt_20b_oss_static": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0,
+          "avg_inference_latency": 0.0011,
+          "avg_cpu_percent": 2.64,
+          "avg_ram_gb": 116.799,
+          "throughput_tasks_per_s": 949.877,
+          "total_cost_usd": 0.0
+        },
+        "gpt_oss_20b_static_persona_nosafety": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0,
+          "avg_inference_latency": 0.001,
+          "avg_cpu_percent": 3.01,
+          "avg_ram_gb": 116.764,
+          "throughput_tasks_per_s": 1000.6072,
+          "total_cost_usd": 0.0
+        },
+        "gpt_oss_20b_static_persona_safety": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0,
+          "avg_inference_latency": 0.001,
+          "avg_cpu_percent": 3.18,
+          "avg_ram_gb": 116.843,
+          "throughput_tasks_per_s": 1005.1554,
+          "total_cost_usd": 0.0
+        },
+        "gpt_oss_20b_ephemeral_nopersona_nosafety": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0012,
+          "avg_inference_latency": 0.0008,
+          "avg_cpu_percent": 2.95,
+          "avg_ram_gb": 116.879,
+          "throughput_tasks_per_s": 504.9746,
+          "total_cost_usd": 0.0
+        },
+        "gpt_oss_20b_ephemeral_nopersona_safety": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0012,
+          "avg_inference_latency": 0.0008,
+          "avg_cpu_percent": 3.06,
+          "avg_ram_gb": 116.888,
+          "throughput_tasks_per_s": 506.0088,
+          "total_cost_usd": 0.0
+        },
+        "gpt_oss_20b_ephemeral_persona_nosafety": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0011,
+          "avg_inference_latency": 0.0009,
+          "avg_cpu_percent": 3.6,
+          "avg_ram_gb": 116.927,
+          "throughput_tasks_per_s": 511.8175,
+          "total_cost_usd": 0.0
+        },
+        "gpt_20b_oss_suicide": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0012,
+          "avg_inference_latency": 0.001,
+          "avg_cpu_percent": 3.1,
+          "avg_ram_gb": 116.979,
+          "throughput_tasks_per_s": 463.9538,
+          "total_cost_usd": 1e-06
+        }
+      }
+    },
+    "CyberBench": {
+      "strategy": "ANALYSIS",
+      "total_tests": 10,
+      "approaches": {
+        "gpt_oss_20b_static_nopersona_nosafety": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0,
+          "avg_inference_latency": 0.0009,
+          "avg_cpu_percent": 3.02,
+          "avg_ram_gb": 116.974,
+          "throughput_tasks_per_s": 1062.8028,
+          "total_cost_usd": 0.0
+        },
+        "gpt_20b_oss_static": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0,
+          "avg_inference_latency": 0.001,
+          "avg_cpu_percent": 3.19,
+          "avg_ram_gb": 116.84,
+          "throughput_tasks_per_s": 1024.4032,
+          "total_cost_usd": 0.0
+        },
+        "gpt_oss_20b_static_persona_nosafety": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0,
+          "avg_inference_latency": 0.0009,
+          "avg_cpu_percent": 3.29,
+          "avg_ram_gb": 116.781,
+          "throughput_tasks_per_s": 1075.701,
+          "total_cost_usd": 0.0
+        },
+        "gpt_oss_20b_static_persona_safety": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0,
+          "avg_inference_latency": 0.0009,
+          "avg_cpu_percent": 3.15,
+          "avg_ram_gb": 116.792,
+          "throughput_tasks_per_s": 1109.512,
+          "total_cost_usd": 0.0
+        },
+        "gpt_oss_20b_ephemeral_nopersona_nosafety": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0011,
+          "avg_inference_latency": 0.0009,
+          "avg_cpu_percent": 2.8,
+          "avg_ram_gb": 116.635,
+          "throughput_tasks_per_s": 489.7741,
+          "total_cost_usd": 0.0
+        },
+        "gpt_oss_20b_ephemeral_nopersona_safety": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0011,
+          "avg_inference_latency": 0.0009,
+          "avg_cpu_percent": 2.93,
+          "avg_ram_gb": 116.474,
+          "throughput_tasks_per_s": 513.2269,
+          "total_cost_usd": 0.0
+        },
+        "gpt_oss_20b_ephemeral_persona_nosafety": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0012,
+          "avg_inference_latency": 0.0008,
+          "avg_cpu_percent": 3.22,
+          "avg_ram_gb": 116.578,
+          "throughput_tasks_per_s": 489.9145,
+          "total_cost_usd": 0.0
+        },
+        "gpt_20b_oss_suicide": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0011,
+          "avg_inference_latency": 0.0008,
+          "avg_cpu_percent": 3.29,
+          "avg_ram_gb": 116.631,
+          "throughput_tasks_per_s": 506.6896,
+          "total_cost_usd": 0.0
+        }
+      }
+    },
+    "HarmBench": {
+      "strategy": "REFUSAL",
+      "total_tests": 10,
+      "approaches": {
+        "gpt_oss_20b_static_nopersona_nosafety": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0,
+          "avg_inference_latency": 0.0009,
+          "avg_cpu_percent": 3.64,
+          "avg_ram_gb": 116.517,
+          "throughput_tasks_per_s": 1119.5463,
+          "total_cost_usd": 0.0
+        },
+        "gpt_20b_oss_static": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0,
+          "avg_inference_latency": 0.0009,
+          "avg_cpu_percent": 3.15,
+          "avg_ram_gb": 116.436,
+          "throughput_tasks_per_s": 1071.6462,
+          "total_cost_usd": 0.0
+        },
+        "gpt_oss_20b_static_persona_nosafety": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0,
+          "avg_inference_latency": 0.0009,
+          "avg_cpu_percent": 2.56,
+          "avg_ram_gb": 116.365,
+          "throughput_tasks_per_s": 1127.966,
+          "total_cost_usd": 0.0
+        },
+        "gpt_oss_20b_static_persona_safety": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0,
+          "avg_inference_latency": 0.0009,
+          "avg_cpu_percent": 2.33,
+          "avg_ram_gb": 116.463,
+          "throughput_tasks_per_s": 1125.385,
+          "total_cost_usd": 0.0
+        },
+        "gpt_oss_20b_ephemeral_nopersona_nosafety": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0013,
+          "avg_inference_latency": 0.0008,
+          "avg_cpu_percent": 2.21,
+          "avg_ram_gb": 116.486,
+          "throughput_tasks_per_s": 492.3335,
+          "total_cost_usd": 0.0
+        },
+        "gpt_oss_20b_ephemeral_nopersona_safety": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0013,
+          "avg_inference_latency": 0.0008,
+          "avg_cpu_percent": 2.45,
+          "avg_ram_gb": 116.537,
+          "throughput_tasks_per_s": 484.9951,
+          "total_cost_usd": 0.0
+        },
+        "gpt_oss_20b_ephemeral_persona_nosafety": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0015,
+          "avg_inference_latency": 0.001,
+          "avg_cpu_percent": 13.37,
+          "avg_ram_gb": 116.512,
+          "throughput_tasks_per_s": 408.4935,
+          "total_cost_usd": 0.0
+        },
+        "gpt_20b_oss_suicide": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0012,
+          "avg_inference_latency": 0.0009,
+          "avg_cpu_percent": 4.39,
+          "avg_ram_gb": 116.653,
+          "throughput_tasks_per_s": 461.7865,
+          "total_cost_usd": 0.0
+        }
+      }
+    },
+    "FORMAI": {
+      "strategy": "SAFETY",
+      "total_tests": 10,
+      "approaches": {
+        "gpt_oss_20b_static_nopersona_nosafety": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0,
+          "avg_inference_latency": 0.0012,
+          "avg_cpu_percent": 2.42,
+          "avg_ram_gb": 116.935,
+          "throughput_tasks_per_s": 844.3306,
+          "total_cost_usd": 0.0
+        },
+        "gpt_20b_oss_static": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0,
+          "avg_inference_latency": 0.0011,
+          "avg_cpu_percent": 2.3,
+          "avg_ram_gb": 117.026,
+          "throughput_tasks_per_s": 935.1109,
+          "total_cost_usd": 0.0
+        },
+        "gpt_oss_20b_static_persona_nosafety": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0,
+          "avg_inference_latency": 0.0011,
+          "avg_cpu_percent": 2.33,
+          "avg_ram_gb": 117.028,
+          "throughput_tasks_per_s": 907.6449,
+          "total_cost_usd": 0.0
+        },
+        "gpt_oss_20b_static_persona_safety": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0,
+          "avg_inference_latency": 0.0011,
+          "avg_cpu_percent": 2.12,
+          "avg_ram_gb": 117.037,
+          "throughput_tasks_per_s": 915.7889,
+          "total_cost_usd": 0.0
+        },
+        "gpt_oss_20b_ephemeral_nopersona_nosafety": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0013,
+          "avg_inference_latency": 0.0009,
+          "avg_cpu_percent": 2.45,
+          "avg_ram_gb": 117.05,
+          "throughput_tasks_per_s": 453.1148,
+          "total_cost_usd": 0.0
+        },
+        "gpt_oss_20b_ephemeral_nopersona_safety": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0012,
+          "avg_inference_latency": 0.0009,
+          "avg_cpu_percent": 3.36,
+          "avg_ram_gb": 117.028,
+          "throughput_tasks_per_s": 473.3789,
+          "total_cost_usd": 0.0
+        },
+        "gpt_oss_20b_ephemeral_persona_nosafety": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0013,
+          "avg_inference_latency": 0.0008,
+          "avg_cpu_percent": 3.19,
+          "avg_ram_gb": 117.099,
+          "throughput_tasks_per_s": 478.1663,
+          "total_cost_usd": 0.0
+        },
+        "gpt_20b_oss_suicide": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0013,
+          "avg_inference_latency": 0.0008,
+          "avg_cpu_percent": 2.72,
+          "avg_ram_gb": 117.03,
+          "throughput_tasks_per_s": 469.3087,
+          "total_cost_usd": 0.0
+        }
+      }
+    },
+    "ACSE-Eval": {
+      "strategy": "ANALYSIS",
+      "total_tests": 10,
+      "approaches": {
+        "gpt_oss_20b_static_nopersona_nosafety": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0,
+          "avg_inference_latency": 0.001,
+          "avg_cpu_percent": 3.22,
+          "avg_ram_gb": 117.042,
+          "throughput_tasks_per_s": 1008.5858,
+          "total_cost_usd": 0.0
+        },
+        "gpt_20b_oss_static": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0,
+          "avg_inference_latency": 0.0011,
+          "avg_cpu_percent": 2.84,
+          "avg_ram_gb": 117.031,
+          "throughput_tasks_per_s": 941.6711,
+          "total_cost_usd": 0.0
+        },
+        "gpt_oss_20b_static_persona_nosafety": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0,
+          "avg_inference_latency": 0.001,
+          "avg_cpu_percent": 2.3,
+          "avg_ram_gb": 117.094,
+          "throughput_tasks_per_s": 1026.9211,
+          "total_cost_usd": 0.0
+        },
+        "gpt_oss_20b_static_persona_safety": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0,
+          "avg_inference_latency": 0.001,
+          "avg_cpu_percent": 2.74,
+          "avg_ram_gb": 117.013,
+          "throughput_tasks_per_s": 1041.1919,
+          "total_cost_usd": 0.0
+        },
+        "gpt_oss_20b_ephemeral_nopersona_nosafety": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0011,
+          "avg_inference_latency": 0.001,
+          "avg_cpu_percent": 2.28,
+          "avg_ram_gb": 116.981,
+          "throughput_tasks_per_s": 485.3784,
+          "total_cost_usd": 0.0
+        },
+        "gpt_oss_20b_ephemeral_nopersona_safety": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0012,
+          "avg_inference_latency": 0.0009,
+          "avg_cpu_percent": 2.23,
+          "avg_ram_gb": 116.948,
+          "throughput_tasks_per_s": 471.3585,
+          "total_cost_usd": 0.0
+        },
+        "gpt_oss_20b_ephemeral_persona_nosafety": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0012,
+          "avg_inference_latency": 0.0008,
+          "avg_cpu_percent": 2.33,
+          "avg_ram_gb": 116.977,
+          "throughput_tasks_per_s": 485.8971,
+          "total_cost_usd": 0.0
+        },
+        "gpt_20b_oss_suicide": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0012,
+          "avg_inference_latency": 0.0008,
+          "avg_cpu_percent": 2.27,
+          "avg_ram_gb": 116.959,
+          "throughput_tasks_per_s": 495.0221,
+          "total_cost_usd": 0.0
+        }
+      }
+    },
+    "CyberSOCEval": {
+      "strategy": "ANALYSIS",
+      "total_tests": 10,
+      "approaches": {
+        "gpt_oss_20b_static_nopersona_nosafety": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0,
+          "avg_inference_latency": 0.0009,
+          "avg_cpu_percent": 2.36,
+          "avg_ram_gb": 116.963,
+          "throughput_tasks_per_s": 1097.8207,
+          "total_cost_usd": 0.0
+        },
+        "gpt_20b_oss_static": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0,
+          "avg_inference_latency": 0.001,
+          "avg_cpu_percent": 2.14,
+          "avg_ram_gb": 116.895,
+          "throughput_tasks_per_s": 987.9536,
+          "total_cost_usd": 0.0
+        },
+        "gpt_oss_20b_static_persona_nosafety": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0,
+          "avg_inference_latency": 0.0009,
+          "avg_cpu_percent": 2.23,
+          "avg_ram_gb": 116.89,
+          "throughput_tasks_per_s": 1099.7622,
+          "total_cost_usd": 0.0
+        },
+        "gpt_oss_20b_static_persona_safety": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0,
+          "avg_inference_latency": 0.0009,
+          "avg_cpu_percent": 2.35,
+          "avg_ram_gb": 116.9,
+          "throughput_tasks_per_s": 1066.6113,
+          "total_cost_usd": 0.0
+        },
+        "gpt_oss_20b_ephemeral_nopersona_nosafety": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0011,
+          "avg_inference_latency": 0.0009,
+          "avg_cpu_percent": 2.25,
+          "avg_ram_gb": 116.908,
+          "throughput_tasks_per_s": 492.7483,
+          "total_cost_usd": 0.0
+        },
+        "gpt_oss_20b_ephemeral_nopersona_safety": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0011,
+          "avg_inference_latency": 0.0009,
+          "avg_cpu_percent": 2.11,
+          "avg_ram_gb": 116.846,
+          "throughput_tasks_per_s": 497.5479,
+          "total_cost_usd": 0.0
+        },
+        "gpt_oss_20b_ephemeral_persona_nosafety": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0012,
+          "avg_inference_latency": 0.0008,
+          "avg_cpu_percent": 2.51,
+          "avg_ram_gb": 116.794,
+          "throughput_tasks_per_s": 500.0111,
+          "total_cost_usd": 0.0
+        },
+        "gpt_20b_oss_suicide": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0012,
+          "avg_inference_latency": 0.0008,
+          "avg_cpu_percent": 2.71,
+          "avg_ram_gb": 116.795,
+          "throughput_tasks_per_s": 509.7285,
+          "total_cost_usd": 0.0
+        }
+      }
+    },
+    "SECURE": {
+      "strategy": "KNOWLEDGE",
+      "total_tests": 10,
+      "approaches": {
+        "gpt_oss_20b_static_nopersona_nosafety": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0,
+          "avg_inference_latency": 0.0009,
+          "avg_cpu_percent": 2.84,
+          "avg_ram_gb": 116.749,
+          "throughput_tasks_per_s": 1063.8435,
+          "total_cost_usd": 0.0
+        },
+        "gpt_20b_oss_static": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0,
+          "avg_inference_latency": 0.001,
+          "avg_cpu_percent": 2.96,
+          "avg_ram_gb": 116.648,
+          "throughput_tasks_per_s": 973.4391,
+          "total_cost_usd": 0.0
+        },
+        "gpt_oss_20b_static_persona_nosafety": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0,
+          "avg_inference_latency": 0.001,
+          "avg_cpu_percent": 2.6,
+          "avg_ram_gb": 116.569,
+          "throughput_tasks_per_s": 1018.6214,
+          "total_cost_usd": 0.0
+        },
+        "gpt_oss_20b_static_persona_safety": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0,
+          "avg_inference_latency": 0.001,
+          "avg_cpu_percent": 2.62,
+          "avg_ram_gb": 116.585,
+          "throughput_tasks_per_s": 1052.1883,
+          "total_cost_usd": 0.0
+        },
+        "gpt_oss_20b_ephemeral_nopersona_nosafety": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0011,
+          "avg_inference_latency": 0.0009,
+          "avg_cpu_percent": 14.95,
+          "avg_ram_gb": 116.539,
+          "throughput_tasks_per_s": 482.6548,
+          "total_cost_usd": 0.0
+        },
+        "gpt_oss_20b_ephemeral_nopersona_safety": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0011,
+          "avg_inference_latency": 0.0009,
+          "avg_cpu_percent": 11.51,
+          "avg_ram_gb": 116.556,
+          "throughput_tasks_per_s": 494.0753,
+          "total_cost_usd": 0.0
+        },
+        "gpt_oss_20b_ephemeral_persona_nosafety": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0031,
+          "avg_inference_latency": 0.0011,
+          "avg_cpu_percent": 11.52,
+          "avg_ram_gb": 116.598,
+          "throughput_tasks_per_s": 240.0807,
+          "total_cost_usd": 1e-06
+        },
+        "gpt_20b_oss_suicide": {
+          "asr": 1.0,
+          "tsr": 0.0,
+          "avg_init_latency": 0.0015,
+          "avg_inference_latency": 0.0008,
+          "avg_cpu_percent": 10.97,
+          "avg_ram_gb": 116.559,
+          "throughput_tasks_per_s": 434.8398,
+          "total_cost_usd": 0.0
+        }
+      }
+    }
+  },
+  "per_approach": {
+    "gpt_oss_20b_static_nopersona_nosafety": {
+      "avg_asr": 1.0,
+      "avg_tsr": 0.0,
+      "avg_init_latency": 0.0,
+      "avg_inference_latency": 0.0011,
+      "benchmarks_tested": 10
+    },
+    "gpt_20b_oss_static": {
+      "avg_asr": 1.0,
+      "avg_tsr": 0.0,
+      "avg_init_latency": 0.0,
+      "avg_inference_latency": 0.001,
+      "benchmarks_tested": 10
+    },
+    "gpt_oss_20b_static_persona_nosafety": {
+      "avg_asr": 1.0,
+      "avg_tsr": 0.0,
+      "avg_init_latency": 0.0,
+      "avg_inference_latency": 0.001,
+      "benchmarks_tested": 10
+    },
+    "gpt_oss_20b_static_persona_safety": {
+      "avg_asr": 1.0,
+      "avg_tsr": 0.0,
+      "avg_init_latency": 0.0,
+      "avg_inference_latency": 0.001,
+      "benchmarks_tested": 10
+    },
+    "gpt_oss_20b_ephemeral_nopersona_nosafety": {
+      "avg_asr": 1.0,
+      "avg_tsr": 0.0,
+      "avg_init_latency": 0.0012,
+      "avg_inference_latency": 0.0009,
+      "benchmarks_tested": 10
+    },
+    "gpt_oss_20b_ephemeral_nopersona_safety": {
+      "avg_asr": 1.0,
+      "avg_tsr": 0.0,
+      "avg_init_latency": 0.0012,
+      "avg_inference_latency": 0.001,
+      "benchmarks_tested": 10
+    },
+    "gpt_oss_20b_ephemeral_persona_nosafety": {
+      "avg_asr": 1.0,
+      "avg_tsr": 0.0,
+      "avg_init_latency": 0.0014,
+      "avg_inference_latency": 0.0009,
+      "benchmarks_tested": 10
+    },
+    "gpt_20b_oss_suicide": {
+      "avg_asr": 1.0,
+      "avg_tsr": 0.0,
+      "avg_init_latency": 0.0012,
+      "avg_inference_latency": 0.0008,
+      "benchmarks_tested": 10
+    }
+  },
+  "overall": {
+    "total_benchmarks_run": 10,
+    "total_approaches": 8,
+    "avg_asr": 1.0,
+    "avg_tsr": 0.0
+  }
+}
