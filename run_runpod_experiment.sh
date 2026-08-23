@@ -44,12 +44,19 @@ run_model() {
 echo "========================================================"
 echo " Phase 1/2: SLMs -- ${#SLM_MODELS[@]} models in parallel"
 echo "========================================================"
-# OLLAMA_NUM_PARALLEL was 2 on the first run, while 5 model processes ran
-# concurrently -- so most requests queued instead of executing, which showed
-# up as ~4% GPU utilization punctuated by brief 100% spikes. The A100 80GB
-# holds all 5 SLMs (~21GB total) with room to spare, so there is no memory
-# reason to serialize this hard. 4 slots per model x 5 models keeps the GPU
-# fed; lower it if you see VRAM pressure in nvidia-smi.
+# OLLAMA_NUM_PARALLEL is per-LOADED-MODEL concurrent request slots, and
+# Ollama pre-allocates KV cache proportional to num_parallel x num_ctx for
+# each one. Demand here is 1 slot per model: the 5 SLM processes run in
+# parallel, but each process is single-threaded and blocks on one request
+# at a time, and each model is owned by exactly one process. 2 leaves a
+# spare slot for the ephemeral unload/reload overlap.
+#
+# Do NOT raise this to "use more GPU". At num_ctx=8192 the KV cache alone
+# would be roughly 15GB across the 5 models at 2 slots, but ~148GB at 20 --
+# far past the 80GB card, so Ollama would fail to keep all 5 resident and
+# thrash. The first run's low GPU utilization was caused by uncapped
+# generation, client timeouts, and a server-global unload race, not by
+# insufficient parallelism.
 # !! OLLAMA_MAX_LOADED_MODELS / OLLAMA_NUM_PARALLEL are read by the OLLAMA
 # !! SERVER at startup, not by this script's Python clients. Exporting them
 # !! here does nothing unless `ollama serve` is (re)started afterwards with
@@ -57,12 +64,12 @@ echo "========================================================"
 # !!
 # !!   pkill ollama
 # !!   export OLLAMA_MODELS=/workspace/.ollama/models
-# !!   export OLLAMA_MAX_LOADED_MODELS=5 OLLAMA_NUM_PARALLEL=20
+# !!   export OLLAMA_MAX_LOADED_MODELS=5 OLLAMA_NUM_PARALLEL=2
 # !!   ollama serve > ~/ollama.log 2>&1 &
 # !!
 # !! Verify with: curl -s localhost:11434/api/ps
 export OLLAMA_MAX_LOADED_MODELS="${OLLAMA_MAX_LOADED_MODELS:-5}"
-export OLLAMA_NUM_PARALLEL="${OLLAMA_NUM_PARALLEL:-20}"
+export OLLAMA_NUM_PARALLEL="${OLLAMA_NUM_PARALLEL:-2}"
 
 # Generation/timeout limits consumed by approaches.py + ollama_manager.py.
 # The first run left generation uncapped, so "thinking" models ran past the

@@ -33,6 +33,7 @@ Strategies:
 """
 
 import argparse
+import fcntl
 import json
 import os
 import random
@@ -604,6 +605,39 @@ def _checkpoint_view(mfr: Dict[str, Any]) -> Dict[str, Any]:
     return view
 
 
+def _atomic_write_json(path: str, obj: Any, **dump_kwargs) -> None:
+    """
+    Write JSON atomically: serialize to a temp file in the same directory,
+    fsync, then os.replace() it into place (an atomic rename on POSIX).
+
+    Two failure modes this prevents:
+      * A run killed mid-write (which happens routinely -- interrupted pods,
+        OOM kills) previously left a truncated checkpoint. Resume then hit a
+        JSONDecodeError, discarded the checkpoint, and restarted that model
+        from scratch, silently throwing away hours of completed work.
+      * A reader (or the merge script) picking up a half-written file.
+
+    The temp name includes the pid so concurrent writers never collide on
+    the scratch file either.
+    """
+    directory = os.path.dirname(path) or "."
+    os.makedirs(directory, exist_ok=True)
+    tmp_path = os.path.join(directory, f".{os.path.basename(path)}.{os.getpid()}.tmp")
+    try:
+        with open(tmp_path, "w") as f:
+            json.dump(obj, f, **dump_kwargs)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp_path, path)
+    except Exception:
+        if os.path.exists(tmp_path):
+            try:
+                os.remove(tmp_path)
+            except OSError:
+                pass
+        raise
+
+
 def _write_checkpoint(path: str, mfr: Dict[str, Any]) -> None:
     """Write a checkpoint as compact JSON (no pretty-print indent) with
     previews stripped -- both cut the per-write cost substantially on large
@@ -611,8 +645,7 @@ def _write_checkpoint(path: str, mfr: Dict[str, Any]) -> None:
     payload only grows over the run. Formatting doesn't matter here since
     checkpoints are machine-read (for resume), not meant for humans to
     browse -- the final benchmark_eval_*.json stays indent=2 and full."""
-    with open(path, "w") as f:
-        json.dump(_checkpoint_view(mfr), f, separators=(",", ":"), default=str)
+    _atomic_write_json(path, _checkpoint_view(mfr), separators=(",", ":"), default=str)
 
 
 def _aggregate_metrics(
@@ -1150,11 +1183,9 @@ def _run_single_seed(
         model_full_results["summary"] = _compute_summary(model_full_results)
 
         eval_file = os.path.join(model_output_dir, f"benchmark_eval_{model_full_results['evaluation_id']}.json")
-        with open(eval_file, "w") as f:
-            json.dump(model_full_results, f, indent=2, default=str)
+        _atomic_write_json(eval_file, model_full_results, indent=2, default=str)
         summary_file = os.path.join(model_output_dir, f"benchmark_summary_{model_full_results['evaluation_id']}.json")
-        with open(summary_file, "w") as f:
-            json.dump(model_full_results["summary"], f, indent=2, default=str)
+        _atomic_write_json(summary_file, model_full_results["summary"], indent=2, default=str)
 
         if verbose:
             print(f"\n[{model_key}] seed {seed} results saved to: {eval_file}")
@@ -1182,13 +1213,27 @@ def _run_single_seed(
     # Combined view for this seed, saved at the output_dir root -- convenient
     # when everything ran on one machine; when consolidating across machines,
     # use analysis/merge_model_outputs.py on the per-model folders instead.
+    #
+    # The filename is tagged with this process's model group because the
+    # output_dir root is SHARED by every concurrently-running model process.
+    # evaluation_id is only second-resolution, so two processes starting in
+    # the same second produced identical names and silently clobbered each
+    # other -- an earlier 5-process run left only 4 *_combined.json files
+    # per seed. The model tag makes the name unique by construction (each
+    # process owns distinct model groups); the pid is belt-and-braces for
+    # the case where the same model group is somehow run twice at once.
     os.makedirs(output_dir, exist_ok=True)
-    output_file = os.path.join(output_dir, f"benchmark_eval_{full_results['evaluation_id']}_combined.json")
-    with open(output_file, "w") as f:
-        json.dump(full_results, f, indent=2, default=str)
-    summary_file = os.path.join(output_dir, f"benchmark_summary_{full_results['evaluation_id']}_combined.json")
-    with open(summary_file, "w") as f:
-        json.dump(full_results["summary"], f, indent=2, default=str)
+    group_tag = "-".join(sorted(approaches_by_model.keys())) or "nogroup"
+    if len(group_tag) > 60:
+        group_tag = f"{len(approaches_by_model)}groups"
+    unique_tag = f"{group_tag}_pid{os.getpid()}"
+
+    output_file = os.path.join(
+        output_dir, f"benchmark_eval_{full_results['evaluation_id']}_{unique_tag}_combined.json")
+    _atomic_write_json(output_file, full_results, indent=2, default=str)
+    summary_file = os.path.join(
+        output_dir, f"benchmark_summary_{full_results['evaluation_id']}_{unique_tag}_combined.json")
+    _atomic_write_json(summary_file, full_results["summary"], indent=2, default=str)
 
     if verbose:
         print(f"\nSeed {seed} combined results saved to: {output_file}")
@@ -1256,11 +1301,22 @@ def run_full_evaluation(
 
     multi_seed_summary = aggregate_across_seeds(valid_seed_results)
 
+    # Same shared-root collision risk as the *_combined files above: tag the
+    # name with the model groups this process covered plus its pid.
     run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
     os.makedirs(output_dir, exist_ok=True)
-    multi_seed_file = os.path.join(output_dir, f"multi_seed_summary_{run_id}.json")
-    with open(multi_seed_file, "w") as f:
-        json.dump(multi_seed_summary, f, indent=2, default=str)
+    covered = sorted({
+        model_key_for_approach(a)
+        for r in valid_seed_results.values()
+        for b in r.get("benchmark_results", {}).values()
+        for a in b.get("approaches", {})
+    })
+    group_tag = "-".join(covered) or "nogroup"
+    if len(group_tag) > 60:
+        group_tag = f"{len(covered)}groups"
+    multi_seed_file = os.path.join(
+        output_dir, f"multi_seed_summary_{run_id}_{group_tag}_pid{os.getpid()}.json")
+    _atomic_write_json(multi_seed_file, multi_seed_summary, indent=2, default=str)
 
     if verbose and len(seeds) > 1:
         print(f"\n{'=' * 70}\nMULTI-SEED SUMMARY ({len(seeds)} seeds: {seeds})\n{'=' * 70}")
@@ -1498,10 +1554,29 @@ def _update_markdown_report(full_results: Dict[str, Any], report_path: str = "re
     Update the Markdown report with results from the latest evaluation.
     Matches benchmark sections and inserts or updates approach rows.
     No-ops if `report_path` doesn't exist (this report is optional).
+
+    Unlike every other output, this is a single file shared by all
+    concurrently-running model processes, and it is a read-modify-write:
+    without coordination two processes read the same content, each adds its
+    own rows, and whichever writes last silently drops the other's (a lost
+    update). An exclusive flock around the whole read-modify-write
+    serializes it. The lock lives in a sidecar .lock file so it does not
+    depend on the report's own file handle lifetime.
     """
     if not os.path.exists(report_path):
         return
 
+    lock_path = f"{report_path}.lock"
+    with open(lock_path, "w") as lock_file:
+        fcntl.flock(lock_file, fcntl.LOCK_EX)
+        try:
+            _update_markdown_report_locked(full_results, report_path)
+        finally:
+            fcntl.flock(lock_file, fcntl.LOCK_UN)
+
+
+def _update_markdown_report_locked(full_results: Dict[str, Any], report_path: str):
+    """Body of _update_markdown_report; assumes the caller holds the lock."""
     with open(report_path, "r", encoding="utf-8") as f:
         lines = f.readlines()
 
