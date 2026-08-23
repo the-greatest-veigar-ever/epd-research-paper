@@ -105,9 +105,21 @@ GENERATION_TIMEOUT_S = int(os.environ.get("EPD_GENERATE_TIMEOUT", "300"))
 # `truncated`/`length_capped`/`data_quality_warning` in a real run and
 # raise further if needed.
 #
-# LLM tier (llama3.3:70b, gpt-oss:120b): NOT calibrated -- both exceed
-# this machine's 48GB RAM, so no local run was possible. Reasoned
-# starting values only; verify with a real run on the RunPod pod.
+# LLM tier (llama3.3:70b, gpt-oss:120b): NOT independently calibrated --
+# both exceed this machine's 48GB RAM, so no local run was possible against
+# either of them directly.
+#   - gpt-oss:120b is set to match its smaller same-family sibling
+#     gpt-oss:20b's *empirically observed* need (3072, see above) rather
+#     than a standalone guess: OpenAI released 20b/120b as the same
+#     training recipe at different scale, so the 20b finding is a
+#     meaningfully stronger signal here than generic model-size reasoning
+#     -- but it is still not a direct measurement of the 120b model.
+#   - llama3.3:70b is left at the original reasoned value (1024), by loose
+#     analogy to its non-reasoning family-mate llama3.2:3b (zero failures,
+#     comfortable margin at the same cap) -- weaker evidence, since 3.2 and
+#     3.3 are different generations, not a scaled sibling pair.
+# Verify both with a real run on the RunPod pod; watch `truncated`/
+# `length_capped`/`data_quality_warning`.
 MODEL_NUM_PREDICT: Dict[str, int] = {
     # SLM tier -- calibrated (see above).
     "phi3:mini": 2048,
@@ -115,7 +127,7 @@ MODEL_NUM_PREDICT: Dict[str, int] = {
     "qwen2.5:3b": 768,
     "deepseek-r1:1.5b": 3072,
     "gpt-oss:20b": 3072,
-    # LLM tier -- uncalibrated, unchanged.
+    # LLM tier -- see note above.
     "gpt-oss:120b": 3072,
     "llama3.3:70b": 1024,
 }
