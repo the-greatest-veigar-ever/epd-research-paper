@@ -33,3 +33,4 @@ old-data/
 # Benchmark Outputs
 #report-output/
 benchmarks/
+*.zip
