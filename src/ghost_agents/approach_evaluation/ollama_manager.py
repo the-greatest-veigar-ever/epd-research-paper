@@ -14,7 +14,7 @@ from typing import Optional
 OLLAMA_BASE_URL = "http://localhost:11434"
 
 
-def preload_model(model: str, timeout: int = 120) -> float:
+def preload_model(model: str, timeout: int = 300) -> float:
     """
     Initializes a model within the Ollama execution environment.
 
