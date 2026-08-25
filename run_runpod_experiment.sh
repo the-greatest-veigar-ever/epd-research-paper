@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 #
-# RunPod scoped experiment: 5 SLMs (full 8-cell ablation) followed by the
-# 2 legacy LLM baselines (static-only). ALL 7 run strictly sequentially --
+# RunPod scoped experiment: 5 SLMs (full 8-cell ablation), optionally
+# followed by the 2 legacy LLM baselines (static-only, opt-in via
+# INCLUDE_LLM_BASELINES=1 -- their weights are ~108GB and are not pulled
+# by default, so including them without pulling first just fails preflight).
+# Everything selected runs strictly sequentially --
 # one model resident at a time, one process at a time -- so that CPU/RAM/
 # GPU readings (sampled machine-wide by ResourceMonitor/nvidia-smi) are
 # attributable to the model actually being measured, not contaminated by
@@ -32,24 +35,51 @@ SEEDS="42 43 44"
 MAX_PER_BENCHMARK=5
 OUTPUT_DIR="report-output/ghost_agents/benchmark_results"
 LOG_DIR="report-output/ghost_agents/run_logs"
+# Checkpoint cadence, in test cases. The default (20) never fires at
+# MAX_PER_BENCHMARK=5: the evaluator counts within a single
+# (benchmark, ablation-cell) pair, which is only 5 cases long, so the sole
+# surviving checkpoint was the one written after each whole benchmark --
+# 8 cells x 5 calls of exposure, an hour of gpt-oss:20b work. 5 makes it
+# one checkpoint per completed cell; the writes are compact and
+# preview-stripped, so the extra cost is negligible next to a 60s call.
+SAVE_EVERY=5
 mkdir -p "$LOG_DIR"
 
 SLM_MODELS=(phi3_mini llama32_3b qwen25_3b deepseek_r1_1_5b gpt_20b_oss)
 LLM_MODELS=(gpt_120b_oss_static llama33_70b_static)
-ALL_APPROACHES=("${SLM_MODELS[@]}" "${LLM_MODELS[@]}")
 
 # Ollama tags to check for in the preflight (approach names above are
 # EPD's internal keys, not what `ollama list` prints).
-ALL_TAGS=(phi3:mini llama3.2:3b qwen2.5:3b deepseek-r1:1.5b gpt-oss:20b llama3.3:70b gpt-oss:120b)
+SLM_TAGS=(phi3:mini llama3.2:3b qwen2.5:3b deepseek-r1:1.5b gpt-oss:20b)
+LLM_TAGS=(llama3.3:70b gpt-oss:120b)
+
+# The LLM baselines are opt-in. They are static-only (1 cell each, no
+# ablation sweep), need ~108GB of weights that this script does not pull,
+# and -- critically -- the preflight below checks EVERY tag in the selected
+# set, so leaving them in unconditionally made the script exit 1 before a
+# single call whenever they were absent, which is the normal state of a pod
+# scoped to the 5 SLMs.
+INCLUDE_LLM_BASELINES="${INCLUDE_LLM_BASELINES:-0}"
+if [ "$INCLUDE_LLM_BASELINES" = "1" ]; then
+    ALL_APPROACHES=("${SLM_MODELS[@]}" "${LLM_MODELS[@]}")
+    ALL_TAGS=("${SLM_TAGS[@]}" "${LLM_TAGS[@]}")
+else
+    ALL_APPROACHES=("${SLM_MODELS[@]}")
+    ALL_TAGS=("${SLM_TAGS[@]}")
+fi
 
 run_model() {
     local approach="$1"
     local log_file="$LOG_DIR/${approach}.log"
     echo "[$approach] starting -> $log_file"
-    python3 -m src.ghost_agents.approach_evaluation.benchmark_evaluator \
+    # -u (unbuffered): stdout is a file here, so Python block-buffers it and
+    # progress appears in multi-KB bursts -- on a multi-hour model that means
+    # tailing a log that looks hung. stderr (tqdm) is unbuffered either way.
+    uv run python3 -u -m src.ghost_agents.approach_evaluation.benchmark_evaluator \
         --approaches "$approach" \
         --seeds $SEEDS \
         --max-per-benchmark "$MAX_PER_BENCHMARK" \
+        --save-every "$SAVE_EVERY" \
         --output "$OUTPUT_DIR" \
         > "$log_file" 2>&1
     echo $? > "$LOG_DIR/${approach}.exitcode"
@@ -78,6 +108,9 @@ purge_all_models() {
 
 echo "========================================================"
 echo " Sequential run: ${#ALL_APPROACHES[@]} approaches, one model at a time"
+echo " Models:     ${ALL_APPROACHES[*]}"
+echo " Seeds:      $SEEDS   Samples/benchmark: $MAX_PER_BENCHMARK"
+echo " LLM baselines: $([ "$INCLUDE_LLM_BASELINES" = "1" ] && echo included || echo "excluded (INCLUDE_LLM_BASELINES=1 to add)")"
 echo "========================================================"
 # !! OLLAMA_MAX_LOADED_MODELS / OLLAMA_NUM_PARALLEL are read by the OLLAMA
 # !! SERVER at startup, not by this script's Python clients. Exporting them

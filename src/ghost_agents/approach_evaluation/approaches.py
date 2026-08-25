@@ -80,6 +80,17 @@ GENERATION_NUM_PREDICT = int(os.environ.get("EPD_NUM_PREDICT", "1024"))
 GENERATION_NUM_CTX = int(os.environ.get("EPD_NUM_CTX", "8192"))
 GENERATION_TIMEOUT_S = int(os.environ.get("EPD_GENERATE_TIMEOUT", "300"))
 
+# Words-per-token ratio used to phrase the prompt's soft RESPONSE BUDGET from
+# the hard num_predict cap. These two knobs pull in opposite directions and
+# are worth keeping separate: the hard cap is a safety net whose only effect
+# when hit is to DISCARD the call (length_capped/truncated are excluded from
+# ASR/TSR), whereas the soft budget is what actually shortens generations, by
+# telling the model to finish sooner. Coupled at 0.7 they fight each other --
+# raising the cap for safety margin simultaneously invites a longer answer.
+# Lower this (e.g. 0.25) to ask for shorter answers while leaving the cap's
+# margin intact; 0.7 preserves the original behavior.
+WORD_BUDGET_RATIO = float(os.environ.get("EPD_WORD_BUDGET_RATIO", "0.7"))
+
 # Per-model generation caps. Reasoning models emit a <think> block before
 # their actual answer, consuming budget that non-reasoning models spend
 # entirely on the answer -- with a single shared cap they are far more
@@ -126,7 +137,13 @@ MODEL_NUM_PREDICT: Dict[str, int] = {
     "llama3.2:3b": 1024,
     "qwen2.5:3b": 768,
     "deepseek-r1:1.5b": 3072,
-    "gpt-oss:20b": 3072,
+    # 3072 -> 2048: at 3072 this model reliably generated to the cap
+    # (done_reason=length, ~90s/call at the 34 tok/s measured on the A100),
+    # making it over half the wall-clock of the entire 5-model sweep. 2048
+    # still sits above its observed generation need (~1837 tokens, see the
+    # calibration note above), so the exclusion risk stays low -- watch
+    # length_capped/truncated in the run and raise it back if they climb.
+    "gpt-oss:20b": 2048,
     # LLM tier -- see note above.
     "gpt-oss:120b": 3072,
     "llama3.3:70b": 1024,
@@ -518,12 +535,15 @@ def _budget_instruction(num_predict: Optional[int], model: Optional[str]) -> str
     measurement failure, not a real observation of the model's behavior.
 
     The word budget is a conservative ~0.7 words/token estimate (rounded),
-    left conservative on purpose so overshoot is unlikely.
+    left conservative on purpose so overshoot is unlikely. Tunable via
+    EPD_WORD_BUDGET_RATIO (see WORD_BUDGET_RATIO) to ask for a shorter
+    answer without lowering the hard cap that protects the call from being
+    discarded.
     """
     if not num_predict:
         return ""
 
-    words = max(20, round(num_predict * 0.7 / 10) * 10)
+    words = max(20, round(num_predict * WORD_BUDGET_RATIO / 10) * 10)
     is_reasoning = bool(model) and any(model.startswith(p) for p in _REASONING_MODEL_PREFIXES)
 
     if is_reasoning:

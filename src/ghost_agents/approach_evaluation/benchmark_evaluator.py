@@ -540,8 +540,11 @@ def update_markdown_table(file_path: str, dataset_name: str, metrics: Dict[str, 
 
     table_divider = "| :--- | :--- | :--- | :--- | :--- | :--- |"
 
-    asr = f"{metrics.get('asr', 0)*100:.2f}%"
-    tsr = f"{metrics.get('tsr', 0)*100:.2f}%"
+    # `or 0` rather than a .get default: asr/tsr are explicitly None for a
+    # cell with no usable calls, which a bare .get(key, 0) does not catch
+    # (the key exists, its value is None) -- that raised TypeError here.
+    asr = f"{(metrics.get('asr') or 0)*100:.2f}%"
+    tsr = f"{(metrics.get('tsr') or 0)*100:.2f}%"
     init_lat = f"{metrics.get('avg_init_latency', 0):.2f}s"
     inf_lat = f"{metrics.get('avg_inference_latency', 0):.2f}s"
 
@@ -659,6 +662,8 @@ def _aggregate_metrics(
     n: int,
     timeout_count: int = 0,
     error_count: int = 0,
+    gpu_samples: Optional[List[float]] = None,
+    gpu_mem_samples: Optional[List[float]] = None,
 ) -> Dict[str, Any]:
     """Shared metric aggregation used both at checkpoint saves and at the final tally.
 
@@ -676,7 +681,12 @@ def _aggregate_metrics(
     total_wall_time = float(np.sum(init_latencies) + np.sum(inf_latencies)) if inf_latencies else 0.0
     metrics = {
         "asr": round(1.0 - (safe_count / completed_divisor), 4) if completed > 0 else None,
-        "tsr": round(float(np.mean(scores)), 4) if scores else 0,
+        # None (not 0) when no call completed. `asr` above is already None in
+        # that case; reporting tsr=0 made a cell whose calls all failed look
+        # like a genuine "the model never succeeded" measurement, and -- because
+        # the downstream roll-ups skip None but happily average a 0 -- it
+        # silently dragged every per-approach / per-seed TSR mean down with it.
+        "tsr": round(float(np.mean(scores)), 4) if scores else None,
         "avg_init_latency": round(float(np.mean(init_latencies)), 4) if init_latencies else 0,
         "avg_inference_latency": round(float(np.mean(inf_latencies)), 4) if inf_latencies else 0,
         "p50_inference_latency": round(float(np.percentile(inf_latencies, 50)), 4) if inf_latencies else 0,
@@ -696,7 +706,12 @@ def _aggregate_metrics(
         "avg_ram_gb": round(float(np.mean(ram_samples)), 3) if ram_samples else None,
         "throughput_tasks_per_s": round(n / total_wall_time, 4) if total_wall_time > 0 else None,
         "total_cost_usd": round(float(np.sum(cost_samples)), 6) if cost_samples else None,
-        "gpu_note": "GPU utilization unavailable on this platform (no nvidia-smi); reported as N/A.",
+        "avg_gpu_percent": round(float(np.mean(gpu_samples)), 2) if gpu_samples else None,
+        "avg_gpu_mem_used_gb": round(float(np.mean(gpu_mem_samples)), 3) if gpu_mem_samples else None,
+        "gpu_note": None if gpu_samples else (
+            "No GPU utilization samples recorded for these calls "
+            "(nvidia-smi unavailable, or every call failed before a sample was taken)."
+        ),
     }
     if completed <= 0:
         metrics["data_quality_warning"] = (
@@ -737,7 +752,7 @@ def _is_completed_call(tr: Dict[str, Any]) -> bool:
     return tr.get("call_status", "success") == "success"
 
 
-def _seed_metric_lists_from_prior(prior_test_results: List[Dict[str, Any]]) -> Tuple[List[float], int, List[float], List[float], List[float], List[float], List[float], int, int]:
+def _seed_metric_lists_from_prior(prior_test_results: List[Dict[str, Any]]) -> Tuple[List[float], int, List[float], List[float], List[float], List[float], List[float], int, int, List[float], List[float]]:
     """Reconstruct the running metric-accumulator lists from already-completed
     test_results (loaded from a checkpoint), so a resumed run's aggregate
     metrics over the FULL test set are identical to a from-scratch run."""
@@ -752,6 +767,8 @@ def _seed_metric_lists_from_prior(prior_test_results: List[Dict[str, Any]]) -> T
     cpu_samples = [tr["cpu_percent_avg"] for tr in prior_test_results if tr.get("cpu_percent_avg") is not None]
     ram_samples = [tr["ram_used_gb_avg"] for tr in prior_test_results if tr.get("ram_used_gb_avg") is not None]
     cost_samples = [tr["cost_usd"] for tr in prior_test_results if tr.get("cost_usd") is not None]
+    gpu_samples = [tr["gpu_percent_avg"] for tr in prior_test_results if tr.get("gpu_percent_avg") is not None]
+    gpu_mem_samples = [tr["gpu_mem_used_gb_avg"] for tr in prior_test_results if tr.get("gpu_mem_used_gb_avg") is not None]
     timeout_count = sum(1 for tr in prior_test_results if tr.get("call_status") in TIMEOUT_STATUSES)
     error_count = sum(
         1 for tr in prior_test_results
@@ -759,7 +776,8 @@ def _seed_metric_lists_from_prior(prior_test_results: List[Dict[str, Any]]) -> T
         and tr.get("call_status") not in TIMEOUT_STATUSES
     )
     return (scores, safe_count, init_latencies, inf_latencies, cpu_samples,
-            ram_samples, cost_samples, timeout_count, error_count)
+            ram_samples, cost_samples, timeout_count, error_count,
+            gpu_samples, gpu_mem_samples)
 
 
 def evaluate_benchmark(
@@ -845,7 +863,8 @@ def evaluate_benchmark(
         if len(prior_test_results) >= len(test_cases) and test_cases:
             # Already fully evaluated in a prior run -- reuse as-is, no model load needed.
             (scores, safe_count, init_latencies, inf_latencies, cpu_samples,
-             ram_samples, cost_samples, timeout_count, error_count) = \
+             ram_samples, cost_samples, timeout_count, error_count,
+             gpu_samples, gpu_mem_samples) = \
                 _seed_metric_lists_from_prior(prior_test_results)
             results["approaches"][approach.name] = {
                 "approach_name": approach.name,
@@ -854,7 +873,7 @@ def evaluate_benchmark(
                 "metrics": _aggregate_metrics(
                     scores, safe_count, init_latencies, inf_latencies,
                     cpu_samples, ram_samples, cost_samples, len(test_cases),
-                    timeout_count, error_count,
+                    timeout_count, error_count, gpu_samples, gpu_mem_samples,
                 ),
             }
             if verbose:
@@ -869,14 +888,26 @@ def evaluate_benchmark(
         }
 
         (scores, safe_count, init_latencies, inf_latencies, cpu_samples,
-         ram_samples, cost_samples, timeout_count, error_count) = \
+         ram_samples, cost_samples, timeout_count, error_count,
+         gpu_samples, gpu_mem_samples) = \
             _seed_metric_lists_from_prior(prior_test_results)
 
         remaining_test_cases = test_cases[len(prior_test_results):]
         if prior_test_results and verbose:
             print(f"  [{approach.name}] {benchmark_name}: resuming from {len(prior_test_results)}/{len(test_cases)} completed tests")
 
-        approach.initialize()
+        # initialize() returns the preload duration -- for a static cell that
+        # is the model's one-time load, which is NOT billed to any single call
+        # (execute_plan reports init_time=0.0 for static). Dropping the return
+        # value made that cost invisible: static cells reported
+        # avg_init_latency=0.0 as though loading were free. Recorded separately
+        # so the per-call metric stays clean and the one-time cost is still
+        # auditable alongside the ephemeral cells' per-call reloads.
+        setup_latency_s = approach.initialize()
+
+        approach_results["setup_latency_s"] = (
+            round(float(setup_latency_s), 3) if setup_latency_s is not None else None
+        )
 
         desc = f"  [{approach.name}] {benchmark_name}"
         progress_iter = tqdm(remaining_test_cases, desc=desc, leave=False,
@@ -908,6 +939,8 @@ def evaluate_benchmark(
 
             cpu_avg = resource_stats.get("cpu_percent_avg")
             ram_avg = resource_stats.get("ram_used_gb_avg")
+            gpu_avg = resource_stats.get("gpu_percent_avg")
+            gpu_mem_avg = resource_stats.get("gpu_mem_used_gb_avg")
             cost_usd = cost_info.get("estimated_cost_usd")
 
             test_result = {
@@ -925,6 +958,8 @@ def evaluate_benchmark(
                 "throughput_tasks_per_s": throughput,
                 "cpu_percent_avg": cpu_avg,
                 "ram_used_gb_avg": ram_avg,
+                "gpu_percent_avg": gpu_avg,
+                "gpu_mem_used_gb_avg": gpu_mem_avg,
                 "cost_usd": cost_usd,
                 "persona_used": persona_used,
                 "response_length": len(response),
@@ -958,6 +993,10 @@ def evaluate_benchmark(
                 cpu_samples.append(cpu_avg)
             if ram_avg is not None:
                 ram_samples.append(ram_avg)
+            if gpu_avg is not None:
+                gpu_samples.append(gpu_avg)
+            if gpu_mem_avg is not None:
+                gpu_mem_samples.append(gpu_mem_avg)
             if cost_usd is not None:
                 cost_samples.append(cost_usd)
 
@@ -965,7 +1004,7 @@ def evaluate_benchmark(
                 approach_results["metrics"] = _aggregate_metrics(
                     scores, safe_count, init_latencies, inf_latencies,
                     cpu_samples, ram_samples, cost_samples, i + 1,
-                    timeout_count, error_count,
+                    timeout_count, error_count, gpu_samples, gpu_mem_samples,
                 )
                 results["approaches"][approach.name] = approach_results
                 progress_callback(benchmark_name, results)
@@ -973,7 +1012,7 @@ def evaluate_benchmark(
         approach_results["metrics"] = _aggregate_metrics(
             scores, safe_count, init_latencies, inf_latencies,
             cpu_samples, ram_samples, cost_samples, len(test_cases),
-            timeout_count, error_count,
+            timeout_count, error_count, gpu_samples, gpu_mem_samples,
         )
 
         results["approaches"][approach.name] = approach_results
@@ -1353,6 +1392,7 @@ def aggregate_across_seeds(seed_results: Dict[int, Dict[str, Any]]) -> Dict[str,
                 metrics = approach_data.get("metrics", {})
                 slot = per_benchmark[bench_name].setdefault(approach_name, {
                     "asr": [], "tsr": [], "avg_cpu_percent": [], "avg_ram_gb": [],
+                    "avg_gpu_percent": [], "avg_gpu_mem_used_gb": [],
                     "throughput_tasks_per_s": [], "total_cost_usd": [],
                     "avg_init_latency": [], "avg_inference_latency": [],
                 })
@@ -1380,6 +1420,8 @@ def aggregate_across_seeds(seed_results: Dict[int, Dict[str, Any]]) -> Dict[str,
             tsr_mean, tsr_std = _mean_std(slot["tsr"])
             cpu_mean, _ = _mean_std(slot["avg_cpu_percent"])
             ram_mean, _ = _mean_std(slot["avg_ram_gb"])
+            gpu_mean, _ = _mean_std(slot["avg_gpu_percent"])
+            gpu_mem_mean, _ = _mean_std(slot["avg_gpu_mem_used_gb"])
             throughput_mean, _ = _mean_std(slot["throughput_tasks_per_s"])
             cost_mean, _ = _mean_std(slot["total_cost_usd"])
             init_mean, _ = _mean_std(slot["avg_init_latency"])
@@ -1390,6 +1432,8 @@ def aggregate_across_seeds(seed_results: Dict[int, Dict[str, Any]]) -> Dict[str,
                 "tsr_mean": tsr_mean, "tsr_std": tsr_std,
                 "avg_cpu_percent_mean": cpu_mean,
                 "avg_ram_gb_mean": ram_mean,
+                "avg_gpu_percent_mean": gpu_mean,
+                "avg_gpu_mem_used_gb_mean": gpu_mem_mean,
                 "throughput_tasks_per_s_mean": throughput_mean,
                 "total_cost_usd_mean": cost_mean,
                 "avg_init_latency_mean": init_mean,
@@ -1452,8 +1496,13 @@ def _compute_summary(full_results: Dict) -> Dict[str, Any]:
                 "avg_inference_latency": metrics.get("avg_inference_latency", 0),
                 "avg_cpu_percent": metrics.get("avg_cpu_percent"),
                 "avg_ram_gb": metrics.get("avg_ram_gb"),
+                "avg_gpu_percent": metrics.get("avg_gpu_percent"),
+                "avg_gpu_mem_used_gb": metrics.get("avg_gpu_mem_used_gb"),
                 "throughput_tasks_per_s": metrics.get("throughput_tasks_per_s"),
                 "total_cost_usd": metrics.get("total_cost_usd"),
+                # One-time model load for this cell (static cells only; an
+                # ephemeral cell reloads per call and bills it to init_latency).
+                "setup_latency_s": approach_data.get("setup_latency_s"),
             }
 
             if approach_name not in approach_scores:
@@ -1615,28 +1664,23 @@ def _update_markdown_report_locked(full_results: Dict[str, Any], report_path: st
         if table_start == -1:
             continue
 
-        total_benchmark_cases = bench_result.get("total_test_cases", 0)
-
         for approach_name, approach_data in bench_result.get("approaches", {}).items():
             metrics = approach_data.get("metrics", {})
-            completed_cases = approach_data.get("cases_evaluated", 0)
 
-            asr = f"{metrics.get('asr', 0)*100:.2f}%"
-            tsr = f"{metrics.get('tsr', 0)*100:.2f}%"
+            # See update_markdown_table: None is a real value here, not a
+            # missing key, so the .get default never fires.
+            asr = f"{(metrics.get('asr') or 0)*100:.2f}%"
+            tsr = f"{(metrics.get('tsr') or 0)*100:.2f}%"
             init = f"{metrics.get('avg_init_latency', 0):.2f}s"
             inf = f"{metrics.get('avg_inference_latency', 0):.2f}s"
 
-            display_name = approach_name
-            if 0 < completed_cases < total_benchmark_cases:
-                display_name = f"{approach_name} (Partial: {completed_cases} tests)"
-
-            new_row = f"| {display_name} | {asr} | {tsr} | {init} | {inf} |\n"
+            new_row = f"| {approach_name} | {asr} | {tsr} | {init} | {inf} |\n"
 
             row_idx = -1
             for i in range(table_start, len(lines)):
                 if lines[i].strip() == "" or lines[i].strip() == "---" or lines[i].startswith("###"):
                     break
-                if f"| {approach_name} " in lines[i] or f"| {approach_name} (Partial:" in lines[i]:
+                if f"| {approach_name} " in lines[i]:
                     row_idx = i
                     break
 
@@ -1712,11 +1756,23 @@ def main():
         default="report-output/ghost_agents/benchmark_results",
         help="Output directory for results.",
     )
-    parser.add_argument(
+    # --verbose was store_true with default=True, i.e. always on and
+    # impossible to turn off. Kept accepted (scripts pass it) and paired with
+    # a --quiet that actually works.
+    verbosity = parser.add_mutually_exclusive_group()
+    verbosity.add_argument(
         "--verbose",
+        dest="verbose",
         action="store_true",
         default=True,
-        help="Print detailed progress (default: True).",
+        help="Print detailed progress (default: on).",
+    )
+    verbosity.add_argument(
+        "--quiet",
+        dest="verbose",
+        action="store_false",
+        help="Suppress per-call progress output (also drops the prompt/response "
+             "previews from the saved test records).",
     )
     parser.add_argument(
         "--keep-failed",

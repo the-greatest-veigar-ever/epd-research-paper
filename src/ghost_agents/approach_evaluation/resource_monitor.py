@@ -119,8 +119,17 @@ class ResourceMonitor:
         stats = mon.stats
     """
 
-    def __init__(self, interval_s: float = 0.2):
+    def __init__(self, interval_s: float = 0.2, gpu_interval_s: float = 1.0):
+        # GPU sampling is deliberately slower than CPU/RAM sampling. Each GPU
+        # sample shells out to `nvidia-smi` (a process spawn, ~10-50ms); at the
+        # 0.2s CPU cadence that was ~450 spawns during a 90s call, and their
+        # CPU cost landed in the machine-wide cpu_percent this very monitor is
+        # recording -- the instrument was measuring itself. 1s keeps GPU
+        # utilization/memory well sampled (dozens of points per call) at a
+        # fifth of the overhead. The first tick always samples, so even a
+        # sub-second call still gets a GPU reading.
         self.interval_s = interval_s
+        self.gpu_interval_s = max(gpu_interval_s, interval_s)
         self._samples: List[ResourceSample] = []
         self._stop_event = threading.Event()
         self._thread: Optional[threading.Thread] = None
@@ -131,10 +140,19 @@ class ResourceMonitor:
     def _sample_loop(self):
         # Prime psutil's internal CPU counter so the first real reading isn't 0.0.
         psutil.cpu_percent(interval=None)
+        next_gpu_t = 0.0  # 0 => the first iteration always takes a GPU sample
         while not self._stop_event.is_set():
             cpu = psutil.cpu_percent(interval=None)
             ram_used_gb = psutil.virtual_memory().used / (1024 ** 3)
-            gpu = _sample_gpu()
+            now = time.perf_counter()
+            if now >= next_gpu_t:
+                gpu = _sample_gpu()
+                next_gpu_t = now + self.gpu_interval_s
+            else:
+                # Not due yet. Recorded as None rather than carrying the last
+                # reading forward -- the aggregate averages only real samples,
+                # so a repeated value would fake precision it does not have.
+                gpu = None
             self._samples.append(
                 ResourceSample(
                     t=time.perf_counter(),
