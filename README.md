@@ -73,7 +73,10 @@ epd-research-paper/
 │       ├── benchmark_evaluator.py      # The main multi-benchmark, multi-seed evaluation engine
 │       ├── benchmark_test_data.py      # Data loaders and formatters for the 10 benchmarks (seedable)
 │       ├── ollama_manager.py           # Memory management engine for EPD instance termination
-│       └── resource_monitor.py         # CPU/RAM sampling + cost estimate per call
+│       ├── resource_monitor.py         # Machine-wide CPU/RAM sampling + cost models
+│       └── per_process_monitor.py      # Per-model CPU/RAM/GPU attribution (concurrent runs)
+├── run_runpod_experiment.sh            # Sequential runner, one model at a time
+├── run_concurrent_experiment.py        # Concurrent runner, ~1/5 the pod-hours (Section 8)
 ├── requirements.txt
 └── README.md
 ```
@@ -130,7 +133,16 @@ Each test case records:
 
 1. **Attack Success Rate (ASR)**: The percentage of adversarial attempts that successfully bypass the model's defensive constraints. Lower is better.
 2. **Task Success Rate (TSR)**: The measure of functional correctness or intended behavior completion, dynamically calculated based on the specific benchmark strategy (e.g., semantic correctness in code generation vs. absolute refusal in HarmBench).
-3. **Runtime efficiency metrics**: `avg_cpu_percent` and `avg_ram_gb` (sampled via `psutil` during each call — GPU utilization is reported as N/A on this platform, see `resource_monitor.py`), `throughput_tasks_per_s`, `p50_inference_latency` / `p95_inference_latency`, and `total_cost_usd` (a documented, editable on-demand-rate estimate, not a metered bill — see `HARDWARE_COST_TABLE` in `resource_monitor.py`).
+3. **Runtime efficiency metrics**: `avg_cpu_percent`, `avg_ram_gb`, `avg_gpu_percent`, `avg_gpu_mem_used_gb`, `throughput_tasks_per_s`, `p50_inference_latency` / `p95_inference_latency`, `total_cpu_core_seconds`, and `total_cost_usd`.
+
+   Every one of these carries a **`resource_attribution`** field, and reading it is not optional:
+
+   * `per_process` — measured on this model's own Ollama process tree (`per_process_monitor.py`). Attributable to this model even while others run alongside it.
+   * `machine_wide` — sampled across the entire host (`resource_monitor.py`). Only attributable to a model when it is the *only* thing running, which is why the sequential runner exists.
+
+   A `machine_wide` number produced during a concurrent run is an average over whichever models happened to be active and belongs to none of them. The two kinds must never be averaged together; a cell containing both is flagged with `resource_attribution: "mixed"` and a warning.
+
+   GPU fields report `null` with an explanatory `gpu_note` when they cannot be measured (no NVIDIA driver, `nvidia-ml-py` not installed, driver too old for per-process utilization, or a container PID namespace that prevents matching GPU processes to local PIDs). They are never estimated or defaulted to zero — "we could not tell" and "it used none" are different claims.
 
 ## 6. Ablation and Multi-Seed Analysis
 
@@ -221,7 +233,55 @@ python3 analysis/merge_model_outputs.py \
 
 This scans every `<model_key>/benchmark_eval_*_seed<N>.json` file under the given roots, regroups them by seed across all machines, and writes a single `multi_seed_summary_merged.json` — feed that into `analysis/ablation_report.py` and `analysis/generate_latex_tables.py` exactly as in Section 6. Each machine should run the *same* `--seeds` values so every model has a result for every seed; the merge does not interpolate missing (model, seed) pairs.
 
-## 8. Generating Performance Charts
+## 8. Running Concurrently: `run_concurrent_experiment.py`
+
+`run_runpod_experiment.sh` runs the five SLMs strictly one at a time. That is not a memory constraint — together they need ~21GB, trivial on an A100 — but a measurement one: `psutil` and `nvidia-smi` sample the *machine*, so any concurrency turns every CPU/RAM/GPU figure into an average across whichever models were running. Sequential execution buys valid numbers at roughly **5x the pod-hours**.
+
+`run_concurrent_experiment.py` removes that trade-off instead of picking a side. Resource usage is attributed **per OS process**, so all five models run together and still report separate figures.
+
+```bash
+python3 run_concurrent_experiment.py --pod-hourly-usd 1.89
+```
+
+### How attribution survives the ablation
+
+Per-process measurement is only as good as the process identity behind it, and the ablation deliberately destroys that identity: every **ephemeral** cell unloads and reloads its model *on every call*, and each reload is a new OS process with a new PID. Anchoring a monitor to a PID would lose the model within one call and — once the kernel recycles that number — silently start recording an unrelated process under the model's name.
+
+So the runner gives each model its own `ollama serve`, on its own port, **for the entire run**, and anchors the monitor on that server. The server is long-lived, so the anchor never churns; the runner children appear and vanish underneath it exactly as ephemerality dictates. Because no other model is ever routed to that server, a new child under it is unambiguously *this* model's reload. Process identity is tracked as `(pid, create_time)`, never PID alone, so a recycled PID can never inherit a dead process's accounting.
+
+A server is never handed from one model to another — even with `--max-parallel` below the model count, a queued model gets a freshly started server on its own port.
+
+### What is and is not recoverable concurrently
+
+| Metric | Concurrent run |
+| :--- | :--- |
+| **ASR / TSR** | Unaffected. Scored from response content at `temperature=0.0` with a fixed per-seed seed; contention changes timing, not what the model said. |
+| **CPU %, RAM, GPU memory** | Exact per model. These are per-PID OS/driver accounting, not a shared total needing division. |
+| **GPU utilization %** | Per-process via NVML (Volta+, so the A100 qualifies). Reported as `null` with a note where the driver does not support it. |
+| **Latency / throughput** | Measured, but genuinely reflects N-way contention. There is no valid way to reconstruct an isolated-hardware latency from a number measured under load — report it as "under N-way concurrent load" rather than as a dedicated-hardware figure. |
+| **Cost** | *More* accurate than before: one real pod bill instead of pretending each model rented its own instance. |
+
+### Cost
+
+Set `--pod-hourly-usd` to the machine's real rate and `estimate_cost_usd` switches from the per-model `HARDWARE_COST_TABLE` (which assumes a dedicated instance per model, and overstates a shared pod several-fold) to one bill split across the models sharing it. Each call also records `cpu_core_seconds` and `gpu_mem_gb_seconds`, so the flat even split applied at call time can be replaced with a usage-weighted one afterwards via `resource_monitor.apportioned_cost()`, using the `pod_wall_seconds` recorded in the run manifest.
+
+### Useful flags
+
+| Flag | Default | Purpose |
+| :--- | :--- | :--- |
+| `--models` | all 5 SLMs | Model keys to run. |
+| `--max-parallel` | all of them | Models running at once. |
+| `--base-port` | `11500` | Each model gets `base-port + its index in the registry`, so a model always lands on the same port and two can never collide. |
+| `--monitor-interval` | `0.5` | Sampling cadence, seconds. |
+| `--keep-alive` | `-1` | `OLLAMA_KEEP_ALIVE` per server. The default keeps models resident indefinitely so a **static** cell really does stay loaded between calls; Ollama's own 5-minute idle default would quietly convert static cells into ephemeral ones during any gap. Ephemeral cells' explicit `keep_alive: 0` teardown still overrides it per request. |
+| `--pod-hourly-usd` | unset | Real hourly rate; enables the shared-pod cost model. |
+| `--dry-run` | — | Preflight and print the plan without running. |
+
+Preflight fails fast on a missing `ollama` binary, an un-pulled model tag (matched **exactly** — `phi3:medium` will not be accepted for `phi3:mini`), an occupied port, or a combined VRAM requirement above 90% of the card. Outputs land in the same per-model folders as the sequential runner, so the `analysis/` scripts are unchanged; each model additionally gets `run_logs/resource_timeseries_<model_key>.csv` and the run writes `run_logs/run_manifest_<id>.json`.
+
+Per-process GPU metrics need `nvidia-ml-py` (in `requirements.txt`). Inside Docker, NVML reports **host** PIDs while the container sees namespaced ones; if they cannot be matched the GPU fields report `null` with an explicit note rather than zero. Run the container with host PID visibility (`--pid=host`) to recover GPU attribution — CPU and RAM attribution work either way.
+
+## 9. Generating Performance Charts
 
 If you wish to visualize the performance metrics (such as the SLM vs EPD comparisons or memory usage charts), you can generate PNG charts using the scripts provided in the `performance_archive` directory.
 

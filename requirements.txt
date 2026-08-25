@@ -14,6 +14,15 @@ tqdm>=4.66.0
 # Runtime resource monitoring (CPU/RAM sampling during each call)
 psutil>=5.9.0
 
+# Per-process GPU attribution for the concurrent runner. NVIDIA's official
+# bindings, reading the same source as nvidia-smi but as an in-process
+# library call rather than a subprocess -- which is what allows sub-second
+# sampling without the instrument's own cost landing in the CPU figure it
+# is recording. Optional: absent (or on a machine with no NVIDIA driver)
+# GPU fields report N/A instead of being estimated, and CPU/RAM
+# attribution is unaffected.
+nvidia-ml-py>=12.535.108
+
 # Analysis / reporting (multi-seed aggregation, ablation report, chart generation)
 pandas>=2.0.0
 matplotlib>=3.7.0

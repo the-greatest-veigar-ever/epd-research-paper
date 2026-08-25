@@ -12,13 +12,14 @@ GPU (e.g. Apple Silicon), `gpu_available` is False and the GPU fields are
 reported as N/A rather than fabricated.
 """
 
+import os
 import platform
 import shutil
 import subprocess
 import threading
 import time
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import psutil
 
@@ -83,6 +84,12 @@ class ResourceStats:
 
     def to_dict(self) -> dict:
         return {
+            # Machine-wide readings: valid only while exactly one model is
+            # resident and one process is active. Under the concurrent
+            # topology this is replaced by per_process_monitor's
+            # "per_process" attribution -- the tag lets any reader tell the
+            # two apart without having to know which run produced the file.
+            "attribution": "machine_wide",
             "duration_s": round(self.duration_s, 4),
             "cpu_percent_avg": round(self.cpu_percent_avg, 2),
             "cpu_percent_max": round(self.cpu_percent_max, 2),
@@ -235,12 +242,101 @@ HARDWARE_COST_TABLE = [
 ]
 
 
-def estimate_cost_usd(elapsed_seconds: float, model_ram_gb: float) -> dict:
+# --- Shared-pod cost model -------------------------------------------------
+#
+# HARDWARE_COST_TABLE above prices each model as if it had rented its own
+# instance. That was a reasonable fiction while the models ran strictly
+# one at a time, but it is simply wrong once five of them share a single
+# pod: the bill is one machine-hour, not five, and summing per-model
+# "dedicated instance" estimates overstates it several-fold.
+#
+# Set EPD_POD_HOURLY_USD to the real hourly rate of the machine actually
+# being rented and costs switch to that single bill, apportioned across
+# the models sharing it.
+#
+#   EPD_POD_HOURLY_USD   real rate of this machine, USD/hr (e.g. 1.89).
+#                        Unset => the legacy per-model table is used.
+#   EPD_POD_CONCURRENCY  how many models share it (default 1). The runner
+#                        sets this to the number of parallel slots.
+POD_HOURLY_USD: Optional[float] = None
+_raw_pod_rate = os.environ.get("EPD_POD_HOURLY_USD", "").strip()
+if _raw_pod_rate:
+    try:
+        POD_HOURLY_USD = float(_raw_pod_rate)
+    except ValueError:
+        POD_HOURLY_USD = None
+
+try:
+    POD_CONCURRENCY = max(int(os.environ.get("EPD_POD_CONCURRENCY", "1")), 1)
+except ValueError:
+    POD_CONCURRENCY = 1
+
+
+def estimate_cost_usd(
+    elapsed_seconds: float,
+    model_ram_gb: Optional[float] = None,
+    cpu_core_seconds: Optional[float] = None,
+    gpu_mem_gb: Optional[float] = None,
+) -> dict:
     """
-    Estimate operational cost for `elapsed_seconds` of compute on a model
-    requiring `model_ram_gb` of memory. Returns the rate used and the
-    resulting estimate, so the assumption is auditable in the output JSON.
+    Estimate operational cost for `elapsed_seconds` of this model's work.
+
+    Two models, selected by whether EPD_POD_HOURLY_USD is set:
+
+      shared_pod -- the honest one for a concurrent run. One real machine
+        rate, divided by the number of models sharing it. `wall_seconds`,
+        `cpu_core_seconds` and `gpu_mem_gb_seconds` are recorded alongside
+        so the flat 1/N split can be replaced by a usage-weighted one
+        after the fact, once every model's totals are known
+        (see apportioned_cost).
+
+      dedicated_instance -- the legacy table, priced per model by RAM
+        footprint. Correct only for a strictly sequential run, where each
+        model really does have the machine to itself. Summing it across
+        concurrently-run models overstates the bill.
+
+    Every field the estimate rests on is returned, so the assumption is
+    auditable in the output JSON rather than buried in this function.
     """
+    resource_seconds = {
+        "wall_seconds": round(elapsed_seconds, 4),
+        "cpu_core_seconds": (
+            round(cpu_core_seconds, 5) if cpu_core_seconds is not None else None
+        ),
+        "gpu_mem_gb_seconds": (
+            round(gpu_mem_gb * elapsed_seconds, 5) if gpu_mem_gb is not None else None
+        ),
+    }
+
+    if POD_HOURLY_USD is not None:
+        unshared = POD_HOURLY_USD * (elapsed_seconds / 3600.0)
+        return {
+            "estimated_cost_usd": round(unshared / POD_CONCURRENCY, 8),
+            "cost_model": "shared_pod",
+            "hourly_rate_usd": POD_HOURLY_USD,
+            "concurrency": POD_CONCURRENCY,
+            "unshared_cost_usd": round(unshared, 8),
+            "resource_seconds": resource_seconds,
+            "note": (
+                f"One real machine at ${POD_HOURLY_USD:.4f}/hr split evenly across "
+                f"{POD_CONCURRENCY} concurrent model(s). Even split because a single "
+                f"process cannot see its siblings' usage at call time; "
+                f"resource_seconds is recorded so the split can be re-weighted by "
+                f"measured usage once every model's run has finished."
+            ),
+        }
+
+    if model_ram_gb is None:
+        return {
+            "estimated_cost_usd": None,
+            "cost_model": "unavailable",
+            "resource_seconds": resource_seconds,
+            "note": (
+                "No cost estimate: EPD_POD_HOURLY_USD is unset and this model has "
+                "no entry in MODEL_RAM_GB. Reported as null rather than guessed."
+            ),
+        }
+
     for max_ram, rate, ref in HARDWARE_COST_TABLE:
         if model_ram_gb <= max_ram:
             hourly_rate = rate
@@ -252,7 +348,63 @@ def estimate_cost_usd(elapsed_seconds: float, model_ram_gb: float) -> dict:
     cost = hourly_rate * (elapsed_seconds / 3600.0)
     return {
         "estimated_cost_usd": round(cost, 6),
+        "cost_model": "dedicated_instance",
         "hourly_rate_usd": hourly_rate,
         "reference_instance": reference,
-        "note": "Illustrative on-demand rate estimate, not a metered bill.",
+        "resource_seconds": resource_seconds,
+        "note": (
+            "Illustrative on-demand rate estimate, not a metered bill. Assumes this "
+            "model had the machine to itself -- set EPD_POD_HOURLY_USD for a "
+            "concurrent run, where that assumption does not hold."
+        ),
+    }
+
+
+def apportioned_cost(
+    pod_hourly_usd: float,
+    pod_wall_seconds: float,
+    per_model_usage: Dict[str, float],
+) -> Dict[str, Any]:
+    """
+    Split one machine's real bill across models by measured usage.
+
+    `per_model_usage` maps model key to any additive usage total on a
+    common basis -- cpu_core_seconds and gpu_mem_gb_seconds are both
+    recorded per call by estimate_cost_usd for exactly this purpose.
+    Unlike the flat 1/N split applied at call time, this can only be
+    computed once every model has finished, because it needs every
+    model's total to form the denominator.
+
+    `pod_wall_seconds` is the pod's own billed wall-clock -- from the
+    first model starting to the last one finishing, not the sum of the
+    models' individual runtimes, which under concurrency would count the
+    same rented seconds several times over.
+    """
+    total_bill = pod_hourly_usd * (pod_wall_seconds / 3600.0)
+    total_usage = sum(v for v in per_model_usage.values() if v)
+
+    if total_usage <= 0:
+        n = len(per_model_usage) or 1
+        return {
+            "total_bill_usd": round(total_bill, 6),
+            "basis": "even_split_fallback",
+            "per_model_usd": {k: round(total_bill / n, 6) for k in per_model_usage},
+            "note": "No usable usage totals; fell back to an even split.",
+        }
+
+    return {
+        "total_bill_usd": round(total_bill, 6),
+        "basis": "measured_usage_share",
+        "per_model_share": {
+            k: round((v or 0.0) / total_usage, 6) for k, v in per_model_usage.items()
+        },
+        "per_model_usd": {
+            k: round(total_bill * (v or 0.0) / total_usage, 6)
+            for k, v in per_model_usage.items()
+        },
+        "note": (
+            "One machine's real bill split by each model's measured share of total "
+            "usage. pod_wall_seconds is the pod's billed wall-clock, not the sum of "
+            "per-model runtimes."
+        ),
     }

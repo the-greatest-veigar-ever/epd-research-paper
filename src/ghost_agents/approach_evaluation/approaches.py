@@ -37,16 +37,22 @@ from abc import ABC, abstractmethod
 import requests
 
 from src.ghost_agents.approach_evaluation.ollama_manager import (
+    OLLAMA_BASE_URL,
     preload_model,
     unload_model,
     unload_all_models,
 )
+from src.ghost_agents.approach_evaluation.per_process_monitor import get_recorder
 from src.ghost_agents.approach_evaluation.resource_monitor import (
     ResourceMonitor,
     estimate_cost_usd,
 )
 
-OLLAMA_URL = "http://localhost:11434/api/generate"
+# Derived from ollama_manager's resolved base URL so both the lifecycle
+# calls (preload/unload) and generation always address the same server --
+# under the concurrent topology that is this model's own dedicated
+# instance, not a shared one (see EPD_OLLAMA_PORT / EPD_OLLAMA_URL).
+OLLAMA_URL = f"{OLLAMA_BASE_URL}/api/generate"
 
 # ---------------------------------------------------------------------------
 # Generation / request limits
@@ -716,27 +722,71 @@ class ConfigurableApproach(Approach):
             num_predict=num_predict_for(self.model), model=self.model,
         )
 
-        init_time = preload_model(self.model) if self.ephemeral else 0.0
+        def _run_call() -> Dict[str, Any]:
+            """
+            One complete task under this cell's lifecycle, timed at two
+            scopes.
 
-        with ResourceMonitor() as mon:
-            t_start = time.perf_counter()
-            result = _call_ollama(self.model, prompt, seed=self.seed)
-            processing_time = time.perf_counter() - t_start
+            `call_*` spans the whole thing -- for an ephemeral cell that
+            includes the per-call reload and teardown, which are not
+            overhead to be excluded but the very cost the ephemerality
+            factor imposes. `gen_*` spans generation alone, so analysis
+            can still separate "what the model cost to run" from "what
+            EPD's lifecycle cost around it".
+            """
+            call_t0 = time.perf_counter()
+            init = preload_model(self.model) if self.ephemeral else 0.0
+            gen_t0 = time.perf_counter()
+            res = _call_ollama(self.model, prompt, seed=self.seed)
+            gen_t1 = time.perf_counter()
+            if self.ephemeral:
+                unload_model(self.model)
+            return {
+                "result": res, "init": init,
+                "call_t0": call_t0, "gen_t0": gen_t0,
+                "gen_t1": gen_t1, "call_t1": time.perf_counter(),
+            }
 
-        if self.ephemeral:
-            unload_model(self.model)
+        # Per-process attribution when this process has a dedicated Ollama
+        # server to anchor on (the concurrent topology), machine-wide
+        # sampling otherwise (the sequential topology, where the machine is
+        # the model). The two are distinguished in the output by
+        # resource_stats["attribution"], so no reader has to infer which
+        # kind of number they are looking at.
+        recorder = get_recorder()
+        if recorder is not None:
+            call = _run_call()
+            resource_stats = recorder.window_stats(call["call_t0"], call["call_t1"])
+            generation_stats = recorder.window_stats(call["gen_t0"], call["gen_t1"])
+        else:
+            with ResourceMonitor() as mon:
+                call = _run_call()
+            resource_stats = mon.stats.to_dict()  # tagged attribution=machine_wide
+            generation_stats = None
+
+        result = call["result"]
+        init_time = call["init"]
+        processing_time = call["gen_t1"] - call["gen_t0"]
+        lifecycle_time = call["call_t1"] - call["call_t0"]
 
         result["init_time"] = init_time
         result["processing_time"] = processing_time
+        result["lifecycle_time"] = round(lifecycle_time, 4)
         result["model_used"] = self.model
         result["num_predict"] = num_predict_for(self.model)
         result["persona_used"] = persona["name"] if persona else "none"
-        result["resource_stats"] = mon.stats.to_dict()
+        result["resource_stats"] = resource_stats
+        if generation_stats is not None:
+            result["generation_resource_stats"] = generation_stats
         result["throughput_tasks_per_s"] = round(1.0 / processing_time, 4) if processing_time > 0 else None
 
         model_ram = MODEL_RAM_GB.get(self.model)
-        if model_ram is not None:
-            result["cost_estimate"] = estimate_cost_usd(processing_time, model_ram)
+        result["cost_estimate"] = estimate_cost_usd(
+            lifecycle_time,
+            model_ram,
+            cpu_core_seconds=resource_stats.get("cpu_core_seconds"),
+            gpu_mem_gb=resource_stats.get("gpu_mem_used_gb_avg"),
+        )
 
         return result
 

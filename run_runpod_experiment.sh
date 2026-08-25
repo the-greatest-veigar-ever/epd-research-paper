@@ -1,5 +1,13 @@
 #!/usr/bin/env bash
 #
+# NOTE: run_concurrent_experiment.py now does this same sweep with all the
+# models running at once, for roughly a fifth of the pod-hours, WITHOUT
+# giving up per-model resource figures -- it attributes CPU/RAM/GPU per OS
+# process instead of per machine, so the sequential-execution argument
+# below no longer has to be paid for. This script remains the reference
+# sequential implementation and the fallback for a host where per-process
+# attribution is unavailable. See README Section 8.
+#
 # RunPod scoped experiment: 5 SLMs (full 8-cell ablation), optionally
 # followed by the 2 legacy LLM baselines (static-only, opt-in via
 # INCLUDE_LLM_BASELINES=1 -- their weights are ~108GB and are not pulled

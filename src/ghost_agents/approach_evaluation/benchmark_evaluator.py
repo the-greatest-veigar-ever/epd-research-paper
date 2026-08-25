@@ -33,16 +33,31 @@ Strategies:
 """
 
 import argparse
-import fcntl
 import json
 import os
 import random
 import re
 import sys
+import time
 from collections import defaultdict
+from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
+
+# Advisory file locking, which has no cross-platform stdlib API. `fcntl` is
+# POSIX-only, so importing it unconditionally made this whole module
+# unimportable on Windows -- which matters now that the experiment is
+# prepared and dry-run locally rather than only on a Linux pod.
+try:  # pragma: no cover - platform guard
+    import fcntl
+except ImportError:  # pragma: no cover - platform guard
+    fcntl = None  # type: ignore
+
+try:  # pragma: no cover - platform guard
+    import msvcrt
+except ImportError:  # pragma: no cover - platform guard
+    msvcrt = None  # type: ignore
 
 import numpy as np
 from tqdm import tqdm
@@ -61,6 +76,7 @@ from src.ghost_agents.approach_evaluation.benchmark_test_data import (
     BENCHMARK_CITATIONS,
     ALL_BENCHMARK_LOADERS,
 )
+from src.ghost_agents.approach_evaluation.per_process_monitor import shutdown_recorder
 
 # ============================================================================
 # Danger patterns — regex patterns that indicate a successful attack
@@ -608,6 +624,57 @@ def _checkpoint_view(mfr: Dict[str, Any]) -> Dict[str, Any]:
     return view
 
 
+@contextmanager
+def _exclusive_file_lock(lock_path: str, timeout_s: float = 60.0):
+    """
+    Cross-platform exclusive lock held for the body of the `with` block.
+
+    Used to serialize the one output that several concurrently-running
+    model processes share: the Markdown report's read-modify-write. Without
+    it, two processes read the same content, each adds its own rows, and
+    whichever writes last silently drops the other's.
+
+    `fcntl.flock` on POSIX, `msvcrt.locking` on Windows. If neither exists
+    the block still runs -- an unserialized report update is a cosmetic
+    loss, and refusing to evaluate over it would be far worse.
+    """
+    directory = os.path.dirname(lock_path)
+    if directory:
+        os.makedirs(directory, exist_ok=True)
+
+    with open(lock_path, "w") as lock_file:
+        acquired = False
+        try:
+            if fcntl is not None:
+                fcntl.flock(lock_file, fcntl.LOCK_EX)
+                acquired = True
+            elif msvcrt is not None:
+                # No blocking-with-timeout mode here: LK_NBLCK fails
+                # immediately if the region is held, so poll it ourselves.
+                deadline = time.monotonic() + timeout_s
+                while True:
+                    try:
+                        lock_file.seek(0)
+                        msvcrt.locking(lock_file.fileno(), msvcrt.LK_NBLCK, 1)
+                        acquired = True
+                        break
+                    except OSError:
+                        if time.monotonic() >= deadline:
+                            break
+                        time.sleep(0.1)
+            yield
+        finally:
+            if acquired:
+                try:
+                    if fcntl is not None:
+                        fcntl.flock(lock_file, fcntl.LOCK_UN)
+                    elif msvcrt is not None:
+                        lock_file.seek(0)
+                        msvcrt.locking(lock_file.fileno(), msvcrt.LK_UNLCK, 1)
+                except OSError:
+                    pass
+
+
 def _atomic_write_json(path: str, obj: Any, **dump_kwargs) -> None:
     """
     Write JSON atomically: serialize to a temp file in the same directory,
@@ -727,6 +794,58 @@ def _aggregate_metrics(
             f"cap (EPD_NUM_PREDICT) is too low for this model."
         )
     return metrics
+
+
+def _annotate_resource_provenance(approach_result: Dict[str, Any]) -> None:
+    """
+    Stamp a cell's metrics with where its resource numbers came from, and
+    with the additive usage total needed to split a shared bill.
+
+    Provenance is not a cosmetic detail here. The same field name,
+    `avg_cpu_percent`, means "this model's own processes" under the
+    concurrent topology and "everything running on the box" under the
+    sequential one -- and under concurrency the latter is an average
+    across whichever models happened to be active, attributable to none of
+    them. A reader of the summary cannot tell those apart from the value,
+    so the metrics say which it is. "mixed" means a single cell contains
+    both, which should not happen in a well-formed run and is worth
+    investigating before the numbers are cited.
+    """
+    metrics = approach_result.get("metrics")
+    if not isinstance(metrics, dict):
+        return
+
+    test_results = approach_result.get("test_results", [])
+    modes = {
+        tr.get("resource_attribution")
+        for tr in test_results
+        if tr.get("resource_attribution")
+    }
+    if len(modes) == 1:
+        metrics["resource_attribution"] = modes.pop()
+    elif modes:
+        metrics["resource_attribution"] = "mixed"
+        metrics["resource_attribution_warning"] = (
+            f"This cell mixes attribution modes ({sorted(modes)}). Per-model and "
+            f"machine-wide figures are not comparable; do not average them."
+        )
+    else:
+        metrics["resource_attribution"] = None
+
+    core_seconds = [
+        tr["cpu_core_seconds"] for tr in test_results
+        if tr.get("cpu_core_seconds") is not None
+    ]
+    metrics["total_cpu_core_seconds"] = (
+        round(float(np.sum(core_seconds)), 5) if core_seconds else None
+    )
+
+    warned = [tr["monitor_warning"] for tr in test_results if tr.get("monitor_warning")]
+    if warned:
+        metrics["monitor_warning"] = (
+            f"{len(warned)}/{len(test_results)} call(s) had no attributable resource "
+            f"monitoring. First: {warned[0]}"
+        )
 
 
 # Call outcomes that are measurement failures rather than observations of
@@ -876,6 +995,7 @@ def evaluate_benchmark(
                     timeout_count, error_count, gpu_samples, gpu_mem_samples,
                 ),
             }
+            _annotate_resource_provenance(results["approaches"][approach.name])
             if verbose:
                 print(f"  [{approach.name}] {benchmark_name}: already complete ({len(prior_test_results)}/{len(test_cases)} tests) -- skipped")
             continue
@@ -941,6 +1061,7 @@ def evaluate_benchmark(
             ram_avg = resource_stats.get("ram_used_gb_avg")
             gpu_avg = resource_stats.get("gpu_percent_avg")
             gpu_mem_avg = resource_stats.get("gpu_mem_used_gb_avg")
+            cpu_core_s = resource_stats.get("cpu_core_seconds")
             cost_usd = cost_info.get("estimated_cost_usd")
 
             test_result = {
@@ -955,15 +1076,31 @@ def evaluate_benchmark(
                 "reasoning_chars": len(result.get("reasoning") or ""),
                 "init_latency_s": round(init_lat, 3),
                 "inference_latency_s": round(inf_lat, 3),
+                # Whole-call wall-clock: for an ephemeral cell this includes
+                # the per-call reload and teardown that the ephemerality
+                # factor imposes, which inference_latency_s alone excludes.
+                "lifecycle_latency_s": result.get("lifecycle_time"),
                 "throughput_tasks_per_s": throughput,
+                # "per_process" (this model's own Ollama process tree) or
+                # "machine_wide" (everything on the box). Recorded per call
+                # because it decides whether these figures are attributable
+                # to this model at all -- under a concurrent run, machine_wide
+                # values are an average across whichever models were active.
+                "resource_attribution": resource_stats.get("attribution"),
                 "cpu_percent_avg": cpu_avg,
                 "ram_used_gb_avg": ram_avg,
                 "gpu_percent_avg": gpu_avg,
                 "gpu_mem_used_gb_avg": gpu_mem_avg,
+                # Additive across calls and models, unlike a percentage --
+                # this is the basis for splitting one shared pod bill by
+                # measured usage (resource_monitor.apportioned_cost).
+                "cpu_core_seconds": cpu_core_s,
                 "cost_usd": cost_usd,
                 "persona_used": persona_used,
                 "response_length": len(response),
             }
+            if resource_stats.get("monitor_warning"):
+                test_result["monitor_warning"] = resource_stats["monitor_warning"]
 
             if verbose:
                 # Wider previews, and the reasoning kept separately: with
@@ -1006,6 +1143,7 @@ def evaluate_benchmark(
                     cpu_samples, ram_samples, cost_samples, i + 1,
                     timeout_count, error_count, gpu_samples, gpu_mem_samples,
                 )
+                _annotate_resource_provenance(approach_results)
                 results["approaches"][approach.name] = approach_results
                 progress_callback(benchmark_name, results)
 
@@ -1014,6 +1152,7 @@ def evaluate_benchmark(
             cpu_samples, ram_samples, cost_samples, len(test_cases),
             timeout_count, error_count, gpu_samples, gpu_mem_samples,
         )
+        _annotate_resource_provenance(approach_results)
 
         results["approaches"][approach.name] = approach_results
 
@@ -1498,6 +1637,11 @@ def _compute_summary(full_results: Dict) -> Dict[str, Any]:
                 "avg_ram_gb": metrics.get("avg_ram_gb"),
                 "avg_gpu_percent": metrics.get("avg_gpu_percent"),
                 "avg_gpu_mem_used_gb": metrics.get("avg_gpu_mem_used_gb"),
+                # Carried into the summary rather than left only on the raw
+                # records: without it the CPU/RAM/GPU figures above are
+                # ambiguous between "this model" and "the whole machine".
+                "resource_attribution": metrics.get("resource_attribution"),
+                "total_cpu_core_seconds": metrics.get("total_cpu_core_seconds"),
                 "throughput_tasks_per_s": metrics.get("throughput_tasks_per_s"),
                 "total_cost_usd": metrics.get("total_cost_usd"),
                 # One-time model load for this cell (static cells only; an
@@ -1623,13 +1767,8 @@ def _update_markdown_report(full_results: Dict[str, Any], report_path: str = "re
     if not os.path.exists(report_path):
         return
 
-    lock_path = f"{report_path}.lock"
-    with open(lock_path, "w") as lock_file:
-        fcntl.flock(lock_file, fcntl.LOCK_EX)
-        try:
-            _update_markdown_report_locked(full_results, report_path)
-        finally:
-            fcntl.flock(lock_file, fcntl.LOCK_UN)
+    with _exclusive_file_lock(f"{report_path}.lock"):
+        _update_markdown_report_locked(full_results, report_path)
 
 
 def _update_markdown_report_locked(full_results: Dict[str, Any], report_path: str):
@@ -1821,16 +1960,22 @@ def main():
         print(f"\nAll registered names (incl. opt-in LLM baselines): {len(ALL_APPROACHES)}")
         return
 
-    results = run_full_evaluation(
-        benchmark_names=args.benchmarks,
-        approach_names=args.approaches,
-        max_per_benchmark=args.max_per_benchmark,
-        save_every=args.save_every,
-        output_dir=args.output,
-        seeds=args.seeds,
-        verbose=args.verbose,
-        retry_failed=not args.keep_failed,
-    )
+    try:
+        results = run_full_evaluation(
+            benchmark_names=args.benchmarks,
+            approach_names=args.approaches,
+            max_per_benchmark=args.max_per_benchmark,
+            save_every=args.save_every,
+            output_dir=args.output,
+            seeds=args.seeds,
+            verbose=args.verbose,
+            retry_failed=not args.keep_failed,
+        )
+    finally:
+        # Stops the per-process sampling thread and closes its CSV. The
+        # thread is a daemon so the process would exit regardless, but that
+        # would truncate the last buffered CSV rows.
+        shutdown_recorder()
 
     if not results:
         sys.exit(1)

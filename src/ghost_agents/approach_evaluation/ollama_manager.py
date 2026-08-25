@@ -12,7 +12,31 @@ import requests
 import time
 from typing import Optional
 
-OLLAMA_BASE_URL = "http://localhost:11434"
+
+def _resolve_base_url() -> str:
+    """
+    Endpoint for this process's Ollama server.
+
+    In the sequential topology every process shared one server on the
+    default port. The concurrent topology gives each model its own
+    dedicated `ollama serve` on its own port, because that server process
+    is what makes per-model resource attribution possible at all: it is
+    the stable anchor the monitor tracks, and it survives the unload /
+    reload churn an ephemeral cell performs on every call (see
+    per_process_monitor for the full argument).
+
+    EPD_OLLAMA_URL wins if set; otherwise EPD_OLLAMA_PORT selects the port
+    on localhost. Unset, this is the original single-server default, so
+    the sequential scripts keep working untouched.
+    """
+    explicit = os.environ.get("EPD_OLLAMA_URL", "").strip()
+    if explicit:
+        return explicit.rstrip("/")
+    port = os.environ.get("EPD_OLLAMA_PORT", "").strip() or "11434"
+    return f"http://localhost:{port}"
+
+
+OLLAMA_BASE_URL = _resolve_base_url()
 
 # Env-tunable lifecycle timeouts (see approaches.py for the matching
 # generation limits). Under heavy concurrency a preload can legitimately
