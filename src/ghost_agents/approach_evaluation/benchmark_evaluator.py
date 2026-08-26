@@ -1218,6 +1218,19 @@ def evaluate_benchmark(
                     gpu_mem_avg = resource_stats.get("gpu_mem_used_gb_avg")
                     cpu_core_s = resource_stats.get("cpu_core_seconds")
                     cost_usd = cost_info.get("estimated_cost_usd")
+                    if cost_usd is not None and wave_size > 1:
+                        # estimate_cost_usd's POD_CONCURRENCY split only knows
+                        # how many *models* share the pod (EPD_POD_CONCURRENCY)
+                        # -- it has no visibility into this call also sharing
+                        # the pod with wave_size-1 sibling calls of this same
+                        # model dispatched concurrently in the same wave, so it
+                        # bills the full 1/POD_CONCURRENCY share for the whole
+                        # overlapping window. Discount by this approach's own
+                        # wave size to correct for that second layer of
+                        # sharing -- the same flat-split approximation
+                        # estimate_cost_usd already applies across models,
+                        # just applied across this wave's concurrent calls too.
+                        cost_usd = cost_usd / wave_size
 
                     test_result = {
                         "test_id": tc["id"],

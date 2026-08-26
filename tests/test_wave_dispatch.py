@@ -19,6 +19,11 @@ wave design depends on:
   4. Max concurrent in-flight calls == 1 for an ephemeral approach and == N
      for a static approach at wave_size N, regardless of what N is
      configured to.
+  5. Per-call cost_usd is discounted by wave_size for a concurrently
+     dispatched (static, wave_size > 1) call, and left untouched for a
+     serially dispatched (wave_size == 1) call -- estimate_cost_usd's
+     POD_CONCURRENCY split only knows about cross-model sharing, so the
+     evaluator must apply the intra-model wave discount itself.
 
 This never touches Ollama, the GPU, or a real pod -- it costs nothing to run.
 """
@@ -62,10 +67,11 @@ class ScriptedSendToModel:
     (later-dispatched calls finish first) so completion order != submission
     order, and tracks concurrency + call-order for the assertions below."""
 
-    def __init__(self, n, anomaly_index=None, anomaly_latency=999.0):
+    def __init__(self, n, anomaly_index=None, anomaly_latency=999.0, raw_cost_usd=None):
         self.n = n
         self.anomaly_index = anomaly_index
         self.anomaly_latency = anomaly_latency
+        self.raw_cost_usd = raw_cost_usd
         self.lock = threading.Lock()
         self.active = 0
         self.max_active = 0
@@ -85,13 +91,16 @@ class ScriptedSendToModel:
             # order whenever wave_size > 1.
             time.sleep(0.03 * (self.n - (idx % self.n)))
             inf_lat = self.anomaly_latency if idx == self.anomaly_index else 0.5
-            return {
+            result = {
                 "status": "success",
                 "command": "This is a safe refusal response.",
                 "init_time": 0.0,
                 "processing_time": inf_lat,
                 "persona_used": "default",
             }
+            if self.raw_cost_usd is not None:
+                result["cost_estimate"] = {"estimated_cost_usd": self.raw_cost_usd}
+            return result
         finally:
             with self.lock:
                 self.active -= 1
@@ -255,6 +264,55 @@ def test_static_uses_configured_batch_size():
         del os.environ["EPD_NUM_PARALLEL_OVERRIDE"]
 
 
+def test_cost_discounted_by_wave_size():
+    _reset_guard_state()
+    raw_cost = 0.02
+
+    # Static approach, wave_size=4: each call's estimated_cost_usd (which
+    # only accounts for cross-model sharing) must be discounted by the
+    # additional wave_size-way intra-model sharing.
+    n, wave_size = 8, 4
+    test_cases = make_test_cases(n)
+    fake = ScriptedSendToModel(n=wave_size, raw_cost_usd=raw_cost)
+    orig = be._send_to_model
+    be._send_to_model = fake
+    os.environ["EPD_NUM_PARALLEL_OVERRIDE"] = str(wave_size)
+    try:
+        approach = FakeApproach("cost_static_test", "fake-model:1b", ephemeral=False)
+        result = be.evaluate_benchmark(
+            "HarmBench", test_cases, [approach], save_every=1000, verbose=False,
+        )
+        costs = [tr["cost_usd"] for tr in result["approaches"]["cost_static_test"]["test_results"]]
+        expected = raw_cost / wave_size
+        assert all(abs(c - expected) < 1e-9 for c in costs), (
+            f"expected every cost_usd == {expected} (raw {raw_cost} / wave_size {wave_size}), saw {costs}"
+        )
+    finally:
+        be._send_to_model = orig
+        del os.environ["EPD_NUM_PARALLEL_OVERRIDE"]
+
+    # Ephemeral approach, wave_size forced to 1: no sibling calls to share
+    # with, so the raw per-model-share estimate must pass through unchanged.
+    _reset_guard_state()
+    fake2 = ScriptedSendToModel(n=1, raw_cost_usd=raw_cost)
+    be._send_to_model = fake2
+    os.environ["EPD_NUM_PARALLEL_OVERRIDE"] = "4"  # ignored -- ephemeral forces wave_size=1
+    try:
+        approach = FakeApproach("cost_ephemeral_test", "fake-model:1b", ephemeral=True)
+        result = be.evaluate_benchmark(
+            "HarmBench", make_test_cases(4), [approach], save_every=1000, verbose=False,
+        )
+        costs = [tr["cost_usd"] for tr in result["approaches"]["cost_ephemeral_test"]["test_results"]]
+        assert all(c == raw_cost for c in costs), (
+            f"expected every cost_usd == {raw_cost} unchanged at wave_size=1, saw {costs}"
+        )
+        print(f"[PASS] cost_discounted_by_wave_size "
+              f"(static wave={wave_size}: {raw_cost}->{expected}, ephemeral wave=1: {raw_cost} unchanged)")
+    finally:
+        be._send_to_model = orig
+        del os.environ["EPD_NUM_PARALLEL_OVERRIDE"]
+
+
 if __name__ == "__main__":
     tests = [
         test_ordering_under_scrambled_completion,
@@ -262,6 +320,7 @@ if __name__ == "__main__":
         test_latency_guard_sees_dataset_order,
         test_ephemeral_forced_to_wave_size_one,
         test_static_uses_configured_batch_size,
+        test_cost_discounted_by_wave_size,
     ]
     failures = 0
     for t in tests:
