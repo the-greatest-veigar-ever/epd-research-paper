@@ -64,7 +64,7 @@ import subprocess
 import sys
 import time
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import psutil
 import requests
@@ -308,6 +308,40 @@ def _gpu_total_gb() -> Optional[float]:
         return None
 
 
+def _gpu_still_alive() -> Tuple[bool, Optional[str]]:
+    try:
+        from src.ghost_agents.approach_evaluation.per_process_monitor import nvml_gpu_alive
+        return nvml_gpu_alive()
+    except Exception as e:
+        return False, str(e)
+
+
+def _stop_pod(reason: str) -> None:
+    """
+    Stop this RunPod pod via runpodctl -- same tool auto_shutdown.sh already
+    uses for the sequential runner. Only called when the caller has decided
+    the *whole* run is broken (GPU gone, or every model failed), never for
+    one model failing among several that are still doing useful work.
+
+    Best-effort: this only runs after the guard that called it has already
+    printed the failure and written the manifest, so a failure here (no
+    RUNPOD_POD_ID, runpodctl missing, API hiccup) is reported but must not
+    raise -- the run has already ended either way.
+    """
+    pod_id = os.environ.get("RUNPOD_POD_ID")
+    if not pod_id:
+        print(f"  [pod-stop] RUNPOD_POD_ID not set (not on a RunPod pod?) -- not stopping anything.")
+        return
+    print(f"  [pod-stop] {reason} -- stopping pod {pod_id} via runpodctl.")
+    try:
+        subprocess.run(["runpodctl", "stop", "pod", pod_id],
+                        check=True, timeout=60,
+                        capture_output=True, text=True)
+        print(f"  [pod-stop] pod {pod_id} stop requested.")
+    except Exception as e:
+        print(f"  [pod-stop] FAILED to stop pod {pod_id}: {e}")
+
+
 def _preflight(runs: List[ModelRun], args) -> bool:
     print("Preflight")
 
@@ -432,6 +466,13 @@ def main() -> int:
                              "each model rented its own instance.")
     parser.add_argument("--dry-run", action="store_true",
                         help="Run preflight and print the plan, then stop.")
+    parser.add_argument("--stop-pod-on-failure", action="store_true",
+                        help="Stop this RunPod pod (via runpodctl) when the whole run "
+                             "is judged broken: the GPU vanishes mid-run, or every "
+                             "model ends up failed. Never triggered by a single model "
+                             "failing among others that are still running. Off by "
+                             "default so a routine or test invocation can't stop the "
+                             "pod by surprise.")
     args = parser.parse_args()
 
     unknown = [m for m in args.models if m not in ABLATION_MODELS]
@@ -477,10 +518,13 @@ def main() -> int:
     active: List[ModelRun] = []
     completed: List[ModelRun] = []
     interrupted = False
+    interrupted_reason: Optional[str] = None
+    gpu_vanished = False
 
     def _shutdown(signum, _frame):
-        nonlocal interrupted
+        nonlocal interrupted, interrupted_reason
         interrupted = True
+        interrupted_reason = f"signal {signum}"
         print(f"\nSignal {signum} -- stopping everything.")
 
     for sig in (signal.SIGINT, signal.SIGTERM):
@@ -488,6 +532,11 @@ def main() -> int:
             signal.signal(sig, _shutdown)
         except (ValueError, OSError):
             pass
+
+    # Only watch for a GPU that was here and vanished -- a pod with no GPU or
+    # no NVML never had a signal to lose, and _preflight already told the
+    # user their attribution will be null.
+    gpu_watchdog = _gpu_total_gb() is not None
 
     try:
         print("\nStarting")
@@ -507,6 +556,26 @@ def main() -> int:
                     continue
                 _start_evaluator(run, args, parallel)
                 active.append(run)
+
+            # Liveness poll, not just an init check: nvml_gpu_alive() makes a
+            # live per-device call every pass, so a mid-run device-cgroup
+            # revocation (host driver and /proc still say "healthy", every
+            # actual device open returns EPERM) is caught here within one
+            # ~2s cycle instead of each model's Ollama server silently
+            # falling back to CPU and every call riding out the full
+            # generate timeout for no result.
+            if gpu_watchdog and active:
+                alive, err = _gpu_still_alive()
+                if not alive:
+                    interrupted = True
+                    gpu_vanished = True
+                    interrupted_reason = f"GPU vanished: {err}"
+                    print(f"\nGPU liveness check failed -- {err}")
+                    print("Matches the 2026-08-25 device-cgroup-revocation signature: "
+                          "the GPU was present at start and is no longer reachable. "
+                          "Stopping every model now rather than letting them run on "
+                          "silently for hours on a dead GPU.")
+                    break
 
             time.sleep(2.0)
 
@@ -534,6 +603,7 @@ def main() -> int:
         "pod_hourly_usd": args.pod_hourly_usd,
         "concurrency": parallel,
         "interrupted": interrupted,
+        "interrupted_reason": interrupted_reason,
         "seeds": args.seeds,
         "max_per_benchmark": args.max_per_benchmark,
         "models": [
@@ -566,6 +636,12 @@ def main() -> int:
     if failed:
         print(f" FAILED: {', '.join(r.key for r in failed)} -- see their logs")
     print("=" * 72)
+
+    if args.stop_pod_on_failure:
+        if gpu_vanished:
+            _stop_pod("GPU vanished mid-run")
+        elif completed and len(failed) == len(completed):
+            _stop_pod(f"every model failed ({len(failed)}/{len(completed)})")
 
     return 1 if failed or interrupted else 0
 

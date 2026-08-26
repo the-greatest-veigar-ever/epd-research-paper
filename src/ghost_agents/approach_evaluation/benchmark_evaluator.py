@@ -899,6 +899,116 @@ def _seed_metric_lists_from_prior(prior_test_results: List[Dict[str, Any]]) -> T
             gpu_samples, gpu_mem_samples)
 
 
+# ============================================================================
+# Watchdog guards -- added after the 2026-08-25 GPU-revocation incident
+#
+# NVML liveness (aborting every model) is handled one level up, in
+# run_concurrent_experiment.py's poll loop, which is the only place with
+# visibility into all the models sharing the GPU. The two guards below are
+# this process's own defense, scoped to the one model it evaluates: stop
+# burning pod time on a broken environment instead of waiting for a human to
+# notice a multi-hour sweep produced nothing.
+# ============================================================================
+
+class EvaluatorGuardTripped(RuntimeError):
+    """Raised when a watchdog guard below decides this evaluator process
+    should stop rather than continue the sweep."""
+
+
+# Consecutive (benchmark, approach) cells with zero completed calls before
+# giving up. This is a backstop for whatever the per-call latency guard
+# below does not catch (e.g. a model tag gone missing, not merely slow) --
+# it is deliberately blunt and only trips after several whole cells have
+# already been lost.
+CIRCUIT_BREAKER_DEAD_CELLS = int(os.environ.get("EPD_CIRCUIT_BREAKER_DEAD_CELLS", "3"))
+
+# Per-call latency fail-fast. A model's own first few *completed* calls set
+# its baseline; any later call -- completed or not -- at LATENCY_FAILFAST_
+# MULTIPLIER times that baseline (and past the floor, so a fast model's
+# normal jitter doesn't trip it) counts as an anomaly. LATENCY_FAILFAST_
+# CONSECUTIVE of those in a row stops the process. This is what would have
+# caught the 2026-08-25 incident within one or two calls instead of after
+# 30 dead cells: Ollama's silent CPU fallback turned a ~7s phi3 call into a
+# ~300s one, and every later call on that server did the same.
+LATENCY_BASELINE_SAMPLES = int(os.environ.get("EPD_LATENCY_BASELINE_SAMPLES", "3"))
+LATENCY_FAILFAST_MULTIPLIER = float(os.environ.get("EPD_LATENCY_FAILFAST_MULTIPLIER", "6"))
+LATENCY_FAILFAST_FLOOR_S = float(os.environ.get("EPD_LATENCY_FAILFAST_FLOOR_S", "30"))
+LATENCY_FAILFAST_CONSECUTIVE = int(os.environ.get("EPD_LATENCY_FAILFAST_CONSECUTIVE", "2"))
+
+# Process-lifetime state. One evaluator process ever evaluates one model
+# (run_concurrent_experiment.py invokes `--approaches <model_key>`), and a
+# process runs every seed and benchmark for that model in turn, so a bare
+# module-level counter is exactly the right scope: "consecutive" and "this
+# model's baseline" both mean "across this process's whole run".
+_consecutive_dead_cells = 0
+_latency_baseline_samples: List[float] = []
+_latency_anomaly_streak = 0
+
+
+def _note_cell_outcome(completed_tests: int, label: str, verbose: bool) -> None:
+    """Circuit breaker: abort after too many consecutive cells with zero
+    completed calls. Call once per (benchmark, approach) cell, after its
+    final metrics are known."""
+    global _consecutive_dead_cells
+    if completed_tests > 0:
+        _consecutive_dead_cells = 0
+        return
+
+    _consecutive_dead_cells += 1
+    if verbose:
+        print(f"  [WARNING] {label}: 0 completed calls "
+              f"({_consecutive_dead_cells}/{CIRCUIT_BREAKER_DEAD_CELLS} consecutive dead cells)")
+    if _consecutive_dead_cells >= CIRCUIT_BREAKER_DEAD_CELLS:
+        raise EvaluatorGuardTripped(
+            f"circuit breaker: {_consecutive_dead_cells} consecutive cells completed "
+            f"zero calls (latest: {label}). This is the signature of a broken "
+            f"environment (GPU gone, Ollama down, wrong model/port) rather than "
+            f"{_consecutive_dead_cells} independently unlucky cells -- stopping this "
+            f"model's evaluator instead of burning the rest of the sweep at up to "
+            f"the configured generate timeout per call to learn the same thing."
+        )
+
+
+def _check_call_latency(inf_lat: float, label: str, verbose: bool) -> None:
+    """Latency fail-fast: compare one call's latency against this model's
+    own baseline, established from its first few *completed* calls. Call
+    once per test case, for every call regardless of outcome."""
+    global _latency_anomaly_streak
+
+    if len(_latency_baseline_samples) < LATENCY_BASELINE_SAMPLES:
+        # Baseline is built from completed calls only -- a slow or failed
+        # call this early says nothing reliable about the model's normal
+        # speed, and folding it in would raise the bar for detecting the
+        # exact degradation this guard exists to catch.
+        return
+
+    baseline = float(np.median(_latency_baseline_samples))
+    threshold = max(baseline * LATENCY_FAILFAST_MULTIPLIER, LATENCY_FAILFAST_FLOOR_S)
+    if inf_lat <= threshold:
+        _latency_anomaly_streak = 0
+        return
+
+    _latency_anomaly_streak += 1
+    if verbose:
+        print(f"  [WARNING] {label}: call took {inf_lat:.1f}s, "
+              f"{inf_lat / baseline:.1f}x this model's {baseline:.1f}s baseline "
+              f"({_latency_anomaly_streak}/{LATENCY_FAILFAST_CONSECUTIVE} consecutive)")
+    if _latency_anomaly_streak >= LATENCY_FAILFAST_CONSECUTIVE:
+        raise EvaluatorGuardTripped(
+            f"latency fail-fast: {_latency_anomaly_streak} consecutive calls at "
+            f"{LATENCY_FAILFAST_MULTIPLIER:.0f}x+ this model's {baseline:.1f}s baseline "
+            f"latency (latest: {label} at {inf_lat:.1f}s). This is the signature of a "
+            f"broken environment (e.g. GPU-less CPU fallback) rather than genuine model "
+            f"variance -- stopping before the rest of the sweep pays the same cost, "
+            f"call after call."
+        )
+
+
+def _record_latency_baseline_sample(inf_lat: float, call_completed: bool) -> None:
+    if call_completed and len(_latency_baseline_samples) < LATENCY_BASELINE_SAMPLES:
+        _latency_baseline_samples.append(inf_lat)
+
+
 def evaluate_benchmark(
     benchmark_name: str,
     test_cases: List[Dict[str, Any]],
@@ -1045,6 +1155,9 @@ def evaluate_benchmark(
             throughput = result.get("throughput_tasks_per_s")
             cost_info = result.get("cost_estimate") or {}
 
+            _check_call_latency(inf_lat, f"{approach.name} ({benchmark_name})", verbose)
+            _record_latency_baseline_sample(inf_lat, call_completed)
+
             if call_completed:
                 classification = classifier(response, tc)
             else:
@@ -1161,6 +1274,18 @@ def evaluate_benchmark(
         except Exception as e:
             if verbose:
                 print(f"  [WARNING] teardown failed for {approach.name}: {e}")
+
+        # Checkpoint this cell before the circuit-breaker check below can
+        # raise -- a dead cell must still land on disk so a resumed run
+        # retries it (retry_failed truncates from the first failed call
+        # onward) instead of the process exiting with it only ever having
+        # existed in memory.
+        if progress_callback:
+            progress_callback(benchmark_name, results)
+        _note_cell_outcome(
+            approach_results["metrics"].get("completed_tests", 0),
+            f"{approach.name} ({benchmark_name})", verbose,
+        )
 
         if verbose:
             m = approach_results["metrics"]
@@ -1961,16 +2086,24 @@ def main():
         return
 
     try:
-        results = run_full_evaluation(
-            benchmark_names=args.benchmarks,
-            approach_names=args.approaches,
-            max_per_benchmark=args.max_per_benchmark,
-            save_every=args.save_every,
-            output_dir=args.output,
-            seeds=args.seeds,
-            verbose=args.verbose,
-            retry_failed=not args.keep_failed,
-        )
+        try:
+            results = run_full_evaluation(
+                benchmark_names=args.benchmarks,
+                approach_names=args.approaches,
+                max_per_benchmark=args.max_per_benchmark,
+                save_every=args.save_every,
+                output_dir=args.output,
+                seeds=args.seeds,
+                verbose=args.verbose,
+                retry_failed=not args.keep_failed,
+            )
+        except EvaluatorGuardTripped as e:
+            # A deliberate stop, not a bug -- the cell(s) that triggered it
+            # are already checkpointed (see the guard call sites), so a
+            # later re-run with a fixed environment resumes and retries
+            # them rather than starting over.
+            print(f"\n[GUARD TRIPPED] {e}")
+            sys.exit(3)
     finally:
         # Stops the per-process sampling thread and closes its CSV. The
         # thread is a daemon so the process would exit regardless, but that

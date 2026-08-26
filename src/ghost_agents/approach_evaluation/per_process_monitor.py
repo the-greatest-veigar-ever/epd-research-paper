@@ -117,6 +117,33 @@ def nvml_init() -> Tuple[bool, Optional[str]]:
             return False, _nvml_state["error"]
 
 
+def nvml_gpu_alive() -> Tuple[bool, Optional[str]]:
+    """
+    Actively confirm the GPU is still reachable, not just that NVML was
+    once initialised successfully.
+
+    `nvml_init()` caches its result for the life of the process, so once it
+    has returned ok=True it never checks again -- fine for its own purpose
+    (avoid repeated failed inits on a driver-less box), but useless as a
+    liveness signal. The 2026-08-25 incident is exactly that gap: a cgroup
+    v2 device-filter revocation left driver state and /proc info reporting
+    a healthy A100 while every device open failed with EPERM, and nothing
+    that only trusted the cached init result would have noticed. This makes
+    one live call per device -- cheap, in-process, no subprocess spawn --
+    so a revocation shows up on the next poll instead of silently turning
+    into an Ollama CPU fallback.
+    """
+    ok, err = nvml_init()
+    if not ok:
+        return False, err
+    for handle in _nvml_state["handles"]:
+        try:
+            pynvml.nvmlDeviceGetMemoryInfo(handle)
+        except Exception as e:
+            return False, f"NVML live query failed: {e}"
+    return True, None
+
+
 def _nvml_compute_processes() -> Optional[List[Tuple[int, Optional[int]]]]:
     """
     Every process currently holding a CUDA compute context, as
