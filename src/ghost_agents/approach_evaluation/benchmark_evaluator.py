@@ -1518,7 +1518,18 @@ def _run_single_seed(
                 "approaches": [a.name for a in model_approaches],
                 "benchmarks": list(loaded_benchmarks.keys()),
             },
-            "benchmark_results": {},
+            # Seeded from the prior checkpoint (empty if none/invalid, see
+            # above) rather than starting blank -- each benchmark's entry
+            # gets fully replaced once this run re-processes it below, but
+            # until then this keeps every OTHER already-complete benchmark
+            # visible in what gets written out. Starting blank here meant
+            # every checkpoint write between resume and the loop catching
+            # back up to where it left off was genuinely missing whichever
+            # benchmarks this run hadn't re-reached yet -- not a display
+            # artifact: a second interruption in that window would have
+            # made the next resume see those benchmarks as never done and
+            # redo the real GPU work for them.
+            "benchmark_results": dict(prior_checkpoint.get("benchmark_results", {})),
             "summary": {},
         }
 
