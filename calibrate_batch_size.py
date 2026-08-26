@@ -52,6 +52,12 @@ def _start_server(model: str, port: int, num_parallel: int, ollama_bin: str,
     env["OLLAMA_MAX_LOADED_MODELS"] = "1"
     env["OLLAMA_NUM_PARALLEL"] = str(num_parallel)
     env["OLLAMA_KEEP_ALIVE"] = "-1"
+    # Match the real run's server config (see run_concurrent_experiment.py's
+    # _server_env) -- left unset, Ollama guesses a default context from the
+    # whole card's VRAM, which a calibration run measures under too but a
+    # multi-server real run does not get, since it has no idea other
+    # servers share the card.
+    env["OLLAMA_CONTEXT_LENGTH"] = os.environ.get("EPD_NUM_CTX", "8192")
     if models_dir:
         env["OLLAMA_MODELS"] = models_dir
     return subprocess.Popen(

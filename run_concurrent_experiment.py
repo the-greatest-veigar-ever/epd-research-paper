@@ -185,6 +185,15 @@ def _server_env(run: ModelRun, models_dir: Optional[str], keep_alive: str) -> Di
     # the evaluator's own wave size, which calls the same function -- that
     # is the single source of truth keeping the two from drifting apart.
     env["OLLAMA_NUM_PARALLEL"] = str(batch_size_for(run.tag))
+    # Left unset, Ollama sizes each server's default context from the
+    # WHOLE card's VRAM (an 80GB A100 here), with no idea 3 other servers
+    # are sharing it -- discovered 2026-08-26 when that produced a 262144-
+    # token default (clamped to the model's own trained max, still up to
+    # 131072) and one server alone held 74GB of the 80GB card. Pin it to
+    # what generation actually uses so no load path (preload_model's own
+    # explicit num_ctx now covers that one call, this covers any other,
+    # e.g. a future health check) can fall back to that guess.
+    env["OLLAMA_CONTEXT_LENGTH"] = os.environ.get("EPD_NUM_CTX", "8192")
     # Ollama unloads an idle model after 5 minutes by default, which would
     # quietly turn a *static* cell -- defined by its model staying resident
     # -- into an ephemeral one during any gap between calls, corrupting the

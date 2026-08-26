@@ -46,6 +46,18 @@ OLLAMA_BASE_URL = _resolve_base_url()
 PRELOAD_TIMEOUT_S = int(os.environ.get("EPD_PRELOAD_TIMEOUT", "600"))
 UNLOAD_TIMEOUT_S = int(os.environ.get("EPD_UNLOAD_TIMEOUT", "120"))
 
+# Must match approaches.GENERATION_NUM_CTX -- mirrored via the same env var
+# rather than imported directly, since approaches.py already imports this
+# module (importing back would be circular). Ollama sizes a model's
+# resident KV cache to the context used at *load* time and does not shrink
+# it just because a later generate call requests a smaller num_ctx, so a
+# preload that omits num_ctx falls back to Ollama's own vram-based default
+# (up to the model's full trained context, e.g. 131072 tokens) instead of
+# the 8192 generation actually uses -- a multi-GB-to-tens-of-GB difference
+# per resident model, discovered 2026-08-26 when it left one server holding
+# 74GB of an 80GB card under the new concurrent wave dispatch.
+PRELOAD_NUM_CTX = int(os.environ.get("EPD_NUM_CTX", "8192"))
+
 
 def preload_model(model: str, timeout: Optional[int] = None) -> float:
     """
@@ -75,7 +87,7 @@ def preload_model(model: str, timeout: Optional[int] = None) -> float:
                 "model": model,
                 "prompt": "",
                 "stream": False,
-                "options": {"num_predict": 1}
+                "options": {"num_predict": 1, "num_ctx": PRELOAD_NUM_CTX}
             },
             timeout=timeout
         )
