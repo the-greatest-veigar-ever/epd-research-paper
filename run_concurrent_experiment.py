@@ -74,6 +74,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from src.ghost_agents.approach_evaluation.approaches import (  # noqa: E402
     ABLATION_MODELS,
     MODEL_RAM_GB,
+    batch_size_for,
 )
 
 DEFAULT_BASE_PORT = 11500
@@ -170,11 +171,20 @@ def _wait_healthy(run: ModelRun, timeout: float = 120.0) -> bool:
 def _server_env(run: ModelRun, models_dir: Optional[str], keep_alive: str) -> Dict[str, str]:
     env = os.environ.copy()
     env["OLLAMA_HOST"] = f"127.0.0.1:{run.port}"
-    # One model per server, one request at a time. Not a throughput
-    # setting: it is what keeps this server's process tree equal to this
-    # model's process tree, which is the whole basis of the attribution.
+    # One model per server -- this, not OLLAMA_NUM_PARALLEL below, is what
+    # keeps this server's process tree equal to this model's process tree:
+    # per_process_monitor anchors on the server PID and sums the ENTIRE
+    # live descendant tree under it every sample (recursive, re-resolved
+    # per tick), so it is correctly attributed to this model regardless of
+    # how many requests that one loaded model is serving concurrently. What
+    # would break attribution is a SECOND model sharing this server, which
+    # OLLAMA_MAX_LOADED_MODELS=1 rules out.
     env["OLLAMA_MAX_LOADED_MODELS"] = "1"
-    env["OLLAMA_NUM_PARALLEL"] = "1"
+    # Batched concurrency for this model's calibrated throughput (see
+    # approaches.batch_size_for / MODEL_BATCH_SIZE). Must stay in sync with
+    # the evaluator's own wave size, which calls the same function -- that
+    # is the single source of truth keeping the two from drifting apart.
+    env["OLLAMA_NUM_PARALLEL"] = str(batch_size_for(run.tag))
     # Ollama unloads an idle model after 5 minutes by default, which would
     # quietly turn a *static* cell -- defined by its model staying resident
     # -- into an ephemeral one during any gap between calls, corrupting the
@@ -197,7 +207,8 @@ def _start_server(run: ModelRun, ollama_bin: str, models_dir: Optional[str],
         stderr=subprocess.STDOUT,
         env=_server_env(run, models_dir, keep_alive),
     )
-    print(f"  [{run.key}] ollama serve pid={run.server.pid} port={run.port}")
+    print(f"  [{run.key}] ollama serve pid={run.server.pid} port={run.port} "
+          f"num_parallel={batch_size_for(run.tag)}")
     if not _wait_healthy(run):
         print(f"  [{run.key}] ERROR: server did not become healthy -- see {run.server_log}")
         return False
@@ -239,6 +250,12 @@ def _start_evaluator(run: ModelRun, args, concurrency: int) -> None:
     env["EPD_MONITOR_ROOT_PID"] = str(run.server.pid)
     env["EPD_MONITOR_LABEL"] = run.key
     env["EPD_MONITOR_CSV"] = run.csv_path
+    # Sanity ceiling for the per-process GPU memory guard (see
+    # per_process_monitor.ProcessTreeRecorder's expected_weight_gb note) --
+    # this model's own known weight size, the one signal available here
+    # that lets the guard distinguish "implausible" from "legitimately
+    # large" without hardcoding a model-specific threshold in that module.
+    env["EPD_MONITOR_EXPECTED_GB"] = str(MODEL_RAM_GB.get(run.tag, 0.0))
     env["EPD_MONITOR_INTERVAL"] = str(args.monitor_interval)
     env["EPD_POD_CONCURRENCY"] = str(concurrency)
     if args.pod_hourly_usd is not None:
@@ -255,6 +272,8 @@ def _start_evaluator(run: ModelRun, args, concurrency: int) -> None:
     ]
     if args.benchmarks:
         cmd.extend(["--benchmarks", *args.benchmarks])
+    if getattr(args, "verbose", False):
+        cmd.append("--verbose")
 
     os.makedirs(os.path.dirname(run.eval_log) or ".", exist_ok=True)
     run._eval_log_fh = open(run.eval_log, "w", encoding="utf-8")
@@ -439,7 +458,7 @@ def main() -> int:
     parser.add_argument("--models", nargs="*", default=list(ABLATION_MODELS.keys()),
                         help=f"Model keys to run (default: all "
                              f"{len(ABLATION_MODELS)} SLMs).")
-    parser.add_argument("--seeds", nargs="*", type=int, default=[42, 43, 44])
+    parser.add_argument("--seeds", nargs="*", type=int, default=[42, 43])
     parser.add_argument("--max-per-benchmark", type=int, default=5)
     parser.add_argument("--save-every", type=int, default=5)
     parser.add_argument("--benchmarks", nargs="*", default=None)
@@ -466,6 +485,9 @@ def main() -> int:
                              "each model rented its own instance.")
     parser.add_argument("--dry-run", action="store_true",
                         help="Run preflight and print the plan, then stop.")
+    parser.add_argument("--verbose", action="store_true",
+                        help="Forwarded to every evaluator subprocess -- per-wave dispatch "
+                             "lines, guard warnings, and response/error previews.")
     parser.add_argument("--stop-pod-on-failure", action="store_true",
                         help="Stop this RunPod pod (via runpodctl) when the whole run "
                              "is judged broken: the GPU vanishes mid-run, or every "
@@ -610,6 +632,7 @@ def main() -> int:
             {
                 "model_key": r.key, "tag": r.tag, "port": r.port,
                 "exit_code": r.exit_code,
+                "ollama_num_parallel": batch_size_for(r.tag),
                 "wall_seconds": (
                     round(r.finished_at - r.started_at, 2)
                     if r.started_at and r.finished_at else None

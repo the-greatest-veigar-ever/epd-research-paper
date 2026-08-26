@@ -281,6 +281,68 @@ MODEL_RAM_GB: Dict[str, float] = {
     "llama3.3:70b": 43.0,
 }
 
+# Per-model OLLAMA_NUM_PARALLEL / evaluator wave size, empirically calibrated
+# by calibrate_batch_size.py against real HarmBench prompts at this
+# pipeline's real num_ctx/num_predict caps (2026-08-26, this A100 80GB PCIe
+# pod). Not derivable from model size alone -- decode is memory-bandwidth-
+# bound, so the right batch size depends on where GPU *compute* saturates,
+# which only measurement (not a formula) can answer.
+#
+# Methodology: for each candidate N, N distinct real prompts' own serial
+# (NUM_PARALLEL=1) cost was measured once and compared against the same N
+# prompts dispatched concurrently under a fresh server at that N -- an
+# apples-to-apples serial-vs-concurrent comparison, not a naive N x (one
+# baseline call) estimate, which proved noisy: prompt-to-prompt cost varies
+# a lot here (an open-ended "continue this passage" style HarmBench prompt
+# reliably ran every model to its generation cap regardless of concurrency,
+# and reasoning-model "thinking" length varies by prompt content
+# independently of batching). Stopped at the first N where efficiency
+# (speedup / N, vs. that serial baseline) dropped below 0.5, VRAM exceeded a
+# safety margin, or any call failed -- whichever came first.
+#
+# Result: every model in the fleet, including gpt-oss:20b, plateaued at
+# N=2 (efficiency ~0.55-0.93 at N=2, i.e. a real but modest ~1.1-1.9x
+# speedup, dropping below the 0.5 floor by N=4 for all five). This is well
+# short of the 3-6x initially guessed from the hardware's raw bandwidth
+# headroom -- Ollama's actual concurrent-request batching on this
+# version/setup does not scale as generously as the theoretical memory-
+# bandwidth argument alone would suggest. gpt-oss:20b's calibrated value
+# already came out at 2, so the separate "cap it conservatively below its
+# plateau" mitigation for NVML-kill blast radius (a wide wave losing more
+# work if the liveness watchdog trips mid-flight) is moot here -- 2 is
+# already about as conservative as this dict gets.
+#
+# Unlisted tags fall back to DEFAULT_OLLAMA_NUM_PARALLEL (today's
+# behavior) rather than guessing.
+MODEL_BATCH_SIZE: Dict[str, int] = {
+    "phi3:mini": 2,
+    "llama3.2:3b": 2,
+    "qwen2.5:3b": 2,
+    "deepseek-r1:1.5b": 2,
+    "gpt-oss:20b": 2,
+}
+DEFAULT_OLLAMA_NUM_PARALLEL = 1
+
+
+def batch_size_for(model: str) -> int:
+    """Effective OLLAMA_NUM_PARALLEL / wave size for `model`.
+
+    Single source of truth imported by both run_concurrent_experiment.py
+    (sets the server's OLLAMA_NUM_PARALLEL) and benchmark_evaluator.py (sets
+    the evaluator's concurrent-dispatch wave size), so the two can never
+    drift out of sync -- both key off this same function.
+
+    EPD_NUM_PARALLEL_OVERRIDE, if set, applies uniformly and is intended for
+    calibration/smoke runs only, not the real sweep.
+    """
+    override = os.environ.get("EPD_NUM_PARALLEL_OVERRIDE")
+    if override:
+        try:
+            return max(1, int(override))
+        except ValueError:
+            pass
+    return MODEL_BATCH_SIZE.get(model, DEFAULT_OLLAMA_NUM_PARALLEL)
+
 # Maps (model, ephemeral, persona, safety_filter) -> the approach name used
 # in the original paper/tables, so pre-existing rows keep their identity
 # instead of being renamed out from under the LaTeX tables.

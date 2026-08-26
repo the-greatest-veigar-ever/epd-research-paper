@@ -80,6 +80,13 @@ except Exception as _e:  # pragma: no cover - import guard
 _nvml_lock = threading.Lock()
 _nvml_state: Dict[str, Any] = {"initialized": False, "handles": [], "error": None}
 
+# See ProcessTreeRecorder's expected_weight_gb docstring note for how these
+# were chosen -- a per-model plausibility ceiling for per-process GPU
+# memory, guarding against an observed NVML per-process misattribution
+# artifact rather than a real batching/OOM condition.
+GPU_MEM_SANITY_MULTIPLIER = float(os.environ.get("EPD_GPU_MEM_SANITY_MULTIPLIER", "8"))
+GPU_MEM_SANITY_FLOOR_GB = float(os.environ.get("EPD_GPU_MEM_SANITY_FLOOR_GB", "4"))
+
 
 def nvml_init() -> Tuple[bool, Optional[str]]:
     """
@@ -322,12 +329,33 @@ class ProcessTreeRecorder:
         interval_s: float = 0.5,
         csv_path: Optional[str] = None,
         max_samples: int = 200_000,
+        expected_weight_gb: Optional[float] = None,
     ) -> None:
         self.root_pid = int(root_pid)
         self.label = label
         self.interval_s = max(float(interval_s), 0.05)
         self.csv_path = csv_path
         self.max_samples = max_samples
+
+        # Sanity ceiling for per-process GPU memory, derived from this
+        # model's own known weight size (2026-08-26: discovered NVML's
+        # nvmlDeviceGetComputeRunningProcesses intermittently misattributes
+        # a wildly inflated usedGpuMemory -- tens of GB -- to a correctly-
+        # matched PID, reproducible through this project's own server-
+        # startup sequence and confirmed against nvidia-smi as ground
+        # truth; root cause not pinned down, looks like a driver-level
+        # race, not something fixable from here). GPU_MEM_SANITY_MULTIPLIER
+        # (8x) is calibrated generously above calibrate_batch_size.py's own
+        # measured peak_vram for this fleet at batch size 4 (phi3:mini hit
+        # 15.3GB against a 2.2GB weight, ~7x) so legitimate batched KV-cache
+        # growth is never flagged, while still catching the implausible
+        # readings actually observed (13-50GB for models with 1-2GB
+        # weights). None (no expected weight known) disables the guard
+        # entirely rather than guessing a threshold.
+        self._gpu_mem_ceiling_gb: Optional[float] = (
+            max(expected_weight_gb * GPU_MEM_SANITY_MULTIPLIER, GPU_MEM_SANITY_FLOOR_GB)
+            if expected_weight_gb else None
+        )
 
         self._samples: List[TreeSample] = []
         self._lock = threading.Lock()
@@ -725,16 +753,42 @@ class ProcessTreeRecorder:
             "cpu_core_seconds": round(cpu_seconds, 5) if measured_span > 0 else None,
         }
         stats["gpu_note"] = self._gpu_note()
+
+        warnings: List[str] = []
         if not window and nearest:
-            stats["monitor_warning"] = (
+            warnings.append(
                 "This call was shorter than the sampling interval; figures are the "
                 "nearest reading rather than an in-window measurement."
             )
         if not self.root_alive:
-            stats["monitor_warning"] = (
+            warnings.append(
                 f"The monitored Ollama server (pid {self.root_pid}) was not "
                 f"running during this call; resource figures are unattributable."
             )
+
+        if self._gpu_mem_ceiling_gb is not None:
+            implausible = [
+                s.gpu_mem_gb for s in effective
+                if s.gpu_mem_gb is not None and s.gpu_mem_gb > self._gpu_mem_ceiling_gb
+            ]
+            if implausible:
+                # Don't silently average a corrupted reading in with good
+                # ones -- null the whole window's GPU memory figures rather
+                # than report a number this process cannot trust, matching
+                # how gpu_pid_mismatch above reports N/A instead of 0.
+                stats["gpu_mem_used_gb_avg"] = None
+                stats["gpu_mem_used_gb_max"] = None
+                warnings.append(
+                    f"{len(implausible)}/{len(effective)} GPU memory sample(s) in this "
+                    f"window exceeded the {self._gpu_mem_ceiling_gb:.1f}GB plausibility "
+                    f"ceiling for {self.label} (up to {max(implausible):.1f}GB reported) -- "
+                    f"a known NVML per-process misattribution artifact, not a real "
+                    f"reading. GPU memory figures for this call are reported as N/A "
+                    f"rather than trusted."
+                )
+
+        if warnings:
+            stats["monitor_warning"] = " | ".join(warnings)
         return stats
 
     def _gpu_note(self) -> Optional[str]:
@@ -875,8 +929,17 @@ def get_recorder() -> Optional[ProcessTreeRecorder]:
             interval = 0.5
         csv_path = os.environ.get("EPD_MONITOR_CSV") or None
 
+        expected_weight_gb: Optional[float] = None
+        raw_weight = os.environ.get("EPD_MONITOR_EXPECTED_GB", "").strip()
+        if raw_weight:
+            try:
+                expected_weight_gb = float(raw_weight)
+            except ValueError:
+                expected_weight_gb = None
+
         _recorder = ProcessTreeRecorder(
-            root_pid=root_pid, label=label, interval_s=interval, csv_path=csv_path
+            root_pid=root_pid, label=label, interval_s=interval, csv_path=csv_path,
+            expected_weight_gb=expected_weight_gb,
         ).start()
         print(f"[monitor] per-process attribution active: {_recorder.diagnostics()}")
         return _recorder

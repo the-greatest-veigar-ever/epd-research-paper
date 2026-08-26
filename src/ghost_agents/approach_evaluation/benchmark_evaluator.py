@@ -40,6 +40,7 @@ import re
 import sys
 import time
 from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
@@ -69,6 +70,7 @@ from src.ghost_agents.approach_evaluation.approaches import (
     MAIN_TABLE_APPROACH_NAMES,
     APPROACHES_BY_MODEL_KEY,
     model_key_for_approach,
+    batch_size_for,
 )
 from src.ghost_agents.approach_evaluation.benchmark_test_data import (
     load_all_benchmarks,
@@ -1139,126 +1141,184 @@ def evaluate_benchmark(
             round(float(setup_latency_s), 3) if setup_latency_s is not None else None
         )
 
+        # Wave size: how many test cases this approach dispatches to the
+        # model's Ollama server concurrently. Ephemeral approaches are
+        # forced to 1 regardless of the model's calibrated batch size --
+        # their lifecycle reloads/unloads the model *inside every call*
+        # (see ConfigurableApproach.execute_plan) and draws persona from the
+        # shared module-level `random` instance on every call, so concurrent
+        # dispatch would let one call's unload evict another's in-flight
+        # generate, and would break the per-seed persona reproducibility
+        # multi-seed runs depend on. Static approaches get the model's
+        # calibrated batch size and are where all the real throughput win
+        # from batching comes from.
+        wave_size = 1 if getattr(approach, "ephemeral", False) else max(1, batch_size_for(approach.model))
+        # Self-documents what concurrency produced this cell's numbers --
+        # MODEL_BATCH_SIZE may be re-tuned between runs, so the checkpoint/
+        # result JSON needs its own record rather than relying on the code.
+        approach_results["batch_size"] = wave_size
+
         desc = f"  [{approach.name}] {benchmark_name}"
-        progress_iter = tqdm(remaining_test_cases, desc=desc, leave=False,
-                              initial=len(prior_test_results), total=len(test_cases))
-        for local_i, tc in enumerate(progress_iter):
-            i = len(prior_test_results) + local_i
-            result = _send_to_model(approach, tc["prompt"], strategy)
-            call_status = result.get("status", "success")
-            call_completed = call_status == "success"
-            response = result.get("command") or ""
-            init_lat = result.get("init_time", 0.0)
-            inf_lat = result.get("processing_time", 0.0)
-            persona_used = result.get("persona_used", "default")
-            resource_stats = result.get("resource_stats") or {}
-            throughput = result.get("throughput_tasks_per_s")
-            cost_info = result.get("cost_estimate") or {}
+        progress_iter = tqdm(total=len(test_cases), initial=len(prior_test_results),
+                              desc=desc, leave=False)
+        with ThreadPoolExecutor(max_workers=max(wave_size, 1)) as executor:
+            for wave_start in range(0, len(remaining_test_cases), wave_size):
+                wave = remaining_test_cases[wave_start: wave_start + wave_size]
+                wave_t0 = time.perf_counter()
+                # Submit the whole wave up front so all len(wave) requests
+                # are genuinely in flight concurrently on the model's
+                # server -- then retrieve results by SUBMISSION order (==
+                # test_cases index order), not completion order. future.
+                # result() on futures[k] only blocks until that specific
+                # future is done; it does not serialize the dispatch above.
+                # This keeps test_results a strict index-ordered prefix
+                # (required for resume, see the prefix check earlier in
+                # this function) and keeps the latency guard below seeing
+                # calls in dataset order rather than race-dependent order.
+                futures = [executor.submit(_send_to_model, approach, tc["prompt"], strategy)
+                           for tc in wave]
+                wave_inf_lats: List[float] = []
 
-            _check_call_latency(inf_lat, f"{approach.name} ({benchmark_name})", verbose)
-            _record_latency_baseline_sample(inf_lat, call_completed)
+                for slot, (tc, future) in enumerate(zip(wave, futures)):
+                    i = len(prior_test_results) + wave_start + slot
+                    result = future.result()
+                    call_status = result.get("status", "success")
+                    call_completed = call_status == "success"
+                    response = result.get("command") or ""
+                    init_lat = result.get("init_time", 0.0)
+                    inf_lat = result.get("processing_time", 0.0)
+                    persona_used = result.get("persona_used", "default")
+                    resource_stats = result.get("resource_stats") or {}
+                    throughput = result.get("throughput_tasks_per_s")
+                    cost_info = result.get("cost_estimate") or {}
+                    wave_inf_lats.append(inf_lat)
 
-            if call_completed:
-                classification = classifier(response, tc)
-            else:
-                # Measurement failure, not model behavior -- excluded from
-                # ASR/TSR entirely rather than scored as an empty answer.
-                classification = {
-                    "classification": call_status,
-                    "safe": None,
-                    "score": None,
-                    "detail": result.get("error") or f"call {call_status}",
-                }
+                    latency_label = f"{approach.name} ({benchmark_name})"
+                    if wave_size > 1:
+                        latency_label += f" [wave batch_size={wave_size} slot {slot + 1}/{len(wave)}]"
+                    _check_call_latency(inf_lat, latency_label, verbose)
+                    _record_latency_baseline_sample(inf_lat, call_completed)
 
-            cpu_avg = resource_stats.get("cpu_percent_avg")
-            ram_avg = resource_stats.get("ram_used_gb_avg")
-            gpu_avg = resource_stats.get("gpu_percent_avg")
-            gpu_mem_avg = resource_stats.get("gpu_mem_used_gb_avg")
-            cpu_core_s = resource_stats.get("cpu_core_seconds")
-            cost_usd = cost_info.get("estimated_cost_usd")
+                    if call_completed:
+                        classification = classifier(response, tc)
+                    else:
+                        # Measurement failure, not model behavior -- excluded
+                        # from ASR/TSR entirely rather than scored as an
+                        # empty answer.
+                        classification = {
+                            "classification": call_status,
+                            "safe": None,
+                            "score": None,
+                            "detail": result.get("error") or f"call {call_status}",
+                        }
 
-            test_result = {
-                "test_id": tc["id"],
-                "category": tc["category"],
-                "classification": classification["classification"],
-                "safe": classification["safe"],
-                "score": classification["score"],
-                "detail": classification["detail"],
-                "call_status": call_status,
-                "had_reasoning": bool(result.get("reasoning")),
-                "reasoning_chars": len(result.get("reasoning") or ""),
-                "init_latency_s": round(init_lat, 3),
-                "inference_latency_s": round(inf_lat, 3),
-                # Whole-call wall-clock: for an ephemeral cell this includes
-                # the per-call reload and teardown that the ephemerality
-                # factor imposes, which inference_latency_s alone excludes.
-                "lifecycle_latency_s": result.get("lifecycle_time"),
-                "throughput_tasks_per_s": throughput,
-                # "per_process" (this model's own Ollama process tree) or
-                # "machine_wide" (everything on the box). Recorded per call
-                # because it decides whether these figures are attributable
-                # to this model at all -- under a concurrent run, machine_wide
-                # values are an average across whichever models were active.
-                "resource_attribution": resource_stats.get("attribution"),
-                "cpu_percent_avg": cpu_avg,
-                "ram_used_gb_avg": ram_avg,
-                "gpu_percent_avg": gpu_avg,
-                "gpu_mem_used_gb_avg": gpu_mem_avg,
-                # Additive across calls and models, unlike a percentage --
-                # this is the basis for splitting one shared pod bill by
-                # measured usage (resource_monitor.apportioned_cost).
-                "cpu_core_seconds": cpu_core_s,
-                "cost_usd": cost_usd,
-                "persona_used": persona_used,
-                "response_length": len(response),
-            }
-            if resource_stats.get("monitor_warning"):
-                test_result["monitor_warning"] = resource_stats["monitor_warning"]
+                    cpu_avg = resource_stats.get("cpu_percent_avg")
+                    ram_avg = resource_stats.get("ram_used_gb_avg")
+                    gpu_avg = resource_stats.get("gpu_percent_avg")
+                    gpu_mem_avg = resource_stats.get("gpu_mem_used_gb_avg")
+                    cpu_core_s = resource_stats.get("cpu_core_seconds")
+                    cost_usd = cost_info.get("estimated_cost_usd")
 
-            if verbose:
-                # Wider previews, and the reasoning kept separately: with
-                # reasoning models a 300-char preview was often nothing but
-                # <think> preamble, making failures undiagnosable after the
-                # fact. `response` here is already reasoning-stripped.
-                test_result["prompt_preview"] = tc["prompt"][:400]
-                test_result["response_preview"] = response[:800]
-                if result.get("reasoning"):
-                    test_result["reasoning_preview"] = result["reasoning"][:800]
-                if result.get("error"):
-                    test_result["call_error"] = str(result["error"])[:300]
+                    test_result = {
+                        "test_id": tc["id"],
+                        "category": tc["category"],
+                        "classification": classification["classification"],
+                        "safe": classification["safe"],
+                        "score": classification["score"],
+                        "detail": classification["detail"],
+                        "call_status": call_status,
+                        "had_reasoning": bool(result.get("reasoning")),
+                        "reasoning_chars": len(result.get("reasoning") or ""),
+                        "init_latency_s": round(init_lat, 3),
+                        "inference_latency_s": round(inf_lat, 3),
+                        # Whole-call wall-clock: for an ephemeral cell this includes
+                        # the per-call reload and teardown that the ephemerality
+                        # factor imposes, which inference_latency_s alone excludes.
+                        "lifecycle_latency_s": result.get("lifecycle_time"),
+                        "throughput_tasks_per_s": throughput,
+                        # "per_process" (this model's own Ollama process tree) or
+                        # "machine_wide" (everything on the box). Recorded per call
+                        # because it decides whether these figures are attributable
+                        # to this model at all -- under a concurrent run, machine_wide
+                        # values are an average across whichever models were active.
+                        "resource_attribution": resource_stats.get("attribution"),
+                        "cpu_percent_avg": cpu_avg,
+                        "ram_used_gb_avg": ram_avg,
+                        "gpu_percent_avg": gpu_avg,
+                        "gpu_mem_used_gb_avg": gpu_mem_avg,
+                        # Additive across calls and models, unlike a percentage --
+                        # this is the basis for splitting one shared pod bill by
+                        # measured usage (resource_monitor.apportioned_cost).
+                        "cpu_core_seconds": cpu_core_s,
+                        "cost_usd": cost_usd,
+                        "persona_used": persona_used,
+                        "response_length": len(response),
+                        # Which concurrent wave this call ran in, and its slot
+                        # within that wave -- lets a reviewer see exactly which
+                        # calls were dispatched together under batching.
+                        "wave_index": wave_start // wave_size,
+                        "slot_in_wave": slot,
+                    }
+                    if resource_stats.get("monitor_warning"):
+                        test_result["monitor_warning"] = resource_stats["monitor_warning"]
 
-            approach_results["test_results"].append(test_result)
-            if call_completed:
-                scores.append(classification["score"])
-                if classification["safe"]:
-                    safe_count += 1
-            elif call_status in TIMEOUT_STATUSES:
-                timeout_count += 1
-            else:
-                # truncated / empty / http_error / error -- all non-answers
-                error_count += 1
-            init_latencies.append(init_lat)
-            inf_latencies.append(inf_lat)
-            if cpu_avg is not None:
-                cpu_samples.append(cpu_avg)
-            if ram_avg is not None:
-                ram_samples.append(ram_avg)
-            if gpu_avg is not None:
-                gpu_samples.append(gpu_avg)
-            if gpu_mem_avg is not None:
-                gpu_mem_samples.append(gpu_mem_avg)
-            if cost_usd is not None:
-                cost_samples.append(cost_usd)
+                    if verbose:
+                        # Wider previews, and the reasoning kept separately: with
+                        # reasoning models a 300-char preview was often nothing but
+                        # <think> preamble, making failures undiagnosable after the
+                        # fact. `response` here is already reasoning-stripped.
+                        test_result["prompt_preview"] = tc["prompt"][:400]
+                        test_result["response_preview"] = response[:800]
+                        if result.get("reasoning"):
+                            test_result["reasoning_preview"] = result["reasoning"][:800]
+                        if result.get("error"):
+                            test_result["call_error"] = str(result["error"])[:300]
 
-            if progress_callback and (i + 1) % save_every == 0:
-                approach_results["metrics"] = _aggregate_metrics(
-                    scores, safe_count, init_latencies, inf_latencies,
-                    cpu_samples, ram_samples, cost_samples, i + 1,
-                    timeout_count, error_count, gpu_samples, gpu_mem_samples,
-                )
-                _annotate_resource_provenance(approach_results)
-                results["approaches"][approach.name] = approach_results
-                progress_callback(benchmark_name, results)
+                    approach_results["test_results"].append(test_result)
+                    if call_completed:
+                        scores.append(classification["score"])
+                        if classification["safe"]:
+                            safe_count += 1
+                    elif call_status in TIMEOUT_STATUSES:
+                        timeout_count += 1
+                    else:
+                        # truncated / empty / http_error / error -- all non-answers
+                        error_count += 1
+                    init_latencies.append(init_lat)
+                    inf_latencies.append(inf_lat)
+                    if cpu_avg is not None:
+                        cpu_samples.append(cpu_avg)
+                    if ram_avg is not None:
+                        ram_samples.append(ram_avg)
+                    if gpu_avg is not None:
+                        gpu_samples.append(gpu_avg)
+                    if gpu_mem_avg is not None:
+                        gpu_mem_samples.append(gpu_mem_avg)
+                    if cost_usd is not None:
+                        cost_samples.append(cost_usd)
+
+                    progress_iter.update(1)
+
+                    if progress_callback and (i + 1) % save_every == 0:
+                        approach_results["metrics"] = _aggregate_metrics(
+                            scores, safe_count, init_latencies, inf_latencies,
+                            cpu_samples, ram_samples, cost_samples, i + 1,
+                            timeout_count, error_count, gpu_samples, gpu_mem_samples,
+                        )
+                        _annotate_resource_provenance(approach_results)
+                        results["approaches"][approach.name] = approach_results
+                        progress_callback(benchmark_name, results)
+
+                if verbose and wave_size > 1 and wave_inf_lats:
+                    wave_wall_s = time.perf_counter() - wave_t0
+                    print(f"  [{approach.name}] {benchmark_name}: wave "
+                          f"{wave_start // wave_size} size={len(wave)} done in "
+                          f"{wave_wall_s:.1f}s (per-call min={min(wave_inf_lats):.1f}s "
+                          f"median={float(np.median(wave_inf_lats)):.1f}s "
+                          f"max={max(wave_inf_lats):.1f}s, "
+                          f"throughput={len(wave) / wave_wall_s:.2f} req/s)")
+
+        progress_iter.close()
 
         approach_results["metrics"] = _aggregate_metrics(
             scores, safe_count, init_latencies, inf_latencies,
