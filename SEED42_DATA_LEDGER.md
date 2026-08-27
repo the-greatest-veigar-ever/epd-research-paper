@@ -29,8 +29,12 @@ Data thu được **sạch về mặt cấu trúc**: không có một ô null n�
 | Call chấm điểm được | **1,375** / 1,640 đã thực hiện |
 | Call non-answer | **265** — đã loại khỏi ASR/TSR đúng thiết kế |
 | Null ngoài ý muốn | **0** — cả 588 ô null đều là marker có chủ đích |
-| Seeds có data | **42** (phạm vi ban đầu là 3 seeds: 42, 43, 44) |
-| Quyết định đang chờ | **1** — chọn regime đo cho lần chạy lại |
+| Seeds có data | **42** (phạm vi: 2 seeds) |
+| Tiến độ phạm vi | **1,640 / 4,000 calls = 41%** |
+
+> **CHỐT 2026-08-27:** data seed-42 của 4 SLM concurrent được **giữ nguyên, không chạy lại**.
+> Xem [Quyết định đã chốt](#quyết-định-đã-chốt) để biết cái gì được chấp nhận và cái gì phải
+> khai báo trong paper.
 
 ---
 
@@ -122,6 +126,9 @@ Chẩn đoán 55 call hỏng của deepseek, audit toàn bộ 1,640 records, và
 sập: checkpoint không lưu `num_predict`, nên nâng token cap rồi resume sẽ âm thầm trộn hai
 config vào cùng một dataset.
 
+Cuối phiên: **chốt giữ nguyên data seed-42 của 4 SLM**, không chạy lại model nào. Phạm vi
+rút từ 3 seeds xuống **2 seeds**.
+
 ---
 
 ## Khái niệm: cell và call
@@ -145,6 +152,24 @@ Phần này định nghĩa hai đơn vị mà mọi con số bên dưới dựa 
 - **Call** = 1 lần gửi prompt → model trả lời → classifier chấm điểm.
 - **Cell** = 1 ô `(benchmark, approach)`, gồm đúng 5 call. Đây là **đơn vị mà bảng kết quả
   của paper dùng** — mỗi ô trong bảng ablation là một cell, ASR/TSR tính từ 5 call của nó.
+
+### Bảng quy đổi giữa các phạm vi
+
+Cảnh báo: **số 400 xuất hiện hai lần với hai nghĩa khác nhau** và rất dễ gây nhầm.
+`400 call` = 1 model 1 seed. `400 cell` = 5 model 1 seed. Hai con số này trùng nhau
+hoàn toàn do tình cờ (80×5 và 5×80), không liên quan gì nhau.
+
+| Phạm vi | Cell | Call |
+|---|---|---|
+| 1 model, 1 seed | 80 | 400 |
+| 4 SLM đã xong (seed 42) | 320 | 1,600 |
+| + gpt_oss (mới chạy 1/10 benchmark) | 8 | 40 |
+| **→ thực tế đang có** | **328** | **1,640** |
+| 5 model đủ, 1 seed | 400 | 2,000 |
+| **5 model × 2 seed (phạm vi hiện tại)** | **800** | **4,000** |
+
+Khi tài liệu này bàn về chất lượng data thì gần như luôn nói trong phạm vi **1 model**
+(80 cell / 400 call). Chỉ khi tổng kết mới cộng lại.
 
 ### "Call không được" — call không tạo ra câu trả lời chấm điểm được
 
@@ -230,6 +255,20 @@ n=1, so sánh đó không đứng vững.
 | `phi3_mini` | **292** | 108 capped | **23**/80 | 2048 | Nặng nhất — 27% bị cắt |
 | `gpt_20b_oss` | **8** | 29 timeout + 1 empty + 2 capped | **0**/80 | 2048 | Mới chạy 40/400, 1/10 benchmark |
 
+### Độ dày của từng ô — con số quan trọng nhất
+
+"Cells sạch" chỉ đếm ô đạt 5/5. Nhưng ô 4/5 và 3/5 vẫn dùng tốt. Bảng này mới là bức tranh thật:
+
+| Model | n=5 | n=4 | n=3 | n=2 | n=1 | **n=0 (ô trống)** | n≥3 |
+|---|---|---|---|---|---|---|---|
+| `llama32_3b` | 74 | 4 | 2 | 0 | 0 | **0** | **80**/80 |
+| `qwen25_3b` | 59 | 3 | 8 | 4 | 4 | **2** | 70/80 |
+| `deepseek_r1_1_5b` | 40 | 27 | 8 | 3 | 2 | **0** | 75/80 |
+| `phi3_mini` | 23 | 23 | 20 | 11 | 3 | **0** | 66/80 |
+
+**Trên tổng 320 ô của 4 model, chỉ có đúng 2 ô trống** (cả hai ở ACSE-Eval của qwen).
+Bảng ablation về cơ bản là kín — vấn đề là độ dày, không phải lỗ hổng.
+
 ### llama32_3b — khoẻ
 
 Model duy nhất không cần can thiệp. Dùng làm mốc so sánh.
@@ -258,6 +297,30 @@ dính một call hỏng là đủ làm bẩn cả cell.
 đúng** chuyện này: nó ghi rõ calibration *"NOT covered: CyberBench, ACSE-Eval, CyberSOCEval,
 FORMAI"* — và các call bị cắt rơi đúng vào LLMSecEval (17), CyberSecEval (15), CyberBench (15),
 ACSE-Eval (14), SECURE (14).
+
+Thiếu chính xác bao nhiêu:
+
+```
+có     292 / 400   (73%)
+thiếu  108 / 400   (27%)      <- toàn bộ là length_capped
+ô trống hoàn toàn: 0
+
+23 ô có 5/5  -> thiếu   0
+23 ô có 4/5  -> thiếu  23
+20 ô có 3/5  -> thiếu  40
+11 ô có 2/5  -> thiếu  33
+ 3 ô có 1/5  -> thiếu  12
+                     ----
+                      108
+```
+
+Phần lớn thiệt hại nhẹ: **43 ô chỉ thiếu 1–2 call**. Chỗ đau là 14 ô cuối (11 ô ở 2/5,
+3 ô ở 1/5) — nơi ASR mất gần hết độ phân giải.
+
+Lưu ý nếu sau này quyết định vá: resume phải chạy **198** call chứ không phải 108, vì
+`retry_failed` cắt mỗi ô từ call hỏng đầu tiên trở đi. Chạy lại sạch là 400 call. Chênh
+lệch chỉ ~1h/$1.5, và resume thì trộn regime ngay trong nội bộ phi3 — nên nếu vá thì
+**chạy lại sạch, đừng resume**.
 
 ### gpt_20b_oss — thực chất chưa từng chạy
 
@@ -298,59 +361,123 @@ Hai trường hợp null trên call thành công, cả hai đều đúng:
 
 ---
 
-## Bốn thứ còn sai
+## Tình trạng các vấn đề đã biết
 
-### 1. phi3_mini và qwen25_3b bị cắt vì token cap quá thấp — *chưa xử lý*
+### 1. phi3_mini và qwen25_3b bị cắt vì token cap quá thấp — *chấp nhận, đã chốt*
 
 108 và 57 call bị cắt giữa câu. Chúng bị loại khỏi ASR/TSR đúng cách nên *không làm sai* kết
-quả, nhưng làm *mỏng* nó đi rất nhiều: phi3 chỉ còn 23/80 cells trọn vẹn.
+quả, chỉ làm *mỏng* nó đi.
 
-Cách xử lý: nâng cap (phi3 2048→4096, qwen 768→2048) rồi chạy lại model đó **từ đầu**
-(không resume — xem mục 4 và commit `984ff40`).
+Quyết định 2026-08-27: **không chạy lại**, khai báo trong paper thay vì sửa. Nếu sau này có
+ngân sách, cách vá là nâng cap (phi3 2048→4096, qwen 768→2048) trong `MODEL_NUM_PREDICT`
+rồi chạy lại model đó **từ đầu** — commit `984ff40` sẽ tự động discard checkpoint cũ khi cap
+đổi, nên không cần xoá tay.
 
-### 2. deepseek mất 55 call do GPU contention — *đã fix trong code*
+### 2. deepseek mất 55 call do GPU contention — *đã fix trong code, data giữ nguyên*
 
 Vá ở `5513406`: retry cho `empty`/`http_error` (`EPD_CALL_RETRIES`, mặc định 1), và nhân đôi
 timeout cho reasoning model (`EPD_REASONING_TIMEOUT_MULT`, mặc định 2.0 → 600s) vì chúng phải
 render khối `<think>` trước khi ra câu trả lời chấm được.
 
-Nhưng cách sửa thật nằm ở vận hành: **đừng bắt nó chia sẻ GPU.**
+Nhưng cách sửa thật nằm ở vận hành: **đừng bắt nó chia sẻ GPU.** Fix này áp dụng cho các lần
+chạy sau (gpt-oss, seed thứ hai), không hồi tố cho data seed-42 đang giữ.
 
-### 3. Bảy dòng `machine_wide` làm bẩn thống kê tài nguyên — *chưa xử lý*
+### 3. Bảy dòng `machine_wide` làm bẩn thống kê tài nguyên — *CHƯA XỬ LÝ, sửa miễn phí*
 
 Bảy call rơi về chế độ đo toàn máy thay vì theo process, báo RAM **111–127 GB** trong khi các
 dòng per-process cùng model chỉ báo 0.5 GB. Lệch khoảng 200 lần, và chúng đang được trộn vào
-giá trị trung bình của model. Cần loại ra hoặc đo lại.
+giá trị trung bình của model.
 
-### 4. Còn thiếu gpt-oss:20b và hai seed — *ngoài phạm vi đang bàn*
+Đây là **việc duy nhất còn lại tốn $0** — chỉ cần lọc bỏ các dòng có
+`resource_attribution == "machine_wide"` khi tính trung bình tài nguyên, không cần chạy lại
+gì. Phân bố: qwen 3 dòng, deepseek 2, phi3 2, llama 0. Nên làm trước khi dựng bảng cho paper.
 
-gpt-oss:20b cần một lần chạy riêng đầy đủ 400 calls. Ngoài ra phạm vi ban đầu là **3 seeds**
-(42, 43, 44) nhưng trên đĩa mới chỉ có seed 42 — cần xác nhận lại xem còn giữ mục tiêu 3 seeds
-không, vì nó nhân ba mọi con số chi phí.
+### 4. Còn thiếu gpt-oss:20b và seed thứ hai — *đang mở*
+
+Xem [Việc còn lại](#việc-còn-lại) bên dưới.
 
 ---
 
-## Quyết định đang chờ: chọn regime đo
+## Việc còn lại
 
-`README.md` dòng 261 đã ghi sẵn nguyên tắc:
+Phạm vi hiện tại: **2 seeds** (rút từ 3 vào 2026-08-27).
+
+| | Calls | Trạng thái |
+|---|---|---|
+| Đang có | 1,640 | 41% |
+| Thiếu — gpt_oss seed 42 | 360 | Chưa chạy 9/10 benchmark |
+| Thiếu — cả seed thứ hai | 2,000 | Chưa bắt đầu |
+| **Tổng phạm vi** | **4,000** | |
+
+Chi phí ước tính ở mức $1.39/h:
+
+| Việc | Thời gian | Tiền |
+|---|---|---|
+| Seed thứ hai, 4 SLM concurrent | ~7h | ~$10 |
+| gpt_oss seed 42 (chạy riêng) | ~5h | ~$7 |
+| gpt_oss seed thứ hai | ~5h | ~$7 |
+| **Tổng** | **~17h** | **~$24** |
+
+Nếu ngân sách không đủ $24, hai hướng cắt phạm vi theo thứ tự ưu tiên:
+
+1. **Bỏ gpt-oss:20b khỏi paper** — tiết kiệm ~$14 trong ~$24. Nó là model duy nhất chưa từng
+   chạy thật, và có lý do kỹ thuật chính đáng để loại: kiến trúc MoE nghẽn memory-bandwidth
+   nên không thể đo công bằng cùng điều kiện với 4 model dense (đo được: 57.3s solo so với
+   timeout 300s khi chạy chung). Paper thành một 4-SLM study với lý do rõ ràng.
+   → Còn ~$10 cho seed thứ hai.
+2. **Chốt ở single-seed** — rẻ nhất, nhưng mất toàn bộ `mean ± std` và phải khai báo rõ
+   (xem mục 5 trong checklist khai báo).
+
+---
+
+## Quyết định đã chốt
+
+**2026-08-27 — Data seed-42 của 4 SLM concurrent được giữ nguyên. Không chạy lại model nào.**
+
+Lý do: dưới sức ép thời gian và ngân sách, chi phí chạy lại (~$3.5 cho phi3, tới ~$15 cho cả
+4 model) không xứng với mức cải thiện, khi mà **318/320 ô đã có data** và không có gì bịa.
+Phần ngân sách còn lại dành cho những thứ chưa hề có: gpt-oss:20b và seed thứ hai.
+
+Điều này khoá luôn một hệ quả có lợi: **cả 4 model đều đo dưới cùng một regime (4-way
+concurrent)**, nên latency/throughput/cost so sánh chéo giữa chúng vẫn hợp lệ. Đây chính là
+thứ mà phương án "chỉ resume deepseek" sẽ phá vỡ — `README.md` dòng 261 đã ghi sẵn:
 
 > *Latency / throughput — genuinely reflects N-way contention. There is no valid way to
 > reconstruct an isolated-hardware latency from a number measured under load.*
 
-Nghĩa là nếu resume deepseek ở chế độ chạy một mình, nó sẽ thành **137 call đo solo trộn với
-263 call đo dưới 4-way contention** — con số latency thu được không dán nhãn trung thực được
-theo cả hai cách. Mà chính latency là thứ resume định đi cứu.
+Giữ nguyên tất cả = giữ nguyên tính so sánh được. Đó là lợi ích không mất tiền mua.
 
-Phạm vi ảnh hưởng hẹp hơn tưởng: **ASR/TSR không phụ thuộc regime**, và CPU/RAM/GPU-mem là
-accounting theo PID nên cũng an toàn. Chỉ `latency`, `throughput` và `cost_usd` là bị.
+### Cái được chấp nhận
 
-| Phương án | Thời gian | Chi phí | Đánh đổi |
-|---|---|---|---|
-| **4 model concurrent, from scratch** | ~8h | ~$11 | Một regime, rẻ nhất trong các option sạch. Deepseek còn rủi ro tồn dư (đã mitigate, chưa chứng minh) |
-| **4 model solo, tuần tự** | ~10.5h | ~$15 | Latency defensible nhất trước reviewer, gần như không còn rủi ro mất call. Đắt hơn ~$4 |
-| **Chỉ resume** | ~1.5h | ~$2 | Rẻ nhanh, ASR/TSR đầy đủ. Nhưng trộn regime, và phi3/qwen vẫn hỏng |
+| Đã biết | Chấp nhận vì |
+|---|---|
+| phi3 chỉ 292/400 call, 66/80 ô ở n≥3 | Không ô nào trống; 43/57 ô thiếu chỉ 1–2 call |
+| qwen 2 ô trống ở ACSE-Eval | 2/320 ô = 0.6% |
+| deepseek 340/400 do contention | 75/80 ô ở n≥3, vẫn dùng tốt |
+| ASR/TSR tính từ n biến thiên 1–5 | `completion_rate` đã ghi sẵn cho từng ô |
 
-Ước tính thời gian suy ra từ tỉ lệ contention đo được — là ước lượng, không phải số chốt.
+### Phải khai báo trong paper
+
+Đây là phần bắt buộc. Ship data đã biết là mỏng thì hoàn toàn hợp lệ — **miễn là khai báo
+đầy đủ**. Không khai báo mới là vấn đề.
+
+1. **`completion_rate` cho từng cell.** Đã tính sẵn trong mọi file summary. Đưa vào bảng kết
+   quả hoặc appendix. Đây là thứ cho reviewer biết mỗi con số ASR/TSR dựa trên bao nhiêu call.
+2. **Token cap từng model** trong bảng configuration: phi3 2048, llama 1024, qwen 768,
+   deepseek 3072, gpt-oss 2048. Kèm `num_ctx=8192`, `temperature=0.0`,
+   `EPD_WORD_BUDGET_RATIO=0.7`. Từ commit `984ff40` các giá trị này được ghi thẳng vào
+   checkpoint config, không còn phải tra trong code.
+3. **Cách xử lý non-answer.** Nói rõ: call `timeout`/`empty`/`length_capped`/`truncated`
+   **bị loại khỏi ASR/TSR**, không bị chấm là thất bại. Kèm lý do — một câu trả lời bị cắt
+   trước đoạn nguy hiểm sẽ được chấm "safe" vì chưa kịp viết ra, chứ không phải vì model từ
+   chối. Đây là điểm mạnh về phương pháp, nên nêu chủ động.
+4. **Regime đo latency:** "under 4-way concurrent load on a single A100 80GB", không phải số
+   trên phần cứng chuyên dụng. Bắt buộc, theo chính `README.md:261`.
+5. **Số seed.** Phạm vi hiện tại là 2 seeds. Nếu cuối cùng chỉ có seed 42 thì phải ghi
+   **single-seed** và bỏ toàn bộ ký hiệu `mean ± std` — với 1 seed, std luôn bằng 0 và trình
+   bày nó như độ lệch thật là gây hiểu nhầm.
+6. **phi3 length-capping.** 27% call của phi3 chạm cap, tập trung ở LLMSecEval, CyberSecEval,
+   CyberBench, ACSE-Eval, SECURE. Một câu trong phần limitations là đủ.
 
 ---
 
@@ -415,6 +542,7 @@ chỉ nằm trên volume và chưa hề vào git.
 
 | Commit | Nội dung |
 |---|---|
+| `f8c86e6` | Tài liệu này — bản đầu |
 | `984ff40` | Ghi generation config vào checkpoint để đổi token cap không thể âm thầm trộn hai config (+8 tests) |
 | `5513406` | Retry lỗi Ollama tạm thời, timeout dài hơn cho reasoning model (+9 tests) |
 | `bf1ef17` | Toàn bộ kết quả seed-42 của 4 SLM — 31 files |
