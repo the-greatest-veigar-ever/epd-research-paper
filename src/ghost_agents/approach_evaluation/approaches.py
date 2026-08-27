@@ -86,6 +86,40 @@ GENERATION_NUM_PREDICT = int(os.environ.get("EPD_NUM_PREDICT", "1024"))
 GENERATION_NUM_CTX = int(os.environ.get("EPD_NUM_CTX", "8192"))
 GENERATION_TIMEOUT_S = int(os.environ.get("EPD_GENERATE_TIMEOUT", "300"))
 
+# Reasoning models (deepseek-r1, gpt-oss) emit a long <think> block before
+# their answer, so at a given decode rate they need proportionally more
+# wall-clock than a same-size dense model to reach a scoreable reply. On
+# the 2026-08-26 concurrent seed-42 run this was the direct cause of
+# deepseek-r1:1.5b losing 55/400 calls -- 16 hard 300s timeouts and 39
+# "empty" HTTP 200s, every one of the latter returning at 244-300s next to
+# an Ollama "GPU discovery watchdog timed out" / "unable to refresh free
+# memory" log line. 4-way GPU contention had dropped its decode rate ~3.7x
+# (measured: 15.8s/call solo vs 59.2s mean under load) and its 3072-token
+# budget no longer fit the flat 300s window. `_call_ollama` multiplies the
+# client wait by this factor for those models (unless the caller pins an
+# explicit timeout). The real fix is to not share the GPU with them -- run
+# deepseek-r1 and gpt-oss in their own `run_concurrent_experiment.py`
+# invocation, exactly as gpt-oss already is -- this is a safety net for any
+# residual contention. Env: EPD_REASONING_TIMEOUT_MULT (default 2.0).
+REASONING_TIMEOUT_MULT = float(os.environ.get("EPD_REASONING_TIMEOUT_MULT", "2.0"))
+
+# Bounded retry for transient _call_ollama failures. An "empty" (HTTP 200,
+# no text) or "http_error" (5xx) under GPU contention is almost always the
+# server briefly wedging, not the model: the 39 empties above each lined up
+# with an Ollama GPU-discovery watchdog timeout. Retry those statuses up to
+# this many times. "timeout" is NOT retried here (the longer reasoning wait
+# above addresses it, and repeating a call that already spent the full
+# window is expensive); "truncated"/"length_capped" are NEVER retried, they
+# are deterministic outcomes of the token cap rather than failures. The
+# caller's inference_latency_s spans every attempt, and result["attempts"]
+# records the count so a retried call stays identifiable. Env:
+# EPD_CALL_RETRIES (default 1).
+CALL_RETRIES = int(os.environ.get("EPD_CALL_RETRIES", "1"))
+RETRYABLE_STATUSES = ("empty", "http_error")
+
+# Model-id prefixes whose generations carry a <think>/reasoning preamble.
+_REASONING_MODEL_PREFIXES = ("deepseek-r1", "gpt-oss")
+
 # Words-per-token ratio used to phrase the prompt's soft RESPONSE BUDGET from
 # the hard num_predict cap. These two knobs pull in opposite directions and
 # are worth keeping separate: the hard cap is a safety net whose only effect
@@ -484,17 +518,14 @@ def _call_ollama(
         Only "success" represents an actual observation of model behavior;
         callers must not score the other statuses as if the model replied.
     """
+    explicit_timeout = timeout is not None
     timeout = GENERATION_TIMEOUT_S if timeout is None else timeout
     num_predict = num_predict_for(model) if num_predict is None else num_predict
 
-    result = {
-        "status": "error",
-        "command": None,
-        "raw_response": None,
-        "reasoning": None,
-        "tool_used": None,
-        "error": None,
-    }
+    # A reasoning model has to render its <think> block before any answer,
+    # so give it a longer client wait -- unless the caller pinned one.
+    if not explicit_timeout and model.startswith(_REASONING_MODEL_PREFIXES):
+        timeout = int(round(timeout * REASONING_TIMEOUT_MULT))
 
     options = {
         "temperature": GENERATION_TEMPERATURE,
@@ -504,90 +535,105 @@ def _call_ollama(
     if seed is not None:
         options["seed"] = seed
 
-    try:
-        response = requests.post(
-            OLLAMA_URL,
-            json={
-                "model": model,
-                "prompt": prompt,
-                "stream": False,
-                "options": options,
-            },
-            timeout=timeout,
-        )
+    def _attempt() -> Dict[str, Any]:
+        result = {
+            "status": "error",
+            "command": None,
+            "raw_response": None,
+            "reasoning": None,
+            "tool_used": None,
+            "error": None,
+        }
+        try:
+            response = requests.post(
+                OLLAMA_URL,
+                json={
+                    "model": model,
+                    "prompt": prompt,
+                    "stream": False,
+                    "options": options,
+                },
+                timeout=timeout,
+            )
 
-        if response.status_code == 200:
-            payload = response.json()
-            raw = (payload.get("response") or "").strip()
-            answer, reasoning = split_reasoning(raw)
+            if response.status_code == 200:
+                payload = response.json()
+                raw = (payload.get("response") or "").strip()
+                answer, reasoning = split_reasoning(raw)
 
-            result["raw_response"] = raw
-            result["reasoning"] = reasoning or None
-            result["done_reason"] = payload.get("done_reason")
+                result["raw_response"] = raw
+                result["reasoning"] = reasoning or None
+                result["done_reason"] = payload.get("done_reason")
 
-            if not raw:
-                # A 200 with no text is a failed measurement, not a model
-                # choosing to say nothing -- don't score it as an answer.
-                result["status"] = "empty"
-                result["error"] = "Model returned an empty response"
-            elif not answer:
-                # Budget was spent entirely on reasoning; the answer never
-                # arrived. Scoring the reasoning as the answer is invalid.
-                result["status"] = "truncated"
-                result["error"] = (
-                    f"Generation hit the {num_predict}-token cap during reasoning; "
-                    "no answer produced"
-                )
-            else:
-                clean_cmd = answer
-                if "```" in clean_cmd:
-                    clean_lines = [
-                        line for line in clean_cmd.split("\n") if "```" not in line
-                    ]
-                    clean_cmd = "\n".join(clean_lines).strip()
-
-                result["command"] = answer
-                result["tool_used"] = clean_cmd.split()[0] if clean_cmd else "unknown"
-
-                if result["done_reason"] == "length":
-                    # An answer exists, but Ollama's own done_reason says the
-                    # token cap cut generation off before it finished
-                    # naturally -- distinct from "truncated" (no answer at
-                    # all): here there IS text, but it may end mid-sentence,
-                    # mid-command, or mid-explanation. Scoring it as a
-                    # complete answer is invalid for the same reason a
-                    # timeout is: the classifier's danger-pattern/refusal
-                    # check runs against whatever text is present, so a
-                    # response cut off just before the risky part would
-                    # score as safe for having never rendered it, not
-                    # because the model refused. Excluded from ASR/TSR like
-                    # every other non-answer status (see NON_ANSWER_STATUSES
-                    # in benchmark_evaluator.py); the text is kept on the
-                    # record for inspection.
-                    result["status"] = "length_capped"
+                if not raw:
+                    # A 200 with no text is a failed measurement, not a model
+                    # choosing to say nothing -- don't score it as an answer.
+                    result["status"] = "empty"
+                    result["error"] = "Model returned an empty response"
+                elif not answer:
+                    # Budget was spent entirely on reasoning; the answer never
+                    # arrived. Scoring the reasoning as the answer is invalid.
+                    result["status"] = "truncated"
                     result["error"] = (
-                        f"Generation hit the {num_predict}-token cap mid-answer "
-                        "(done_reason=length); answer may be incomplete"
+                        f"Generation hit the {num_predict}-token cap during reasoning; "
+                        "no answer produced"
                     )
                 else:
-                    result["status"] = "success"
-        else:
-            result["status"] = "http_error"
-            result["error"] = f"HTTP {response.status_code}"
-    except requests.exceptions.Timeout as e:
-        # Explicitly distinct from a real response. Previously this was
-        # recorded as "simulated_success" with an empty command, which the
-        # classifiers then scored as a genuine unsafe/zero-score answer.
-        result["status"] = "timeout"
-        result["error"] = f"Request exceeded {timeout}s timeout: {e}"
-    except Exception as e:
-        result["status"] = "error"
-        result["error"] = str(e)
+                    clean_cmd = answer
+                    if "```" in clean_cmd:
+                        clean_lines = [
+                            line for line in clean_cmd.split("\n") if "```" not in line
+                        ]
+                        clean_cmd = "\n".join(clean_lines).strip()
 
+                    result["command"] = answer
+                    result["tool_used"] = clean_cmd.split()[0] if clean_cmd else "unknown"
+
+                    if result["done_reason"] == "length":
+                        # An answer exists, but Ollama's own done_reason says the
+                        # token cap cut generation off before it finished
+                        # naturally -- distinct from "truncated" (no answer at
+                        # all): here there IS text, but it may end mid-sentence,
+                        # mid-command, or mid-explanation. Scoring it as a
+                        # complete answer is invalid for the same reason a
+                        # timeout is: the classifier's danger-pattern/refusal
+                        # check runs against whatever text is present, so a
+                        # response cut off just before the risky part would
+                        # score as safe for having never rendered it, not
+                        # because the model refused. Excluded from ASR/TSR like
+                        # every other non-answer status (see NON_ANSWER_STATUSES
+                        # in benchmark_evaluator.py); the text is kept on the
+                        # record for inspection.
+                        result["status"] = "length_capped"
+                        result["error"] = (
+                            f"Generation hit the {num_predict}-token cap mid-answer "
+                            "(done_reason=length); answer may be incomplete"
+                        )
+                    else:
+                        result["status"] = "success"
+            else:
+                result["status"] = "http_error"
+                result["error"] = f"HTTP {response.status_code}"
+        except requests.exceptions.Timeout as e:
+            # Explicitly distinct from a real response. Previously this was
+            # recorded as "simulated_success" with an empty command, which the
+            # classifiers then scored as a genuine unsafe/zero-score answer.
+            result["status"] = "timeout"
+            result["error"] = f"Request exceeded {timeout}s timeout: {e}"
+        except Exception as e:
+            result["status"] = "error"
+            result["error"] = str(e)
+        return result
+
+    # Retry only the transient statuses (see RETRYABLE_STATUSES / CALL_RETRIES).
+    result = _attempt()
+    attempts = 1
+    while result["status"] in RETRYABLE_STATUSES and attempts <= CALL_RETRIES:
+        time.sleep(1.0)  # brief backoff so a wedged Ollama server can recover
+        result = _attempt()
+        attempts += 1
+    result["attempts"] = attempts
     return result
-
-
-_REASONING_MODEL_PREFIXES = ("deepseek-r1", "gpt-oss")
 
 
 def _budget_instruction(num_predict: Optional[int], model: Optional[str]) -> str:

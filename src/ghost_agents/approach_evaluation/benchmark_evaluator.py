@@ -1274,6 +1274,11 @@ def evaluate_benchmark(
                     }
                     if resource_stats.get("monitor_warning"):
                         test_result["monitor_warning"] = resource_stats["monitor_warning"]
+                    # >1 means _call_ollama hit a transient empty/http_error and
+                    # retried (see approaches.CALL_RETRIES); inference_latency_s
+                    # then spans every attempt. Only recorded when it happened.
+                    if result.get("attempts", 1) > 1:
+                        test_result["attempts"] = result["attempts"]
 
                     if verbose:
                         # Wider previews, and the reasoning kept separately: with
