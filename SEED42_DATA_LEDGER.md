@@ -1,10 +1,12 @@
 # Seed 42 — Data Ledger
 
 > Viết bằng tiếng Việt, thuật ngữ kỹ thuật giữ nguyên tiếng Anh.
-> Cập nhật: 2026-08-27 · Pod `ljsku2csqpmasd` (RunPod A100 80GB) · branch `runpod-results-slm`
+> Cập nhật: 2026-08-27 (sau khi gpt-oss:20b chạy solo xong lúc 21:40 UTC) ·
+> Pod `ljsku2csqpmasd` (RunPod A100 80GB) · branch `runpod-results-slm`
 >
-> Tài liệu này dựng từ audit trực tiếp **1,640 call records** trong
-> `report-output/ghost_agents/benchmark_results/`, log Ollama và log orchestrator.
+> Tài liệu này dựng từ audit trực tiếp **2,000 call records** trong
+> `report-output/ghost_agents/benchmark_results/` (1,600 của 4 SLM + 400 của
+> gpt-oss:20b), log Ollama và log orchestrator.
 > Đọc lại file này sau mỗi lần pod restart — session Claude Code không sống sót,
 > nhưng `/workspace` và repo thì có.
 >
@@ -15,26 +17,28 @@
 
 ## Tóm tắt
 
-Run gần nhất **không hề crash**. Nó chạy xong, rồi một watcher script tự gọi
-`runpodctl stop pod` theo đúng kế hoạch — cái "stop pod" bất ngờ chính là nó.
-Cả 4 SLM đều về đích 80/80 cells.
+Không lần chạy nào crash. 4 SLM chạy concurrent xong 2026-08-27 00:41 UTC; gpt-oss:20b
+chạy **solo** (một mình trên GPU) xong 2026-08-27 21:40 UTC. Mỗi lần một watcher script
+tự gọi `runpodctl stop pod` theo đúng kế hoạch — cái "stop pod" bất ngờ chính là nó.
+**Cả 5 model đều về đích 80/80 cells cho seed 42.**
 
 Data thu được **sạch về mặt cấu trúc**: không có một ô null nào là thiếu sót ngoài
-ý muốn. Nhưng ba model có vấn đề về *độ đầy đủ*, và một quyết định về phương pháp
-đo đang chờ.
+ý muốn. Nhưng bốn model có vấn đề về *độ đầy đủ* (SLM: token cap thấp / contention;
+gpt-oss: câu trả lời dài quá `num_predict`), và việc còn lại là **seed thứ hai**.
 
 | | |
 |---|---|
-| Model đã chạy | **4/5** — qwen, llama, deepseek, phi3 đủ 400 calls. gpt-oss:20b mới 40/400 |
-| Call chấm điểm được | **1,375** / 1,640 đã thực hiện |
-| Call non-answer | **265** — đã loại khỏi ASR/TSR đúng thiết kế |
-| Null ngoài ý muốn | **0** — cả 588 ô null đều là marker có chủ đích |
+| Model đã chạy | **5/5** — qwen, llama, deepseek, phi3 concurrent + gpt-oss:20b solo, mỗi model 400 calls |
+| Call chấm điểm được | **1,691** / 2,000 đã thực hiện |
+| Call non-answer | **309** — đã loại khỏi ASR/TSR đúng thiết kế |
+| Null ngoài ý muốn | **0** — cả 627 ô null đều là marker có chủ đích |
 | Seeds có data | **42** (phạm vi: 2 seeds) |
-| Tiến độ phạm vi | **1,640 / 4,000 calls = 41%** |
+| Tiến độ phạm vi | **2,000 / 4,000 calls = 50%** |
 
 > **CHỐT 2026-08-27:** data seed-42 của 4 SLM concurrent được **giữ nguyên, không chạy lại**.
-> Xem [Quyết định đã chốt](#quyết-định-đã-chốt) để biết cái gì được chấp nhận và cái gì phải
-> khai báo trong paper.
+> gpt-oss:20b đã có run solo seed-42 đầy đủ (10/10 benchmark). Việc duy nhất còn mở là
+> **seed thứ hai**. Xem [Quyết định đã chốt](#quyết-định-đã-chốt) để biết cái gì được chấp
+> nhận và cái gì phải khai báo trong paper.
 
 ---
 
@@ -129,6 +133,32 @@ config vào cùng một dataset.
 Cuối phiên: **chốt giữ nguyên data seed-42 của 4 SLM**, không chạy lại model nào. Phạm vi
 rút từ 3 seeds xuống **2 seeds**.
 
+### 2026-08-27 16:13 → 21:40 UTC — gpt-oss:20b chạy solo seed 42, xong trọn vẹn
+
+Lần chạy đầu (marker `GPTOSS_RUN_COMPLETE_20260827_161308.md`) bị **tường wall-clock cắt**,
+không viết checkpoint — bỏ. Lần chạy thật khởi động lại ngay sau đó và **về đích lúc
+21:40:08 UTC**: 10/10 benchmark, 80/80 cells, 400/400 calls. Watcher ghi marker
+`GPTOSS_RUN_COMPLETE_20260827_214008.md`, commit `fe81bed`, push, rồi `runpodctl stop pod`.
+
+Chạy **một mình** — Ollama server riêng, không model nào khác trên GPU — vì gpt-oss:20b
+là MoE (32 expert, 4 active/token) nghẽn memory-bandwidth khi chia sẻ GPU (đo 25/08:
+57.3s solo so với timeout 300s khi 4-way). Nhờ solo nên **không có một call `timeout`,
+`empty` hay `error` nào** — khác hẳn deepseek dưới contention.
+
+Config lần chạy này (đã ghi thẳng vào checkpoint, commit `984ff40`):
+
+```
+seed 42 · max_per_benchmark 5 · num_predict 4096 · num_ctx 8192 · temperature 0.0
+word_budget_ratio 0.7 · generate_timeout_s 300 · reasoning_timeout_mult 2.0 · call_retries 1
+```
+
+`num_predict` được nâng 2048 → **4096** ở commit `01a409b` (cùng commit bắt đầu bắt trường
+`thinking` của Ollama) — vì gpt-oss:20b luôn sinh khối reasoning trước câu trả lời, cap 2048
+không đủ chỗ. Kết quả: **324/400 success**, 56 `length_capped`, 20 `truncated`. Tức 19% call
+vẫn không chấm điểm được, nhưng đó là do câu trả lời *dài*, không phải hạ tầng hỏng.
+
+**Được:** 400 calls · 80/80 cells · ~$6.76 (bảng estimate) / ~$7.5 pod thật (5.4h × $1.39).
+
 ---
 
 ## Khái niệm: cell và call
@@ -163,9 +193,8 @@ hoàn toàn do tình cờ (80×5 và 5×80), không liên quan gì nhau.
 |---|---|---|
 | 1 model, 1 seed | 80 | 400 |
 | 4 SLM đã xong (seed 42) | 320 | 1,600 |
-| + gpt_oss (mới chạy 1/10 benchmark) | 8 | 40 |
-| **→ thực tế đang có** | **328** | **1,640** |
-| 5 model đủ, 1 seed | 400 | 2,000 |
+| + gpt_oss:20b solo (seed 42, 10/10 benchmark) | 80 | 400 |
+| **→ thực tế đang có (5 model, seed 42)** | **400** | **2,000** |
 | **5 model × 2 seed (phạm vi hiện tại)** | **800** | **4,000** |
 
 Khi tài liệu này bàn về chất lượng data thì gần như luôn nói trong phạm vi **1 model**
@@ -177,14 +206,19 @@ Mỗi call có một `call_status`. **Chỉ `success` mới được tính vào 
 còn lại là *thất bại của phép đo*, không phải quan sát về hành vi model
 (xem `NON_ANSWER_STATUSES` trong `benchmark_evaluator.py`).
 
-| Status | Nghĩa là | Seed 42 |
-|---|---|---|
-| `success` | Model trả lời trọn vẹn, `done_reason=stop` | **1,375** |
-| `length_capped` | **Có** câu trả lời nhưng bị cắt giữa chừng vì đụng `num_predict` cap | 180 |
-| `timeout` | Quá `EPD_GENERATE_TIMEOUT` (300s) | 45 |
-| `empty` | HTTP 200 nhưng không có chữ nào | 40 |
-| `truncated` | Reasoning model tiêu hết budget vào `<think>`, chưa kịp ra câu trả lời | 0 |
-| `error` / `http_error` | Request fail vì lý do khác | 0 |
+| Status | Nghĩa là | Seed 42 (5 model) | Trong đó gpt-oss:20b |
+|---|---|---|---|
+| `success` | Model trả lời trọn vẹn, `done_reason=stop` | **1,691** | 324 |
+| `length_capped` | **Có** câu trả lời nhưng bị cắt giữa chừng vì đụng `num_predict` cap | 234 | 56 |
+| `timeout` | Quá `EPD_GENERATE_TIMEOUT` (300s) | 16 | 0 |
+| `empty` | HTTP 200 nhưng không có chữ nào | 39 | 0 |
+| `truncated` | Reasoning model tiêu hết budget vào `<think>`, chưa kịp ra câu trả lời | 20 | 20 |
+| `error` / `http_error` | Request fail vì lý do khác | 0 | 0 |
+
+Toàn bộ 20 call `truncated` là của gpt-oss:20b — model sinh reasoning cho **cả 400/400 call**,
+và 20 lần trong đó khối `<think>` xài hết 4096 token trước khi ra câu trả lời chấm được.
+56 call `length_capped` của nó thì ngược lại: có câu trả lời sau reasoning nhưng vẫn bị cắt.
+gpt-oss:20b **không có** call `timeout`/`empty`/`error` vì chạy solo, không dính contention.
 
 #### Tại sao `length_capped` bị vứt, dù nó *có* text?
 
@@ -253,7 +287,7 @@ n=1, so sánh đó không đứng vững.
 | `qwen25_3b` | **343** | 57 capped | **59**/80 | 768 | Cap thấp; 28/57 ở ACSE-Eval → 2 cells chết |
 | `deepseek_r1_1_5b` | **340** | 39 empty + 16 timeout + 5 capped | **40**/80 | 3072 | Contention (đã fix code) |
 | `phi3_mini` | **292** | 108 capped | **23**/80 | 2048 | Nặng nhất — 27% bị cắt |
-| `gpt_20b_oss` | **8** | 29 timeout + 1 empty + 2 capped | **0**/80 | 2048 | Mới chạy 40/400, 1/10 benchmark |
+| `gpt_20b_oss` | **324** | 56 capped + 20 truncated | **48**/80 | 4096 | Solo run xong 27/08 — 10/10 benchmark, 66/80 ô ở n≥3 |
 
 ### Độ dày của từng ô — con số quan trọng nhất
 
@@ -265,9 +299,11 @@ n=1, so sánh đó không đứng vững.
 | `qwen25_3b` | 59 | 3 | 8 | 4 | 4 | **2** | 70/80 |
 | `deepseek_r1_1_5b` | 40 | 27 | 8 | 3 | 2 | **0** | 75/80 |
 | `phi3_mini` | 23 | 23 | 20 | 11 | 3 | **0** | 66/80 |
+| `gpt_20b_oss` | 48 | 11 | 7 | 7 | 5 | **2** | 66/80 |
 
-**Trên tổng 320 ô của 4 model, chỉ có đúng 2 ô trống** (cả hai ở ACSE-Eval của qwen).
-Bảng ablation về cơ bản là kín — vấn đề là độ dày, không phải lỗ hổng.
+**Trên tổng 400 ô của 5 model, có 4 ô trống** — 2 ở ACSE-Eval của qwen, 2 của gpt-oss:20b
+(`ACSE-Eval / ephemeral_nopersona_nosafety` và `SECURE / ephemeral_nopersona_safety`).
+396/400 ô có data. Bảng ablation về cơ bản là kín — vấn đề là độ dày, không phải lỗ hổng.
 
 ### llama32_3b — khoẻ
 
@@ -322,10 +358,55 @@ Lưu ý nếu sau này quyết định vá: resume phải chạy **198** call ch
 lệch chỉ ~1h/$1.5, và resume thì trộn regime ngay trong nội bộ phi3 — nên nếu vá thì
 **chạy lại sạch, đừng resume**.
 
-### gpt_20b_oss — thực chất chưa từng chạy
+### gpt_20b_oss — đã chạy solo seed 42, xong 2026-08-27
 
-Data hiện tại là tàn dư từ 2026-08-25, chỉ đụng tới **1 trong 10 benchmark** (SecurityEval).
-Phải chạy riêng một mình vì kiến trúc MoE nghẽn memory-bandwidth khi chia sẻ GPU.
+Data cũ (tàn dư 2026-08-25, chỉ 1/10 benchmark) đã bị **thay hoàn toàn** bằng run solo mới:
+`benchmark_eval_20260827_161331_seed42_gpt_20b_oss_pid13898_combined.json` +
+`multi_seed_summary_20260827_213951_gpt_20b_oss_pid13898.json`. 10/10 benchmark, 400 calls.
+
+**Độ đầy đủ.** 324/400 success (81%). 76 call không chấm được = 56 `length_capped` +
+20 `truncated` — tất cả là do câu trả lời quá dài so với `num_predict=4096`, không phải
+hạ tầng hỏng (0 timeout, 0 empty, 0 error nhờ chạy solo). Phân bố cực lệch theo benchmark:
+
+```
+ACSE-Eval   25 hỏng      SECURE      24 hỏng      CyberBench  17 hỏng
+SecurityEval 5           LLMSecEval   2           HarmBench    1
+FORMAI       1           SecBench     1           CyberSecEval 0   CyberSOCEval 0
+```
+
+66/80 ô ở n≥3, 48 ô đủ n=5. Hai ô trống hoàn toàn (n=0): `ACSE-Eval / ephemeral_nopersona_nosafety`
+và `SECURE / ephemeral_nopersona_safety`.
+
+**Missingness có làm lệch kết quả không — không rõ ràng.** `completion_rate` trải khá đều
+giữa 8 approach (0.76–0.90), **không dồn về nhánh safety-on hay safety-off**. Vì tín hiệu
+ASR duy nhất nằm ở nhánh safety-off (xem dưới), việc data thiếu không đứng về phía nào nên
+ít có khả năng bóp méo so sánh đó. Vẫn phải khai `completion_rate` từng ô và nên chạy một
+kiểm tra độ nhạy (ASR/TSR có và không có các ô n<5).
+
+**Kết quả (seed 42, 8 approach × 10 benchmark).** Overall **avg ASR 0.84%**, **avg TSR 70.9%**.
+
+- ASR gần như sàn. Chỉ **SecurityEval** có attack success khác 0, và chỉ ở nhánh
+  `safety_filter` **tắt**: `static_nopersona_nosafety` 25%, `static_persona_nosafety` 20%,
+  `ephemeral_nopersona_nosafety` 20%. **Mọi approach bật `safety_filter` = 0% ASR trên cả
+  10 benchmark.**
+- TSR dao động mạnh theo benchmark: LLMSecEval / HarmBench 100%, SecurityEval 93%, xuống
+  CyberSecEval / SecBench 50%, SECURE 30%.
+- Lỗi (không phải timeout — là non-answer) dồn ở ACSE-Eval, SECURE, CyberBench → chính các
+  benchmark này kéo completion rate và tạo ra các ô n<5.
+
+**Lưu ý tên approach — dễ gây nhầm khi parse file.** 6/8 approach theo mẫu
+`gpt_oss_20b_<ephemeral|static>_<persona|nopersona>_<safety|nosafety>`, nhưng 2 approach
+đặt tên khác hệ: `gpt_20b_oss_static` = `static_nopersona_safety`, và `gpt_20b_oss_suicide`
+= `ephemeral_persona_safety` (ô "bật hết"). Cùng là ablation 2×2×2, chỉ khác nhãn.
+
+**Latency (solo).** p50 26.6s, mean 38.9s trên call success (lệch phải, max 143s). Nhánh
+`ephemeral` cộng thêm ~9s init/call. GPU mem ~12.9 GB, GPU util ~19%.
+
+**Vì sao phải chạy solo.** Kiến trúc MoE (32 expert, 4 active/token) nghẽn memory-bandwidth
+khi chia sẻ GPU — 57.3s solo so với timeout 300s khi 4-way (đo 25/08). Hệ quả trực tiếp cho
+paper: **các chỉ số tài nguyên của gpt-oss:20b (latency, throughput, GPU%, cost) KHÔNG so
+đầu-đối-đầu được với 4 SLM** (4 SLM đo dưới 4-way contention). ASR/TSR thì **không bị ảnh
+hưởng** — hành vi an toàn không phụ thuộc việc có model khác dùng chung GPU.
 
 ### Latency đo được (call success, seed 42)
 
@@ -335,29 +416,38 @@ Phải chạy riêng một mình vì kiến trúc MoE nghẽn memory-bandwidth k
 | `phi3_mini` | 38.5s | 8.6s | 4.5× |
 | `llama32_3b` | 49.0s | 11.2s | 4.4× |
 | `deepseek_r1_1_5b` | 50.4s | 15.8s | 3.2× |
-| `gpt_20b_oss` | 274.4s | — | — |
+| `gpt_20b_oss` | n/a (chưa từng chạy 4-way hợp lệ) | **26.6s** (p50) / 38.9s (mean) | — |
+
+gpt-oss:20b chỉ có số **solo** (từ run 27/08). Con số "274.4s" trong bản ledger cũ đến từ
+partial 40-call của 25/08 mà 29/40 là timeout — không phải latency thật, đã bỏ. Vì gpt-oss:20b
+không thể chạy 4-way, cột "solo" của nó **không nằm cùng thang** với 4 SLM.
 
 ---
 
 ## Kiểm toán null — mọi ô đều có chủ đích
 
-Rà toàn bộ 1,640 records: **không có ô nào là thiếu sót**. Mỗi null là một lời khẳng định có
+Rà toàn bộ 2,000 records: **không có ô nào là thiếu sót**. Mỗi null là một lời khẳng định có
 chủ đích rằng "chỗ này không đo được" — khác hẳn với "giá trị bằng 0".
 
 | Field | Null | Trên call fail | Trên call success | Giải thích |
 |---|---|---|---|---|
-| `safe` | 265 | 265 | **0** | Call fail thì không có câu trả lời để chấm |
-| `score` | 265 | 265 | **0** | Cùng lý do |
-| `gpu_percent_avg` | 25 | 25 | **0** | Toàn bộ thuộc gpt_20b_oss, đều là call timeout |
-| `gpu_mem_used_gb_avg` | 26 | 25 | 1 | 25 như trên; 1 ô do NVML guard |
-| `cpu_core_seconds` | 7 | 0 | 7 | Trùng *chính xác* 7 dòng attribution `machine_wide` |
+| `safe` | 309 | 309 | **0** | Call fail thì không có câu trả lời để chấm |
+| `score` | 309 | 309 | **0** | Cùng lý do |
+| `cpu_core_seconds` | 8 | 1 | 7 | Trùng *chính xác* 8 dòng attribution `machine_wide` (7 SLM + 1 gpt-oss) |
+| `gpu_mem_used_gb_avg` | 1 | 0 | 1 | 1 ô do NVML guard (trên SLM) |
+| `gpu_percent_avg` | 0 | 0 | 0 | 25 null cũ thuộc gpt-oss partial (call timeout) đã bị thay bằng run solo — hết null |
 
-Hai trường hợp null trên call thành công, cả hai đều đúng:
+Trường hợp null trên call thành công vẫn như cũ, đều đúng:
 
 - Ô `gpu_mem` null duy nhất kèm một `monitor_warning`: NVML báo mức dùng bộ nhớ GPU vượt trần
   hợp lý 8.8GB cho model này, nên monitor **chủ động ghi null thay vì ghi một con số sai**.
-- Bảy ô `cpu_core_seconds` null trùng khít với bảy dòng dùng attribution `machine_wide` —
-  chế độ đo toàn máy không sinh ra chỉ số core-seconds theo process.
+- Bảy ô `cpu_core_seconds` null (trên call success của SLM) trùng khít với bảy dòng
+  `machine_wide` — chế độ đo toàn máy không sinh ra core-seconds theo process.
+
+gpt-oss:20b thêm **1 dòng `machine_wide`** nữa: một call `truncated` ở
+`SecurityEval / static_nopersona_nosafety`, RAM báo 174 GB (toàn máy) thay vì ~2 GB per-process,
+`cpu_core_seconds` null. Call này đã bị loại khỏi ASR/TSR (non-answer) và dòng resource của nó
+bị filter `machine_wide` của commit `ce80d3a` loại khỏi mọi trung bình — xem vấn đề 3 bên dưới.
 
 ---
 
@@ -382,19 +472,21 @@ render khối `<think>` trước khi ra câu trả lời chấm được.
 Nhưng cách sửa thật nằm ở vận hành: **đừng bắt nó chia sẻ GPU.** Fix này áp dụng cho các lần
 chạy sau (gpt-oss, seed thứ hai), không hồi tố cho data seed-42 đang giữ.
 
-### 3. Bảy dòng `machine_wide` làm bẩn thống kê tài nguyên — *CHƯA XỬ LÝ, sửa miễn phí*
+### 3. Các dòng `machine_wide` làm bẩn thống kê tài nguyên — *đã xử lý ở `ce80d3a`*
 
-Bảy call rơi về chế độ đo toàn máy thay vì theo process, báo RAM **111–127 GB** trong khi các
-dòng per-process cùng model chỉ báo 0.5 GB. Lệch khoảng 200 lần, và chúng đang được trộn vào
-giá trị trung bình của model.
+8 call rơi về chế độ đo toàn máy thay vì theo process, báo RAM **111–174 GB** trong khi các
+dòng per-process cùng model chỉ báo ~0.5–2 GB. Phân bố: qwen 3, deepseek 2, phi3 2, llama 0,
+**gpt-oss 1** (call `truncated` ở SecurityEval, RAM 174 GB).
 
-Đây là **việc duy nhất còn lại tốn $0** — chỉ cần lọc bỏ các dòng có
-`resource_attribution == "machine_wide"` khi tính trung bình tài nguyên, không cần chạy lại
-gì. Phân bố: qwen 3 dòng, deepseek 2, phi3 2, llama 0. Nên làm trước khi dựng bảng cho paper.
+Commit `ce80d3a` lọc bỏ mọi dòng `resource_attribution == "machine_wide"` khi tính trung bình
+tài nguyên (recompute 18 cell-record, +8 tests). Run gpt-oss 27/08 chạy *sau* commit này nên
+summary của nó đã sạch sẵn — ví dụ ô SecurityEval/`static_nopersona_nosafety` báo
+`avg_ram_gb = 1.98`, không phải 174. Không còn việc phải làm ở đây.
 
-### 4. Còn thiếu gpt-oss:20b và seed thứ hai — *đang mở*
+### 4. Còn thiếu seed thứ hai — *đang mở*
 
-Xem [Việc còn lại](#việc-còn-lại) bên dưới.
+gpt-oss:20b đã xong (run solo 27/08). Việc duy nhất còn lại là **seed thứ hai** cho cả 5
+model. Xem [Việc còn lại](#việc-còn-lại) bên dưới.
 
 ---
 
@@ -404,9 +496,8 @@ Phạm vi hiện tại: **2 seeds** (rút từ 3 vào 2026-08-27).
 
 | | Calls | Trạng thái |
 |---|---|---|
-| Đang có | 1,640 | 41% |
-| Thiếu — gpt_oss seed 42 | 360 | Chưa chạy 9/10 benchmark |
-| Thiếu — cả seed thứ hai | 2,000 | Chưa bắt đầu |
+| Đang có (seed 42, 5 model) | 2,000 | 50% |
+| Thiếu — seed thứ hai (5 model) | 2,000 | Chưa bắt đầu |
 | **Tổng phạm vi** | **4,000** | |
 
 Chi phí ước tính ở mức $1.39/h:
@@ -414,19 +505,19 @@ Chi phí ước tính ở mức $1.39/h:
 | Việc | Thời gian | Tiền |
 |---|---|---|
 | Seed thứ hai, 4 SLM concurrent | ~7h | ~$10 |
-| gpt_oss seed 42 (chạy riêng) | ~5h | ~$7 |
-| gpt_oss seed thứ hai | ~5h | ~$7 |
-| **Tổng** | **~17h** | **~$24** |
+| Seed thứ hai, gpt-oss:20b solo | ~5.5h | ~$7.5 |
+| **Tổng** | **~12.5h** | **~$17** |
 
-Nếu ngân sách không đủ $24, hai hướng cắt phạm vi theo thứ tự ưu tiên:
+Nếu ngân sách không đủ $17, hai hướng cắt phạm vi theo thứ tự ưu tiên:
 
-1. **Bỏ gpt-oss:20b khỏi paper** — tiết kiệm ~$14 trong ~$24. Nó là model duy nhất chưa từng
-   chạy thật, và có lý do kỹ thuật chính đáng để loại: kiến trúc MoE nghẽn memory-bandwidth
-   nên không thể đo công bằng cùng điều kiện với 4 model dense (đo được: 57.3s solo so với
-   timeout 300s khi chạy chung). Paper thành một 4-SLM study với lý do rõ ràng.
-   → Còn ~$10 cho seed thứ hai.
-2. **Chốt ở single-seed** — rẻ nhất, nhưng mất toàn bộ `mean ± std` và phải khai báo rõ
-   (xem mục 5 trong checklist khai báo).
+1. **Chỉ chạy seed thứ hai cho 4 SLM, để gpt-oss:20b single-seed** — tiết kiệm ~$7.5. Các so
+   sánh chính (ephemeral/persona/safety) đều là *trong nhóm 4 SLM*; gpt-oss:20b vốn đã đứng
+   riêng vì lý do đo tài nguyên (MoE không chạy 4-way được), nên để nó một seed và khai báo
+   rõ là chấp nhận được. → Còn ~$10 cho seed thứ hai của 4 SLM.
+2. **Chốt toàn bộ ở single-seed** — rẻ nhất, nhưng mất toàn bộ `mean ± std` và phải khai báo
+   rõ (xem mục 5 trong checklist khai báo). Bù lại: có thể làm thống kê ở **cấp prompt** thay
+   vì cấp seed — mỗi approach có ~400 item/model, đủ để chạy McNemar/paired test *trong* một
+   seed. Đây là cách cứu phần lớn luận điểm so sánh nếu không chạy được seed thứ hai.
 
 ---
 
@@ -447,6 +538,11 @@ thứ mà phương án "chỉ resume deepseek" sẽ phá vỡ — `README.md` d�
 
 Giữ nguyên tất cả = giữ nguyên tính so sánh được. Đó là lợi ích không mất tiền mua.
 
+**Hệ quả cho gpt-oss:20b (run solo 27/08):** nó đứng *ngoài* nhóm so sánh tài nguyên đó. 4
+SLM đo dưới 4-way contention; gpt-oss:20b đo solo vì MoE không chạy 4-way được. Nên trong
+paper, cột latency/throughput/GPU%/cost của gpt-oss:20b phải để **riêng**, không xếp cùng
+bảng efficiency với 4 SLM. ASR/TSR thì xếp chung bình thường — không phụ thuộc regime.
+
 ### Cái được chấp nhận
 
 | Đã biết | Chấp nhận vì |
@@ -454,6 +550,9 @@ Giữ nguyên tất cả = giữ nguyên tính so sánh được. Đó là lợi
 | phi3 chỉ 292/400 call, 66/80 ô ở n≥3 | Không ô nào trống; 43/57 ô thiếu chỉ 1–2 call |
 | qwen 2 ô trống ở ACSE-Eval | 2/320 ô = 0.6% |
 | deepseek 340/400 do contention | 75/80 ô ở n≥3, vẫn dùng tốt |
+| gpt-oss:20b 324/400 call, 66/80 ô ở n≥3 | Không dồn về nhánh nào (completion 0.76–0.90 đều); tín hiệu ASR không bị lệch |
+| gpt-oss:20b 2 ô trống (ACSE-Eval, SECURE — đều nhánh ephemeral_nopersona) | 2/400 ô = 0.5% |
+| gpt-oss:20b đo solo, không so tài nguyên được với 4 SLM | Có lý do kiến trúc (MoE memory-bandwidth); khai báo riêng |
 | ASR/TSR tính từ n biến thiên 1–5 | `completion_rate` đã ghi sẵn cho từng ô |
 
 ### Phải khai báo trong paper
@@ -464,20 +563,32 @@ Giữ nguyên tất cả = giữ nguyên tính so sánh được. Đó là lợi
 1. **`completion_rate` cho từng cell.** Đã tính sẵn trong mọi file summary. Đưa vào bảng kết
    quả hoặc appendix. Đây là thứ cho reviewer biết mỗi con số ASR/TSR dựa trên bao nhiêu call.
 2. **Token cap từng model** trong bảng configuration: phi3 2048, llama 1024, qwen 768,
-   deepseek 3072, gpt-oss 2048. Kèm `num_ctx=8192`, `temperature=0.0`,
+   deepseek 3072, **gpt-oss 4096** (nâng từ 2048 ở commit `01a409b` vì gpt-oss:20b luôn
+   sinh reasoning trước câu trả lời). Kèm `num_ctx=8192`, `temperature=0.0`,
    `EPD_WORD_BUDGET_RATIO=0.7`. Từ commit `984ff40` các giá trị này được ghi thẳng vào
    checkpoint config, không còn phải tra trong code.
 3. **Cách xử lý non-answer.** Nói rõ: call `timeout`/`empty`/`length_capped`/`truncated`
    **bị loại khỏi ASR/TSR**, không bị chấm là thất bại. Kèm lý do — một câu trả lời bị cắt
    trước đoạn nguy hiểm sẽ được chấm "safe" vì chưa kịp viết ra, chứ không phải vì model từ
    chối. Đây là điểm mạnh về phương pháp, nên nêu chủ động.
-4. **Regime đo latency:** "under 4-way concurrent load on a single A100 80GB", không phải số
-   trên phần cứng chuyên dụng. Bắt buộc, theo chính `README.md:261`.
+4. **Regime đo latency:** 4 SLM đo "under 4-way concurrent load on a single A100 80GB";
+   **gpt-oss:20b đo solo (1 model trên GPU)** vì kiến trúc MoE nghẽn memory-bandwidth khi
+   4-way (57.3s solo vs timeout 300s). Hai regime khác nhau → cột tài nguyên của gpt-oss:20b
+   (latency, throughput, GPU%, cost) **để riêng, không xếp cùng bảng efficiency với 4 SLM**.
+   Bắt buộc, theo chính `README.md:261`.
 5. **Số seed.** Phạm vi hiện tại là 2 seeds. Nếu cuối cùng chỉ có seed 42 thì phải ghi
    **single-seed** và bỏ toàn bộ ký hiệu `mean ± std` — với 1 seed, std luôn bằng 0 và trình
-   bày nó như độ lệch thật là gây hiểu nhầm.
+   bày nó như độ lệch thật là gây hiểu nhầm. (Đường cứu: thống kê cấp prompt, ~400 item/
+   approach/model, chạy paired test trong một seed.)
 6. **phi3 length-capping.** 27% call của phi3 chạm cap, tập trung ở LLMSecEval, CyberSecEval,
    CyberBench, ACSE-Eval, SECURE. Một câu trong phần limitations là đủ.
+7. **gpt-oss:20b length-capping + truncation.** 19% call (56 capped + 20 truncated) không
+   chấm được, dồn ở ACSE-Eval (25), SECURE (24), CyberBench (17). `completion_rate` đều giữa
+   các approach nên không lệch tín hiệu ASR — nhưng vẫn nên kèm một kiểm tra độ nhạy
+   (ASR/TSR có và không có 32 ô n<5) trong appendix.
+8. **Tên approach của gpt-oss không nhất quán.** `gpt_20b_oss_static` = `static_nopersona_safety`,
+   `gpt_20b_oss_suicide` = `ephemeral_persona_safety`. Nếu bảng paper dùng nhãn 2×2×2 thì
+   map lại, đừng chép thẳng tên file.
 
 ---
 
@@ -509,17 +620,27 @@ Commit `5513406` (27/08) thêm retry và nhân đôi timeout cho reasoning model
 bằng code hiện tại sẽ khiến deepseek chạy ở 600s + retry thay vì 300s + không retry.
 
 ```bash
+# 4 SLM concurrent (giữ đúng regime seed 42)
 EPD_CALL_RETRIES=0 \
 EPD_REASONING_TIMEOUT_MULT=1.0 \
 python3 -u run_concurrent_experiment.py \
   --models qwen25_3b llama32_3b deepseek_r1_1_5b phi3_mini \
   --seeds 43 --pod-hourly-usd 1.39
+
+# gpt-oss:20b solo (giữ đúng regime run 27/08 — retry + reasoning-timeout BẬT, cap 4096)
+python3 -u run_concurrent_experiment.py \
+  --models gpt_20b_oss --seeds 43 --pod-hourly-usd 1.39
 ```
 
-Hai biến này là **no-op với qwen/llama/phi3** — cả ba không có call `empty`/`timeout` nào
-trong seed 42 nên fix không kích hoạt. Chúng chỉ giữ deepseek đúng như seed 42. Cái giá:
-deepseek sẽ lại mất ~55 call. Đó là đánh đổi có chủ đích — một seed 43 tốt hơn nhưng không so
-được với seed 42 thì vô dụng cho `mean ± std`, mà `± std` là lý do duy nhất để chạy seed thứ hai.
+Với 4 SLM, hai biến `EPD_*` là **no-op với qwen/llama/phi3** — cả ba không có call
+`empty`/`timeout` nào trong seed 42 nên fix không kích hoạt. Chúng chỉ giữ deepseek đúng như
+seed 42. Cái giá: deepseek sẽ lại mất ~55 call. Đó là đánh đổi có chủ đích — một seed 43 tốt
+hơn nhưng không so được với seed 42 thì vô dụng cho `mean ± std`.
+
+Với **gpt-oss:20b thì ngược lại**: run seed-42 của nó (27/08) chạy *với* `EPD_CALL_RETRIES=1`
+và `EPD_REASONING_TIMEOUT_MULT=2.0` và `num_predict=4096`. Seed thứ hai của gpt-oss phải giữ
+đúng ba giá trị đó (mặc định hiện tại của code đã đúng — **không** set `EPD_*` về 0/1.0 như
+lệnh SLM ở trên). Chạy solo, không kèm SLM.
 
 Config seed 42 đã được backfill từ bằng chứng trên đĩa (commit dưới), nên có thể verify bằng máy:
 
@@ -571,10 +692,14 @@ chỉ nằm trên volume và chưa hề vào git.
 
 | Commit | Nội dung |
 |---|---|
+| `fe81bed` | **Kết quả gpt-oss:20b solo seed 42** — eval + summary + multi_seed_summary + checkpoint + resource timeseries (8 files) |
+| `01a409b` | Bắt trường `thinking` của Ollama; nâng cap gpt-oss 2048 → 4096 |
+| `f116b1e` | Backfill config seed 42 từ bằng chứng trên đĩa + `analysis/compare_seed_configs.py` |
+| `10e51c4` | Ghi quyết định freeze seed-42, cắt phạm vi xuống 2 seeds |
 | `ce80d3a` | Loại dòng attribution hỏng khỏi trung bình tài nguyên; recompute 18 cell-record (+8 tests) |
-| `f8c86e6` | Tài liệu này — bản đầu |
 | `984ff40` | Ghi generation config vào checkpoint để đổi token cap không thể âm thầm trộn hai config (+8 tests) |
 | `5513406` | Retry lỗi Ollama tạm thời, timeout dài hơn cho reasoning model (+9 tests) |
 | `bf1ef17` | Toàn bộ kết quả seed-42 của 4 SLM — 31 files |
+| `f8c86e6` | Tài liệu này — bản đầu |
 | `af2e5b8` | Ba watchdog guard chống mất GPU, dựng từ post-mortem 25/08 |
 | `d4905f4` | Xoá data seed 42–44 bị nhiễm |
