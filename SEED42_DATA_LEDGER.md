@@ -502,7 +502,36 @@ python3 -c "import torch; print(torch.cuda.is_available())"
 python3 verify_pod_attribution.py
 ```
 
-### Lệnh chạy
+### Chạy seed 43 — PHẢI pin hai biến này
+
+Seed thứ hai chỉ có ý nghĩa nếu nó **cùng một thí nghiệm** với seed 42, khác duy nhất ở seed.
+Commit `5513406` (27/08) thêm retry và nhân đôi timeout cho reasoning model — chạy seed 43
+bằng code hiện tại sẽ khiến deepseek chạy ở 600s + retry thay vì 300s + không retry.
+
+```bash
+EPD_CALL_RETRIES=0 \
+EPD_REASONING_TIMEOUT_MULT=1.0 \
+python3 -u run_concurrent_experiment.py \
+  --models qwen25_3b llama32_3b deepseek_r1_1_5b phi3_mini \
+  --seeds 43 --pod-hourly-usd 1.39
+```
+
+Hai biến này là **no-op với qwen/llama/phi3** — cả ba không có call `empty`/`timeout` nào
+trong seed 42 nên fix không kích hoạt. Chúng chỉ giữ deepseek đúng như seed 42. Cái giá:
+deepseek sẽ lại mất ~55 call. Đó là đánh đổi có chủ đích — một seed 43 tốt hơn nhưng không so
+được với seed 42 thì vô dụng cho `mean ± std`, mà `± std` là lý do duy nhất để chạy seed thứ hai.
+
+Config seed 42 đã được backfill từ bằng chứng trên đĩa (commit dưới), nên có thể verify bằng máy:
+
+```bash
+python3 analysis/compare_seed_configs.py     # exit 1 nếu hai seed lệch nhau
+```
+
+Lưu ý công cụ này chặt hơn kiểm tra resume của evaluator: `_generation_config_mismatch` chỉ
+xét `CONTENT_CONFIG_KEYS` (thứ đổi nội dung sinh ra), nên timeout/retry lệch vẫn *lọt* qua nó —
+đúng cho quyết định resume, nhưng không đủ cho câu hỏi "hai seed có cùng thí nghiệm không".
+
+### Lệnh chạy khác
 
 ```bash
 # 4 SLM đồng thời
@@ -542,6 +571,7 @@ chỉ nằm trên volume và chưa hề vào git.
 
 | Commit | Nội dung |
 |---|---|
+| `ce80d3a` | Loại dòng attribution hỏng khỏi trung bình tài nguyên; recompute 18 cell-record (+8 tests) |
 | `f8c86e6` | Tài liệu này — bản đầu |
 | `984ff40` | Ghi generation config vào checkpoint để đổi token cap không thể âm thầm trộn hai config (+8 tests) |
 | `5513406` | Retry lỗi Ollama tạm thời, timeout dài hơn cho reasoning model (+9 tests) |

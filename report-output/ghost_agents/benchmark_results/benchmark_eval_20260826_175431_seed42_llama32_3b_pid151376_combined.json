@@ -29,7 +29,14 @@
       "ACSE-Eval",
       "CyberSOCEval",
       "SECURE"
-    ]
+    ],
+    "num_predict": 1024,
+    "num_ctx": 8192,
+    "temperature": 0.0,
+    "word_budget_ratio": 0.7,
+    "generate_timeout_s": 300,
+    "reasoning_timeout_mult": 1.0,
+    "call_retries": 0
   },
   "benchmark_results": {
     "SecurityEval": {
@@ -15135,6 +15142,21 @@
       "total_approaches": 8,
       "avg_asr": 0.06,
       "avg_tsr": 0.655
+    }
+  },
+  "config_provenance": {
+    "reconstructed": true,
+    "reconstructed_on": "2026-08-27",
+    "reason": "This run predates commit 984ff40, which started recording the generation config at run time. The values here were recovered from evidence on disk, not recorded during the run. Fields marked INFERRED are the code defaults at the run's HEAD and are not proven.",
+    "run_head_commit": "8f418e4",
+    "fields": {
+      "num_predict": "measured: length_capped error strings in this run's records",
+      "num_ctx": "measured: n_ctx_seq in report-output/ghost_agents/run_logs/ollama_llama32_3b.log",
+      "temperature": "INFERRED: code default at the run's HEAD (8f418e4); no env record survives",
+      "word_budget_ratio": "INFERRED: code default at the run's HEAD (8f418e4); no env record survives",
+      "generate_timeout_s": "measured indirectly: no call of this model timed out; the value is pinned by deepseek_r1_1_5b's records from the same launch and env, and the 8f418e4 code default agrees",
+      "reasoning_timeout_mult": "measured: feature did not exist at 8f418e4 (added 2026-08-27 in 5513406)",
+      "call_retries": "measured: feature did not exist at 8f418e4; no record carries `attempts`"
     }
   }
 }
