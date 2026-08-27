@@ -177,13 +177,21 @@ MODEL_NUM_PREDICT: Dict[str, int] = {
     "llama3.2:3b": 1024,
     "qwen2.5:3b": 768,
     "deepseek-r1:1.5b": 3072,
-    # 3072 -> 2048: at 3072 this model reliably generated to the cap
-    # (done_reason=length, ~90s/call at the 34 tok/s measured on the A100),
-    # making it over half the wall-clock of the entire 5-model sweep. 2048
-    # still sits above its observed generation need (~1837 tokens, see the
-    # calibration note above), so the exclusion risk stays low -- watch
-    # length_capped/truncated in the run and raise it back if they climb.
-    "gpt-oss:20b": 2048,
+    # 2048 -> 4096 (2026-08-27). The earlier 3072 -> 2048 cut rested on an
+    # "observed generation need of ~1837 tokens" that was measured while the
+    # `thinking` field was being discarded (see _call_ollama): for a reasoning
+    # model the cap is spent on reasoning AND answer together, so that figure
+    # counted roughly half of what it should have. Measured directly once the
+    # field was captured: a single ordinary call reported eval_count=1734 with
+    # 4986 chars of reasoning beside 3430 chars of answer, and 1 of 8 sampled
+    # benchmark prompts ran out of budget mid-reasoning at 2048 and produced no
+    # answer at all.
+    #
+    # gpt-oss:20b has no usable seed-42 data to stay compatible with (its only
+    # records are 40 calls from a 2026-08-25 run under a different config), so
+    # raising this now costs nothing in comparability. Whatever it is set to
+    # here must then hold for every later seed.
+    "gpt-oss:20b": 4096,
     # LLM tier -- see note above.
     "gpt-oss:120b": 3072,
     "llama3.3:70b": 1024,
@@ -559,25 +567,49 @@ def _call_ollama(
             if response.status_code == 200:
                 payload = response.json()
                 raw = (payload.get("response") or "").strip()
-                answer, reasoning = split_reasoning(raw)
+                # Ollama returns a reasoning model's chain-of-thought in its own
+                # top-level `thinking` field, NOT as inline <think> tags inside
+                # `response`. Reading only `response` (as this did until
+                # 2026-08-27) loses the reasoning entirely: across all 1,640
+                # seed-42 calls, `reasoning_chars` was 0 and `had_reasoning`
+                # False even for deepseek-r1 and gpt-oss, and the "truncated"
+                # status -- which needs inline tags to detect -- never once
+                # fired. A reasoning model that burned its whole budget
+                # thinking was therefore filed as "empty", indistinguishable
+                # from an infrastructure failure.
+                #
+                # split_reasoning() is still applied to `response` for any
+                # model that does inline its reasoning; the native field wins
+                # when both are present.
+                native_reasoning = (payload.get("thinking") or "").strip()
+                answer, inline_reasoning = split_reasoning(raw)
+                reasoning = native_reasoning or inline_reasoning
+                done_reason = payload.get("done_reason")
 
                 result["raw_response"] = raw
                 result["reasoning"] = reasoning or None
-                result["done_reason"] = payload.get("done_reason")
+                result["done_reason"] = done_reason
+                # Tokens cover reasoning AND answer together, so this is the
+                # number a generation cap is actually spent against -- the one
+                # to calibrate num_predict from.
+                result["eval_count"] = payload.get("eval_count")
 
-                if not raw:
-                    # A 200 with no text is a failed measurement, not a model
-                    # choosing to say nothing -- don't score it as an answer.
-                    result["status"] = "empty"
-                    result["error"] = "Model returned an empty response"
-                elif not answer:
-                    # Budget was spent entirely on reasoning; the answer never
-                    # arrived. Scoring the reasoning as the answer is invalid.
-                    result["status"] = "truncated"
-                    result["error"] = (
-                        f"Generation hit the {num_predict}-token cap during reasoning; "
-                        "no answer produced"
-                    )
+                if not answer:
+                    if reasoning and done_reason == "length":
+                        # The cap landed mid-reasoning, so no answer was ever
+                        # produced. Distinct from "empty": this one is fixed by
+                        # raising num_predict, not by retrying.
+                        result["status"] = "truncated"
+                        result["error"] = (
+                            f"Generation hit the {num_predict}-token cap during reasoning "
+                            f"({len(reasoning)} chars of it); no answer produced"
+                        )
+                    else:
+                        # Nothing usable came back and the cap was not the
+                        # cause -- a failed measurement, not a model choosing
+                        # to say nothing. Don't score it as an answer.
+                        result["status"] = "empty"
+                        result["error"] = "Model returned an empty response"
                 else:
                     clean_cmd = answer
                     if "```" in clean_cmd:

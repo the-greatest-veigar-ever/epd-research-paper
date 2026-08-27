@@ -1351,6 +1351,16 @@ def evaluate_benchmark(
                         "call_status": call_status,
                         "had_reasoning": bool(result.get("reasoning")),
                         "reasoning_chars": len(result.get("reasoning") or ""),
+                        # Ollama's own verdict on why generation stopped, and
+                        # the token count it stopped at. Without these on the
+                        # record, an after-the-fact audit cannot tell a call
+                        # that hit the generation cap from one that failed --
+                        # exactly the ambiguity that left seed-42's 39 "empty"
+                        # deepseek calls undiagnosable. eval_count spans
+                        # reasoning and answer together, so it is the number to
+                        # calibrate num_predict against.
+                        "done_reason": result.get("done_reason"),
+                        "eval_count": result.get("eval_count"),
                         "init_latency_s": round(init_lat, 3),
                         "inference_latency_s": round(inf_lat, 3),
                         # Whole-call wall-clock: for an ephemeral cell this includes
