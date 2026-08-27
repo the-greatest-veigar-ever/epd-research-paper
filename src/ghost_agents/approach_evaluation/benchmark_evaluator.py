@@ -828,11 +828,21 @@ def _annotate_resource_provenance(approach_result: Dict[str, Any]) -> None:
     if len(modes) == 1:
         metrics["resource_attribution"] = modes.pop()
     elif modes:
-        metrics["resource_attribution"] = "mixed"
+        # The cell holds both modes, but the aggregates above were built from
+        # per-process rows only (see _resource_samples), so name that rather
+        # than "mixed" -- the figures ARE attributable; the machine-wide rows
+        # were excluded from them, not averaged in.
+        excluded = sum(1 for tr in test_results
+                       if tr.get("resource_attribution") not in (None, "per_process"))
+        metrics["resource_attribution"] = "per_process"
         metrics["resource_attribution_warning"] = (
-            f"This cell mixes attribution modes ({sorted(modes)}). Per-model and "
-            f"machine-wide figures are not comparable; do not average them."
+            f"{excluded}/{len(test_results)} call(s) in this cell fell back to "
+            f"machine-wide sampling ({sorted(modes)}) and are EXCLUDED from the "
+            f"resource averages above, which cover the per-process calls only. "
+            f"A machine-wide row under the concurrent topology measures every "
+            f"model on the box and is attributable to none of them."
         )
+        metrics["resource_calls_excluded"] = excluded
     else:
         metrics["resource_attribution"] = None
 
@@ -932,6 +942,42 @@ def _is_completed_call(tr: Dict[str, Any]) -> bool:
     return tr.get("call_status", "success") == "success"
 
 
+def _resource_samples(test_results: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """Resource sample lists for aggregation, drawn from ONE attribution mode.
+
+    Under the concurrent topology a handful of calls can fall back to
+    machine-wide sampling when per-process attribution momentarily fails for
+    that window. Those rows measure the whole box -- every model running on
+    it -- and are attributable to none of them. The 2026-08-27 seed-42 audit
+    found 7 such rows (qwen 3, deepseek 2, phi3 2) reporting 111-127 GB RAM
+    next to 0.5 GB from per-process rows of the same model: ~200x off, and
+    silently inflating that cell's averages.
+
+    `_annotate_resource_provenance` already flags a mixed cell; this makes
+    the metrics act on the flag instead of averaging across it. Rule: if any
+    per-process row exists, aggregate only those -- a machine-wide row
+    alongside them is a failed attribution, not a valid measurement. A
+    genuinely sequential run has no per-process rows at all, so every row is
+    kept and nothing changes.
+    """
+    per_process = [tr for tr in test_results
+                   if tr.get("resource_attribution") == "per_process"]
+    kept = per_process if per_process else list(test_results)
+    dropped = len(test_results) - len(kept)
+
+    def col(field: str) -> List[float]:
+        return [tr[field] for tr in kept if tr.get(field) is not None]
+
+    return {
+        "cpu": col("cpu_percent_avg"),
+        "ram": col("ram_used_gb_avg"),
+        "gpu": col("gpu_percent_avg"),
+        "gpu_mem": col("gpu_mem_used_gb_avg"),
+        "dropped": dropped,
+        "mode": "per_process" if per_process else None,
+    }
+
+
 def _seed_metric_lists_from_prior(prior_test_results: List[Dict[str, Any]]) -> Tuple[List[float], int, List[float], List[float], List[float], List[float], List[float], int, int, List[float], List[float]]:
     """Reconstruct the running metric-accumulator lists from already-completed
     test_results (loaded from a checkpoint), so a resumed run's aggregate
@@ -944,11 +990,15 @@ def _seed_metric_lists_from_prior(prior_test_results: List[Dict[str, Any]]) -> T
     # efficiency data, even though it says nothing about model behavior.
     init_latencies = [tr["init_latency_s"] for tr in prior_test_results]
     inf_latencies = [tr["inference_latency_s"] for tr in prior_test_results]
-    cpu_samples = [tr["cpu_percent_avg"] for tr in prior_test_results if tr.get("cpu_percent_avg") is not None]
-    ram_samples = [tr["ram_used_gb_avg"] for tr in prior_test_results if tr.get("ram_used_gb_avg") is not None]
+    # Resource columns come from one attribution mode only -- see
+    # _resource_samples. The other accumulators below stay over every call:
+    # a timed-out call still consumed wall-clock and is real efficiency data.
+    _res = _resource_samples(prior_test_results)
+    cpu_samples = _res["cpu"]
+    ram_samples = _res["ram"]
     cost_samples = [tr["cost_usd"] for tr in prior_test_results if tr.get("cost_usd") is not None]
-    gpu_samples = [tr["gpu_percent_avg"] for tr in prior_test_results if tr.get("gpu_percent_avg") is not None]
-    gpu_mem_samples = [tr["gpu_mem_used_gb_avg"] for tr in prior_test_results if tr.get("gpu_mem_used_gb_avg") is not None]
+    gpu_samples = _res["gpu"]
+    gpu_mem_samples = _res["gpu_mem"]
     timeout_count = sum(1 for tr in prior_test_results if tr.get("call_status") in TIMEOUT_STATUSES)
     error_count = sum(
         1 for tr in prior_test_results
@@ -1363,16 +1413,19 @@ def evaluate_benchmark(
                         error_count += 1
                     init_latencies.append(init_lat)
                     inf_latencies.append(inf_lat)
-                    if cpu_avg is not None:
-                        cpu_samples.append(cpu_avg)
-                    if ram_avg is not None:
-                        ram_samples.append(ram_avg)
-                    if gpu_avg is not None:
-                        gpu_samples.append(gpu_avg)
-                    if gpu_mem_avg is not None:
-                        gpu_mem_samples.append(gpu_mem_avg)
                     if cost_usd is not None:
                         cost_samples.append(cost_usd)
+                    # Resource columns are NOT accumulated per call: which
+                    # rows are eligible depends on the attribution modes
+                    # present across the whole cell, which is only known once
+                    # every call is in. Derived from test_results at each
+                    # aggregation point below (see _resource_samples), so
+                    # there is one source of truth rather than two.
+                    _res = _resource_samples(approach_results["test_results"])
+                    cpu_samples = _res["cpu"]
+                    ram_samples = _res["ram"]
+                    gpu_samples = _res["gpu"]
+                    gpu_mem_samples = _res["gpu_mem"]
 
                     progress_iter.update(1)
 
