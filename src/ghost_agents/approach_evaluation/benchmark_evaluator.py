@@ -71,7 +71,9 @@ from src.ghost_agents.approach_evaluation.approaches import (
     APPROACHES_BY_MODEL_KEY,
     model_key_for_approach,
     batch_size_for,
+    num_predict_for,
 )
+from src.ghost_agents.approach_evaluation import approaches as _approaches_mod
 from src.ghost_agents.approach_evaluation.benchmark_test_data import (
     load_all_benchmarks,
     get_benchmark_summary,
@@ -864,6 +866,63 @@ TIMEOUT_STATUSES = ("timeout",)
 NON_ANSWER_STATUSES = ("timeout", "truncated", "length_capped", "empty", "error", "http_error")
 
 
+# ---------------------------------------------------------------------------
+# Checkpoint generation-config fingerprint
+#
+# A checkpoint is only resumable if the records in it were generated under the
+# same conditions as the calls about to be appended to it. Before this, the
+# checkpoint recorded only `max_per_benchmark`, so changing a generation knob
+# -- most importantly `num_predict` -- and re-running would silently resume:
+# the model's dataset would then hold some cells generated at one token cap
+# and some at another, with nothing in the output recording the split. That
+# is exactly the mixture the 2026-08-27 data audit flagged as a hazard when
+# raising phi3/qwen's caps to address their length_capped rates.
+#
+# CONTENT_CONFIG_KEYS are the knobs that change the generated text itself, so
+# a mismatch makes old records incomparable and the checkpoint is discarded.
+# The remaining keys (timeouts, retry counts) only affect whether a call
+# succeeds, not what a successful call says, so they are recorded for
+# provenance but never trigger a discard.
+CONTENT_CONFIG_KEYS = ("num_predict", "num_ctx", "temperature", "word_budget_ratio")
+
+
+def _generation_config(model_approaches: List[Approach]) -> Dict[str, Any]:
+    """Fingerprint of the generation settings this model's calls run under."""
+    models = {a.models[0] for a in model_approaches if getattr(a, "models", None)}
+    # One evaluator process evaluates one model, so this is a single tag; the
+    # sorted list keeps the field well-defined if that ever stops holding.
+    num_predict = sorted({num_predict_for(m) for m in models})
+    return {
+        "num_predict": num_predict[0] if len(num_predict) == 1 else num_predict,
+        "num_ctx": _approaches_mod.GENERATION_NUM_CTX,
+        "temperature": _approaches_mod.GENERATION_TEMPERATURE,
+        "word_budget_ratio": _approaches_mod.WORD_BUDGET_RATIO,
+        # Provenance only -- see note above, these never force a discard.
+        "generate_timeout_s": _approaches_mod.GENERATION_TIMEOUT_S,
+        "reasoning_timeout_mult": _approaches_mod.REASONING_TIMEOUT_MULT,
+        "call_retries": _approaches_mod.CALL_RETRIES,
+    }
+
+
+def _generation_config_mismatch(
+    prior_config: Dict[str, Any], current: Dict[str, Any]
+) -> Optional[str]:
+    """Describe the first content-affecting difference, or None if resumable.
+
+    Returns a special marker string when the checkpoint predates this field
+    entirely: it cannot be verified either way, which is a warning rather
+    than grounds to throw away a completed run.
+    """
+    if not any(k in prior_config for k in CONTENT_CONFIG_KEYS):
+        return "UNVERIFIABLE"
+    for key in CONTENT_CONFIG_KEYS:
+        if key not in prior_config:
+            continue
+        if prior_config[key] != current[key]:
+            return f"{key}: checkpoint={prior_config[key]!r} now={current[key]!r}"
+    return None
+
+
 def _is_completed_call(tr: Dict[str, Any]) -> bool:
     """True if this test result came from a call that actually returned a
     scoreable model answer. Calls recorded as timeout/truncated/empty/error
@@ -1490,17 +1549,38 @@ def _run_single_seed(
         # final benchmark_eval_*/benchmark_summary_* files below stay
         # timestamped as a historical record of each completed run.
         checkpoint_file = os.path.join(model_output_dir, f"checkpoint_seed{seed}.json")
+        gen_config = _generation_config(model_approaches)
         prior_checkpoint: Dict[str, Any] = {}
         if os.path.exists(checkpoint_file):
             try:
                 with open(checkpoint_file) as f:
                     prior_checkpoint = json.load(f)
-                if prior_checkpoint.get("config", {}).get("max_per_benchmark") != max_per_benchmark:
+                prior_config = prior_checkpoint.get("config", {})
+                gen_mismatch = _generation_config_mismatch(prior_config, gen_config)
+                if prior_config.get("max_per_benchmark") != max_per_benchmark:
                     if verbose:
                         print(f"  [{model_key}] seed {seed}: found a checkpoint but --max-per-benchmark "
                               f"differs from the interrupted run -- ignoring it, starting fresh.")
                     prior_checkpoint = {}
-                elif verbose:
+                elif gen_mismatch and gen_mismatch != "UNVERIFIABLE":
+                    # Resuming here would append calls generated under
+                    # different settings to ones that are not comparable to
+                    # them, with nothing in the output recording the split.
+                    print(f"  [{model_key}] seed {seed}: checkpoint was generated under a DIFFERENT "
+                          f"generation config ({gen_mismatch}) -- discarding it and starting fresh, "
+                          f"so this model's records all come from one config.")
+                    prior_checkpoint = {}
+                elif gen_mismatch == "UNVERIFIABLE":
+                    # Written before the fingerprint existed. Resume (throwing
+                    # away a completed run on a guess would be worse), but say
+                    # so unconditionally -- not just under --verbose.
+                    print(f"  [{model_key}] seed {seed}: WARNING -- this checkpoint predates the "
+                          f"generation-config fingerprint, so it cannot be verified against the "
+                          f"current settings (num_predict={gen_config['num_predict']}, "
+                          f"num_ctx={gen_config['num_ctx']}, temperature={gen_config['temperature']}, "
+                          f"word_budget_ratio={gen_config['word_budget_ratio']}). Resuming anyway. "
+                          f"If you have changed any of these since it was written, delete it first.")
+                if prior_checkpoint and verbose:
                     n_done = sum(
                         1 for b in prior_checkpoint.get("benchmark_results", {}).values()
                         for _ in b.get("approaches", {})
@@ -1522,6 +1602,12 @@ def _run_single_seed(
                 "max_per_benchmark": max_per_benchmark,
                 "approaches": [a.name for a in model_approaches],
                 "benchmarks": list(loaded_benchmarks.keys()),
+                # Generation settings these records were produced under.
+                # Checked on resume (see _generation_config_mismatch) so a
+                # changed token cap can never silently mix two configs into
+                # one model's dataset, and doubles as the provenance the
+                # paper's configuration table is built from.
+                **gen_config,
             },
             # Seeded from the prior checkpoint (empty if none/invalid, see
             # above) rather than starting blank -- each benchmark's entry
