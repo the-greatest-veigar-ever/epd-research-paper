@@ -1,0 +1,26 @@
+{
+  "run_id": "20260826_112246",
+  "topology": "concurrent_per_model_server",
+  "resource_attribution": "per_process",
+  "pod_wall_seconds": 82.31,
+  "pod_hourly_usd": 1.39,
+  "concurrency": 1,
+  "interrupted": true,
+  "interrupted_reason": "signal 15",
+  "seeds": [
+    42
+  ],
+  "max_per_benchmark": 5,
+  "models": [
+    {
+      "model_key": "gpt_20b_oss",
+      "tag": "gpt-oss:20b",
+      "port": 11504,
+      "exit_code": -15,
+      "ollama_num_parallel": 2,
+      "wall_seconds": 78.25,
+      "resource_csv": "report-output/ghost_agents/run_logs/resource_timeseries_gpt_20b_oss.csv",
+      "eval_log": "report-output/ghost_agents/run_logs/gpt_20b_oss.log"
+    }
+  ]
+}
