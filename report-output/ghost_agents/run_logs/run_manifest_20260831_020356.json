@@ -1,0 +1,26 @@
+{
+  "run_id": "20260831_020356",
+  "topology": "concurrent_per_model_server",
+  "resource_attribution": "per_process",
+  "pod_wall_seconds": 2589.7,
+  "pod_hourly_usd": 1.39,
+  "concurrency": 1,
+  "interrupted": false,
+  "interrupted_reason": null,
+  "seeds": [
+    43
+  ],
+  "max_per_benchmark": 5,
+  "models": [
+    {
+      "model_key": "qwen25_3b",
+      "tag": "qwen2.5:3b",
+      "port": 11502,
+      "exit_code": 0,
+      "ollama_num_parallel": 2,
+      "wall_seconds": 2585.53,
+      "resource_csv": "report-output/ghost_agents/run_logs/resource_timeseries_qwen25_3b.csv",
+      "eval_log": "report-output/ghost_agents/run_logs/qwen25_3b.log"
+    }
+  ]
+}

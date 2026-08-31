@@ -1,0 +1,56 @@
+{
+  "run_id": "20260831_004305",
+  "topology": "concurrent_per_model_server",
+  "resource_attribution": "per_process",
+  "pod_wall_seconds": 32931.14,
+  "pod_hourly_usd": 1.39,
+  "concurrency": 4,
+  "interrupted": false,
+  "interrupted_reason": null,
+  "seeds": [
+    43
+  ],
+  "max_per_benchmark": 5,
+  "models": [
+    {
+      "model_key": "qwen25_3b",
+      "tag": "qwen2.5:3b",
+      "port": 11502,
+      "exit_code": 3,
+      "ollama_num_parallel": 2,
+      "wall_seconds": 7375.45,
+      "resource_csv": "report-output/ghost_agents/run_logs/resource_timeseries_qwen25_3b.csv",
+      "eval_log": "report-output/ghost_agents/run_logs/qwen25_3b.log"
+    },
+    {
+      "model_key": "llama32_3b",
+      "tag": "llama3.2:3b",
+      "port": 11501,
+      "exit_code": 0,
+      "ollama_num_parallel": 2,
+      "wall_seconds": 20052.69,
+      "resource_csv": "report-output/ghost_agents/run_logs/resource_timeseries_llama32_3b.csv",
+      "eval_log": "report-output/ghost_agents/run_logs/llama32_3b.log"
+    },
+    {
+      "model_key": "phi3_mini",
+      "tag": "phi3:mini",
+      "port": 11500,
+      "exit_code": 0,
+      "ollama_num_parallel": 2,
+      "wall_seconds": 32640.11,
+      "resource_csv": "report-output/ghost_agents/run_logs/resource_timeseries_phi3_mini.csv",
+      "eval_log": "report-output/ghost_agents/run_logs/phi3_mini.log"
+    },
+    {
+      "model_key": "deepseek_r1_1_5b",
+      "tag": "deepseek-r1:1.5b",
+      "port": 11503,
+      "exit_code": 0,
+      "ollama_num_parallel": 2,
+      "wall_seconds": 32916.91,
+      "resource_csv": "report-output/ghost_agents/run_logs/resource_timeseries_deepseek_r1_1_5b.csv",
+      "eval_log": "report-output/ghost_agents/run_logs/deepseek_r1_1_5b.log"
+    }
+  ]
+}
