@@ -1,12 +1,14 @@
 # Seed 43 — Data Ledger
 
 > Viết bằng tiếng Việt, thuật ngữ kỹ thuật giữ nguyên tiếng Anh.
-> Cập nhật: 2026-08-29 (sau khi gpt-oss:20b chạy solo seed 43 xong lúc 06:41 UTC) ·
-> Pod `ljsku2csqpmasd` (RunPod A100 80GB) · branch `runpod-results-slm`
+> Cập nhật: 2026-08-31 (sau khi 4 SLM concurrent seed 43 chạy xong + qwen resume solo) ·
+> gpt-oss:20b solo phần cũ: 2026-08-29 · Pod `ljsku2csqpmasd` (RunPod A100 80GB) ·
+> branch `runpod-results-slm`
 >
-> Tài liệu này dựng từ audit trực tiếp **400 call records** của gpt-oss:20b seed 43 trong
-> `report-output/ghost_agents/benchmark_results/gpt_20b_oss/`, cộng với log Ollama của
-> chính run đó (`run_logs/ollama_gpt_20b_oss.log`) và log orchestrator (`run_logs/gpt_20b_oss.log`).
+> Tài liệu này dựng từ audit trực tiếp **2,000 call records** của seed 43:
+> 400 của gpt-oss:20b (solo, trong `benchmark_results/gpt_20b_oss/`) +
+> 1,600 của 4 SLM (qwen25_3b, llama32_3b, deepseek_r1_1_5b, phi3_mini, mỗi model 400),
+> cộng với log Ollama + log orchestrator của từng run trong `run_logs/`.
 > Đọc lại file này sau mỗi lần pod restart — session Claude Code không sống sót, nhưng
 > `/workspace` và repo thì có.
 >
@@ -14,38 +16,49 @@
 > bị loại, vì sao gpt-oss:20b phải chạy solo, ablation 2×2×2) đã giải thích đầy đủ ở
 > [`SEED42_DATA_LEDGER.md`](SEED42_DATA_LEDGER.md) — ở đây chỉ nhắc lại thật ngắn và tập
 > trung vào cái **mới/khác** của seed 43.
+>
+> **Trạng thái phạm vi: seed 43 ĐÃ ĐỦ 5/5 model — 2,000/2,000 call. Toàn bộ đề tài
+> 4,000/4,000 call (2 seeds × 5 model).**
 
 ---
 
 ## Tóm tắt
 
-**gpt-oss:20b seed 43 (solo run) đã xong 2026-08-29 06:41 UTC — 10/10 benchmark, 80/80 cells,
-400/400 calls.** Config khớp seed 42 tuyệt đối (chỉ khác `seed`), nên hai seed **average được**.
-ASR/TSR bám sát seed 42 (overall ASR 0.88% vs 0.84%, TSR 73.4% vs 70.9%).
+**Seed 43 đã đủ 5/5 model, 2,000/2,000 call.** Hai đợt chạy:
 
-Khác biệt duy nhất đáng kể so với seed 42: **llama-server bị crash CUDA "illegal memory
-access" 8 lần** trong lúc chạy (seed 42 không có lần nào), làm hỏng đúng **4 call**
-(`http_error`). Các crash được cô lập sạch, không làm hỏng data còn lại — xem
-[Sự cố CUDA](#sự-cố-cuda-illegal-memory-access).
+1. **gpt-oss:20b solo** — xong 2026-08-29 06:41 UTC. 10/10 benchmark, 80/80 cells, 400/400 call,
+   304 chấm được (76%). Chi tiết ở các mục dưới; phần này không đổi.
+2. **4 SLM concurrent** — xong 2026-08-31. qwen25_3b + llama32_3b + deepseek_r1_1_5b + phi3_mini,
+   mỗi model 400 call → 80/80 cells, 10/10 benchmark. **1,363/1,600 call chấm được (85%)**.
+   qwen chết giữa chừng lần chạy concurrent (GPU-discovery watchdog timeout) rồi **chạy lại
+   solo** và xong sạch — xem [Sự cố qwen GPU-discovery](#sự-cố-qwen-gpu-discovery-timeout).
 
-Data mỏng hơn seed 42 một chút: 304/400 call chấm được (76% vs 81%), 62/80 ô ở n≥3 (vs 66),
-1 ô trống (vs 2). Nguyên nhân chính vẫn là câu trả lời dài quá `num_predict=4096`, **không
-phải do crash** (crash chỉ 4 call).
+Config cả 5 model khớp seed 42 (`compare_seed_configs.py`: **cả 5 "SAME EXPERIMENT"**, exit 0),
+nên hai seed **average được**. ASR/TSR bám sát seed 42 ở mọi model (xem
+[So sánh seed 42 ↔ seed 43](#so-sánh-seed-42--seed-43)).
+
+Khác biệt hạ tầng so với seed 42:
+- **gpt-oss:20b:** 8 crash CUDA `illegal memory access` → 4 `http_error`. Cô lập sạch —
+  [Sự cố CUDA](#sự-cố-cuda-illegal-memory-access).
+- **qwen25_3b:** lần concurrent bị `llama-server GPU discovery watchdog timed out`, latency
+  fail-fast guard trip sau 2 call ≥6× baseline, exit 3 → **bỏ toàn bộ data lần đó**, chạy lại
+  solo. Data qwen dùng cho paper là **từ run solo** — không cùng regime 4-way với 3 SLM kia.
 
 | | |
 |---|---|
-| Model đã chạy seed 43 | **1/5** — chỉ gpt-oss:20b (solo). 4 SLM: **chưa chạy** |
-| gpt-oss:20b calls | 400/400 · 80/80 cells · 10/10 benchmark |
-| Call chấm điểm được | **304** / 400 (76%) |
-| Call non-answer | **96** — 55 `length_capped` + 37 `truncated` + 4 `http_error` — đã loại khỏi ASR/TSR đúng thiết kế |
-| Null ngoài ý muốn | **0** — 96 ô null `safe`/`score` đều trùng đúng 96 call non-answer |
-| Ô trống hoàn toàn (n=0) | **1** — `ACSE-Eval / ephemeral_nopersona_nosafety` (trùng đúng 1 trong 2 ô trống của seed 42) |
-| Sự cố hạ tầng | 8 crash CUDA `illegal memory access` → 4 `http_error`. Cô lập, không lan |
-| Tiến độ phạm vi (2 seeds) | seed 42: 5/5 model · seed 43: **1/5 model** — 2,400 / 4,000 calls = 60% |
+| Model đã chạy seed 43 | **5/5** — gpt-oss:20b (solo) + qwen25_3b (solo, sau khi concurrent fail) + llama32_3b/deepseek_r1_1_5b/phi3_mini (concurrent) |
+| Tổng call | **2,000 / 2,000** · 400/400 cells · 50/50 (model×benchmark) |
+| Call chấm điểm được | **1,667** / 2,000 (83%) — gpt-oss 304, qwen 349, llama 391, deepseek 338, phi3 285 |
+| Null ngoài ý muốn | **0** — mọi ô null `safe`/`score` đều trùng đúng call non-answer (audit 5/5 model) |
+| Ô trống hoàn toàn (n=0) | **4** trên 400 ô — 1 gpt-oss (`ACSE-Eval/ephemeral_nopersona_nosafety`) + 2 qwen (ACSE-Eval) + 1 phi3 (`SECURE/static_nopersona_nosafety`) |
+| Sự cố hạ tầng | gpt-oss: 8 crash CUDA → 4 `http_error` · qwen: 1 GPU-discovery timeout → chạy lại solo. Cả hai cô lập, không lan |
+| Tiến độ phạm vi (2 seeds) | seed 42: 5/5 · seed 43: **5/5** — **4,000 / 4,000 call = 100%** |
 
-> **CHỐT 2026-08-29:** giữ nguyên data gpt-oss:20b seed 43 này. Không chạy lại. Run complete,
-> config-matched, metric nhất quán với seed 42; 4 call `http_error` và độ mỏng 76% được **khai
-> báo trong paper** thay vì sửa. Xem [Quyết định đã chốt](#quyết-định-đã-chốt).
+> **CHỐT 2026-08-31:** giữ nguyên toàn bộ data seed 43 (5/5 model). Không chạy lại model nào.
+> Tất cả run complete (400/400 call mỗi model), config-matched với seed 42, metric nhất quán.
+> Độ mỏng (gpt-oss 76%, 4 SLM 85%), 4 ô trống, 4 `http_error`, và việc qwen đo solo thay vì
+> concurrent — tất cả **khai báo trong paper** thay vì sửa. Xem
+> [Quyết định đã chốt](#quyết-định-đã-chốt).
 
 ---
 
@@ -113,6 +126,37 @@ CHECK E [PASS]  origin/runpod-results-slm khớp local HEAD sau khi push
 Commit `d745ce8` ("results(seed43): gpt-oss:20b solo run"), push lên
 `origin/runpod-results-slm`, rồi `runpodctl stop pod ljsku2csqpmasd` (stop, **không**
 terminate — `/workspace` giữ nguyên). Marker: `/workspace/SEED43_GPTOSS_RUN_COMPLETE_20260829_064135.md`.
+
+### 2026-08-30 15:34 → 2026-08-31 ~02:11 UTC — 4 SLM concurrent seed 43
+
+Pod restart lại, dựng môi trường (Ollama, `pip install -r requirements.txt`,
+`OLLAMA_MODELS=/workspace/.ollama/models`). Chạy 4 SLM đồng thời — mỗi model một Ollama
+server riêng (`topology = concurrent_per_model_server`), `ollama_num_parallel=2` mỗi server,
+đúng regime seed 42. **Hai biến pin regime** (`EPD_CALL_RETRIES=0`,
+`EPD_REASONING_TIMEOUT_MULT=1.0`) được set theo đúng công thức mục
+[Lệnh chạy 4 SLM](#lệnh-chạy-4-slm-seed-43--phải-pin-hai-biến) để deepseek không bị lệch
+`600s+retry` so với `300s` của seed 42.
+
+```
+run_manifest_20260831_004305.json   topology=concurrent_per_model_server   seeds=[43]
+  llama32_3b        exit 0   wall 20 053 s (5.6 h)
+  phi3_mini         exit 0   wall 32 640 s (9.1 h)
+  deepseek_r1_1_5b  exit 0   wall 32 917 s (9.1 h)
+  qwen25_3b         exit 3   wall  7 375 s   <- GPU-discovery timeout, xem mục riêng
+run_manifest_20260831_020356.json   qwen25_3b solo resume   exit 0   wall 2 586 s (0.7 h)
+```
+
+- **llama32_3b, phi3_mini, deepseek_r1_1_5b:** chạy hết trong một lần, exit 0, 400/400 call mỗi model.
+- **qwen25_3b:** lần concurrent `llama-server GPU discovery watchdog timed out`
+  (15:46 UTC, ~12 phút sau khi bắt đầu), Ollama tụt xuống chế độ chậm; orchestrator's
+  **latency fail-fast guard** trip sau 2 call liên tiếp ≥6× baseline (84–102 s vs 11.8 s),
+  exit 3. Data lần đó nằm ở `report-output/ghost_agents/_failed_runs/qwen25_3b_seed43_20260831_0118/`
+  (KHÔNG dùng). qwen chạy lại **solo** lúc 01:20 UTC, xong 43 phút, exit 0, 400/400 call.
+  Xem [Sự cố qwen GPU-discovery](#sự-cố-qwen-gpu-discovery-timeout).
+
+Commit `a267a73` ("results(seed43): 4-SLM concurrent run; qwen resumed solo after
+GPU-discovery failure"), đã push lên `origin/runpod-results-slm` (local HEAD == remote).
+**Không có marker file** trên `/workspace` cho run này (khác gpt-oss:20b).
 
 ---
 
@@ -223,6 +267,97 @@ paper** — chỉ số tài nguyên của gpt-oss:20b vốn đã để riêng (�
 
 ---
 
+## Data đang như thế nào — 4 SLM seed 43
+
+Tất cả 4 model: **400/400 call · 80/80 cell · 10/10 benchmark**. Config khớp seed 42
+(`compare_seed_configs.py` → "SAME EXPERIMENT" cả 4).
+
+| model | scoreable | non-answer | cells sạch (5/5) | n≥3 | cap | Tình trạng |
+|---|---|---|---|---|---|---|
+| `llama32_3b` | **391** | 9 `length_capped` | **72**/80 | **80**/80 | 1024 | Khoẻ nhất — 98% chấm được, không ô nào n<3. Concurrent. |
+| `qwen25_3b` | **349** | 51 `length_capped` | **62**/80 | **69**/80 | 768 | **Solo** (concurrent fail). 50/51 non-answer dồn ở ACSE-Eval + SECURE. 2 ô trống. |
+| `deepseek_r1_1_5b` | **338** | 46 `truncated` + 13 `timeout` + 3 `capped` | **33**/80 | **76**/80 | 3072 | Contention (regime pinned) — non-answer rải đều 10 benchmark, không ô trống. Concurrent. |
+| `phi3_mini` | **285** | 113 `length_capped` + 2 `timeout` | **17**/80 | **69**/80 | 2048 | Mỏng nhất — 29% bị cắt vì cap 2048. 1 ô trống. Concurrent. |
+
+**Tổng 4 SLM: 1,363/1,600 call chấm được (85%)**, 294/320 ô ở n≥3 (92%).
+
+### Độ dày của từng ô (n = số call chấm được / ô)
+
+| model | n=5 | n=4 | n=3 | n=2 | n=1 | **n=0** | n≥3 |
+|---|---|---|---|---|---|---|---|
+| `llama32_3b`      | 72 | 7  | 1  | 0 | 0 | **0** | 80/80 |
+| `qwen25_3b`       | 62 | 4  | 3  | 5 | 4 | **2** | 69/80 |
+| `deepseek_r1_1_5b`| 33 | 36 | 7  | 4 | 0 | **0** | 76/80 |
+| `phi3_mini`       | 17 | 27 | 25 | 7 | 3 | **1** | 69/80 |
+
+**Ô trống (n=0) — 3 ô trên 320:**
+
+```
+qwen25_3b   ACSE-Eval / static_persona_safety_filter
+qwen25_3b   ACSE-Eval / suicide (= ephemeral_persona_safety)
+phi3_mini   SECURE    / static_nopersona_nosafety
+```
+
+qwen 2 ô trống đều ở ACSE-Eval — **cùng benchmark** với 2 ô trống ACSE-Eval của qwen seed 42
+(seed 42: `static_persona_safety_filter` + `ephemeral_nopersona_nosafety`); 1 trong 2 ô
+(`static_persona_safety_filter`) **trùng hệt**. phi3 ô trống `SECURE/static_nopersona_nosafety`
+là mới (seed 42 phi3 không có ô trống). → 3 ô này để "—" trong bảng ablation tương ứng, khai báo.
+
+### Non-answer dồn ở đâu
+
+```
+llama32_3b (9):    ACSE-Eval 4  + 5 benchmark khác mỗi cái 1
+qwen25_3b (51):    ACSE-Eval 29   SECURE 18   CyberBench 3   SecurityEval 1
+deepseek (62):     LLMSecEval 12  CyberSecEval 9  SecurityEval 8  ACSE-Eval 7  CyberBench 5
+                   CyberSOCEval 5  SECURE 5  SecBench 4  HarmBench 4  FORMAI 3   (rải đều)
+phi3_mini (115):   SECURE 23  SecurityEval 17  LLMSecEval 13  HarmBench 13  ACSE-Eval 13
+                   CyberBench 11  SecBench 10  CyberSecEval 6  FORMAI 6  CyberSOCEval 3
+```
+
+Cùng chữ ký seed 42: qwen dồn ACSE-Eval/SECURE (cap 768 quá thấp cho câu trả lời dài),
+phi3 rải khắp nơi (cap 2048 vẫn thiếu), deepseek mất call vì contention chứ không vì cap,
+llama gần như không mất gì.
+
+### Kết quả (seed 43, mỗi model 8 approach × 10 benchmark)
+
+Overall per-model (nhãn 2×2×2; tên file approach xem checkpoint — **đừng chép thẳng vào paper**):
+
+| model | avg ASR | avg TSR | so seed 42 (ASR / TSR) |
+|---|---|---|---|
+| `qwen25_3b`       | 3.4% | 68.3% | 3.9% / 64.7% |
+| `llama32_3b`      | 6.0% | 68.1% | 6.0% / 65.5% |
+| `deepseek_r1_1_5b`| 2.7% | 67.3% | 4.4% / 66.0% |
+| `phi3_mini`       | 2.3% | 70.1% | 5.5% / 65.4% |
+
+ASR cùng dải sàn 2–6% ở cả hai seed; TSR seed 43 nhích lên ~2–5 điểm ở cả 4 model (cùng
+hướng, cùng cỡ với gpt-oss:20b +2.5). Không model nào lệch bất thường → **8 crash CUDA của
+gpt-oss + 1 GPU-discovery fail của qwen KHÔNG nhiễm sang metric**.
+
+Điểm ASR≠0 đáng nhìn nhất: `llama32_3b / static_persona_nosafety` ASR 18% (n=5 đầy) — cao
+hơn hẳn các ô khác. seed 42 cần đối chiếu ô này trước khi kết luận; nhiều khả năng vẫn là
+noise cấp classifier (llama seed 42 overall ASR 6% y hệt), nhưng **phải check** bằng McNemar
+cấp prompt nếu muốn nói gì về nhánh `persona`.
+
+### Latency — CHỈ 3 SLM concurrent so được với nhau
+
+| model | seed 42 (4-way) mean inf-lat | seed 43 mean inf-lat | regime seed 43 |
+|---|---|---|---|
+| `llama32_3b`      | 50.0s | 44.4s | **3-way concurrent** (qwen rớt 12 phút đầu) |
+| `deepseek_r1_1_5b`| 77.3s | 87.0s | **3-way concurrent** |
+| `phi3_mini`       | 73.4s | 89.0s | **3-way concurrent** |
+| `qwen25_3b`       | 42.7s | **19.0s** | **SOLO** — KHÔNG cùng thang |
+
+**Cảnh báo regime:** seed 42 đo cả 4 SLM dưới **4-way** contention. seed 43: qwen chết sau
+~12 phút nên 3 model kia thực tế chạy **3-way** gần như toàn bộ, và qwen được đo **solo**.
+→ Với bảng efficiency (latency / throughput / GPU% / cost):
+- **qwen seed 43 KHÔNG xếp cùng cột 4-way** — latency solo 19s vs 4-way 42.7s, lệch 2×.
+  Dùng số qwen seed 42 cho bảng efficiency, hoặc đánh dấu qwen seed 43 là "solo, not comparable".
+- llama/deepseek/phi3 seed 43 là **3-way**, không phải 4-way — sai khác nhỏ hơn nhưng vẫn
+  phải ghi chú "measured under 3-way concurrent load (qwen failed at 12 min)".
+- **ASR/TSR thì không phụ thuộc regime** — xếp chung bình thường.
+
+---
+
 ## So sánh seed 42 ↔ seed 43
 
 ### Config — cùng một thí nghiệm
@@ -247,6 +382,23 @@ seed                      42          43          (khác đúng như kỳ vọng
 `ollama_num_parallel = 2` cả hai seed (từ `run_manifest`). CHECK C
 (`analysis/compare_seed_configs.py`) chạy trên pod trước khi stop → exit 0. → **average được.**
 
+**Cập nhật 2026-08-31:** sau khi 4 SLM seed 43 chạy xong, chạy lại
+`analysis/compare_seed_configs.py` (cần `pip install tqdm` trước — import gián tiếp) →
+**cả 5/5 model "SAME EXPERIMENT", exit 0**:
+
+```
+deepseek_r1_1_5b   SAME EXPERIMENT  (one side reconstructed -- see config_provenance)
+gpt_20b_oss        SAME EXPERIMENT
+llama32_3b         SAME EXPERIMENT  (one side reconstructed)
+phi3_mini          SAME EXPERIMENT  (one side reconstructed)
+qwen25_3b          SAME EXPERIMENT  (one side reconstructed)
+```
+
+4 SLM seed 43 dùng `EPD_CALL_RETRIES=0` + `EPD_REASONING_TIMEOUT_MULT=1.0` để pin đúng
+regime seed 42 (`call_retries=0`, `reasoning_timeout_mult=1.0`) — xác nhận trong 4 block
+`config` của checkpoint. Cap từng model giữ nguyên: qwen 768 · llama 1024 · phi3 2048 ·
+deepseek 3072 · gpt-oss 4096. → **cả 2 seed × 5 model average được.**
+
 Công cụ này chặt hơn resume-check của evaluator: `_generation_config_mismatch` chỉ xét
 `CONTENT_CONFIG_KEYS`, nên timeout/retry lệch vẫn lọt qua nó — đúng cho quyết định resume,
 không đủ cho câu hỏi "hai seed có cùng thí nghiệm không". `compare_seed_configs.py` xét cả
@@ -267,26 +419,42 @@ TSR per-approach cả hai seed nằm gọn trong dải 0.69–0.75. **Nếu 8 cr
 GPU state thì sẽ thấy generation rác kéo TSR sụp hoặc ASR vọt — không có.** Đây là bằng
 chứng mạnh nhất rằng crash chỉ làm mất 4 call, không nhiễm phần còn lại.
 
+### Metric 4 SLM — cũng nhất quán
+
+| model | ASR 42→43 | TSR 42→43 |
+|---|---|---|
+| `qwen25_3b`       | 3.9% → 3.4% | 64.7% → 68.3% |
+| `llama32_3b`      | 6.0% → 6.0% | 65.5% → 68.1% |
+| `deepseek_r1_1_5b`| 4.4% → 2.7% | 66.0% → 67.3% |
+| `phi3_mini`       | 5.5% → 2.3% | 65.4% → 70.1% |
+
+ASR giữ dải sàn (2–6%), TSR +2–5 điểm đồng đều — **cùng hướng, cùng cỡ với gpt-oss:20b
+(+2.5)**. Không có model nào metric lệch bất thường → 1 GPU-discovery fail của qwen (đã
+bỏ data lần đó) + 8 crash CUDA của gpt-oss KHÔNG nhiễm sang phần còn lại.
+
 ---
 
-## Kiểm toán null — gpt-oss:20b seed 43
+## Kiểm toán null — cả 5 model seed 43
 
-Rà 400 records: **không có ô nào là thiếu sót ngoài ý muốn.**
+**gpt-oss:20b (400 records):** không có null ngoài ý muốn.
 
 | Field | Null | Giải thích |
 |---|---|---|
 | `safe` | 96 | Trùng đúng 96 call non-answer (55 capped + 37 truncated + 4 http_error). 0 null trên call success |
 | `score` | 96 | Cùng lý do |
 | `cpu_core_seconds` | 1 | Trùng đúng 1 dòng `resource_attribution == "machine_wide"` |
-| `gpu_percent_avg` | 0 | Sạch |
-| `gpu_mem_used_gb_avg` | 0 | Sạch |
+| `gpu_percent_avg` / `gpu_mem_used_gb_avg` | 0 | Sạch |
 
-**1 dòng `machine_wide`:** call `SecurityEval / static_nopersona_nosafety / seceval_CWE-215_codeql_1.py`
-— lần này là một call **`success`** (seed 42 là call `truncated`). RAM báo **118.7 GB** (toàn
-máy) thay vì ~2 GB per-process, `cpu_core_seconds` null. Score/safe của call này vẫn đúng
-(nó success). Dòng resource của nó bị filter `machine_wide` của commit `ce80d3a` loại khỏi
-mọi trung bình — kiểm chứng: ô này trong summary báo `avg_ram_gb = 1.90`, không phải 118.7.
-Run seed 43 chạy *sau* `ce80d3a` nên summary đã sạch sẵn, không có việc phải làm.
+**4 SLM (1,600 records):** mọi null `safe`/`score` trùng đúng call non-answer, không thừa
+không thiếu (llama 9, qwen 51, deepseek 62, phi3 115). Mỗi model có **đúng 1 dòng
+`resource_attribution == "machine_wide"`** (RAM toàn máy, `cpu_core_seconds` null) — bị
+filter `ce80d3a` loại khỏi trung bình tài nguyên, `score`/`safe` của các call đó vẫn hợp lệ.
+Giống hệt seed 42 (khi đó phân bố machine_wide là qwen 3 / deepseek 2 / phi3 2 / llama 0).
+
+**1 dòng `machine_wide` của gpt-oss:20b:** call `SecurityEval / static_nopersona_nosafety /
+seceval_CWE-215_codeql_1.py` — lần này là call **`success`** (seed 42 là `truncated`). RAM
+báo **118.7 GB** thay vì ~2 GB per-process. Filter `ce80d3a` đã loại nó; summary báo
+`avg_ram_gb = 1.90`. Không có việc phải làm.
 
 ---
 
@@ -347,11 +515,71 @@ bình thường.
   ```bash
   nvidia-smi -q -d ECC,ROW_REMAPPER
   ```
-  Nếu có `Pending` row-remap hoặc uncorrectable ECC count > 0 → GPU nghi lỗi phần cứng,
-  cân nhắc đổi pod và chạy lại gpt-oss:20b seed 43. Nếu ECC sạch → gần như chắc là transient,
-  giữ data này.
-- Nếu lần chạy 4 SLM seed 43 (chưa làm) lại thấy `illegal memory access` trên **cùng** pod
-  này → nâng mức nghi ngờ, xử lý như GPU lỗi.
+  Nếu có `Pending` row-remap hoặc uncorrectable ECC count > 0 → GPU nghi lỗi phần cứng.
+  Nếu ECC sạch → gần như chắc là transient, giữ data này.
+- **Cập nhật:** lần chạy 4 SLM seed 43 (2026-08-30/31) trên **cùng pod `ljsku2csqpmasd`**
+  **KHÔNG** thấy `illegal memory access` lần nào ở bất kỳ model nào trong 4 SLM. Điều này
+  nghiêng thêm về giả thuyết crash gpt-oss:20b là **transient / đặc thù MoE**, không phải
+  vùng nhớ A100 hỏng. (4 SLM có sự cố khác — qwen GPU-discovery timeout — nhưng đó là
+  watchdog/scheduling, không phải memory fault; xem mục ngay dưới.)
+
+---
+
+## Sự cố qwen GPU-discovery timeout
+
+### Chữ ký
+
+`report-output/ghost_agents/_failed_runs/qwen25_3b_seed43_20260831_0118/ollama_qwen25_3b.log`:
+
+```
+time=2026-08-30T15:34:18Z ... msg="inference compute" ... library=CUDA ... "NVIDIA A100 80GB PCIe"   <- GPU thấy bình thường lúc đầu
+time=2026-08-30T15:34:28Z ... msg="template selection" model=...qwen2.5:3b                            <- model nạp xong, chạy ~1h
+time=2026-08-30T15:46:08Z level=WARN source=runner.go:584
+    msg="llama-server GPU discovery watchdog timed out"
+    OLLAMA_LIBRARY_PATH="[/usr/local/lib/ollama /usr/local/lib/ollama/cuda_v12]"
+    extra_envs=map[CUDA_VISIBLE_DEVICES:0] error="context deadline exceeded"
+```
+
+`qwen25_3b.log` (orchestrator):
+
+```
+[WARNING] ... CyberBench ... call took 101.6s, 8.6x this model's 11.8s baseline (1/2 consecutive)
+[WARNING] ... CyberBench ... call took  84.4s, 7.2x this model's 11.8s baseline (2/2 consecutive)
+[GUARD TRIPPED] latency fail-fast: 2 consecutive calls at 6x+ ... baseline ...
+    This is the signature of a broken environment (e.g. GPU-less CPU fallback) ... stopping ...
+```
+
+Evaluator exit code **3**. `run_manifest_20260831_004305.json` ghi `qwen25_3b exit_code 3`.
+
+### Chuyện gì xảy ra
+
+qwen chạy bình thường ~2 benchmark đầu (SecurityEval, SecBench OK), rồi ở benchmark thứ 3
+(CyberBench) Ollama kích hoạt lại một vòng **GPU re-discovery** cho llama-server của qwen
+(cơ chế của Ollama 0.33.2 khi tải đổi) — dưới 4-way contention, vòng discovery này
+`context deadline exceeded` (watchdog timeout). Ollama không kill server mà để nó chạy
+tiếp ở trạng thái giảm hiệu năng → 2 call CyberBench kế tiếp mất 84–102 s (baseline 11.8 s).
+**Latency fail-fast guard** của evaluator (thêm ở seed-42-era) trip đúng thiết kế: 2 call
+liên tiếp ≥6× baseline = "môi trường hỏng, dừng ngay đừng đốt tiền".
+
+### Xử lý — bỏ data lần đó, chạy lại qwen SOLO
+
+- Data lần concurrent fail: giữ nguyên ở `_failed_runs/qwen25_3b_seed43_20260831_0118/`
+  (chỉ có `resource_timeseries` + 2 log; checkpoint chưa kịp đủ). **KHÔNG dùng, KHÔNG merge.**
+- qwen chạy lại **solo** 2026-08-31 01:20 UTC (không model nào khác trên GPU),
+  cùng lệnh + cùng 2 biến pin regime → 43 phút, exit 0, **400/400 call**.
+- File dùng cho paper: `benchmark_results/qwen25_3b/*_20260831_012052_seed43.json` +
+  `checkpoint_seed43.json`.
+
+### Hệ quả cho paper
+
+1. **qwen seed 43 đo dưới regime SOLO**, không phải 4-way như seed 42 và như 3 SLM còn lại
+   của seed 43. → ASR/TSR của qwen vẫn dùng bình thường (không phụ thuộc regime), nhưng
+   **mọi chỉ số efficiency của qwen seed 43 (latency, throughput, GPU%, cost) KHÔNG được
+   xếp cùng bảng 4-way**. Xem [Latency](#latency--chỉ-3-slm-concurrent-so-được-với-nhau).
+2. 3 SLM còn lại (llama, deepseek, phi3) thực tế chạy **3-way** sau 15:46, không phải 4-way.
+   Ghi chú "3-way concurrent (qwen failed at ~12 min)" cho bảng efficiency của chúng.
+3. Không có memory fault — đây là watchdog/scheduling timeout dưới contention, không phải
+   dấu hiệu GPU hỏng. Một câu trong limitations là đủ.
 
 ---
 
@@ -375,16 +603,35 @@ Xem [Sự cố CUDA](#sự-cố-cuda-illegal-memory-access). 4 call mất, đã 
 Call success ở `SecurityEval / static_nopersona_nosafety`. Filter của `ce80d3a` đã loại nó
 khỏi trung bình tài nguyên; summary báo `avg_ram_gb = 1.90`. Không còn việc phải làm.
 
-### 4. 4 SLM seed 43 chưa chạy — *đang mở*
+### 4. 4 SLM seed 43 — *ĐÃ XONG 2026-08-31*
 
-qwen25_3b, llama32_3b, deepseek_r1_1_5b, phi3_mini **chưa có data seed 43**. Xem
-[Việc còn lại](#việc-còn-lại).
+qwen25_3b, llama32_3b, deepseek_r1_1_5b, phi3_mini: **400/400 call mỗi model, đã push
+(`a267a73`)**. Chi tiết ở [Data 4 SLM seed 43](#data-đang-như-thế-nào--4-slm-seed-43).
+Hai chuyện phải khai báo trong paper:
+- **qwen đo solo** (concurrent fail → resume solo) → efficiency của qwen seed 43 không so
+  4-way. Xem [Sự cố qwen GPU-discovery](#sự-cố-qwen-gpu-discovery-timeout).
+- **phi3 mỏng:** 285/400 chấm được (cap 2048), 1 ô trống. qwen 2 ô trống ở ACSE-Eval.
+  Tổng 3 ô trống / 320 → đánh dấu "—".
+
+### 5. phi3 & qwen (4 SLM) độ mỏng do cap — *chấp nhận, giống seed 42*
+
+phi3 71% / qwen 87% call chấm được, cùng nguyên nhân cap thấp như seed 42 (phi3 292/400,
+qwen 343/400 ở seed 42). **Không nâng cap** — phá config-match. Khai báo `completion_rate`
+từng ô + sensitivity check chung với seed 42.
 
 ---
 
 ## Quyết định đã chốt
 
-**2026-08-29 — Giữ nguyên data gpt-oss:20b seed 43. Không chạy lại.**
+**2026-08-31 — Giữ nguyên toàn bộ data seed 43 (5/5 model). Không chạy lại model nào.**
+
+Lý do: cả 5 run **complete** (400/400 call mỗi model), **config-matched** với seed 42
+(`compare_seed_configs.py`: 5/5 "SAME EXPERIMENT", exit 0), **metric nhất quán** (ASR giữ
+dải sàn, TSR +2–5 điểm đồng đều ở cả 5 model). Các sự cố (8 crash CUDA gpt-oss → 4
+`http_error`; 1 GPU-discovery timeout qwen → đã bỏ data lần đó, chạy lại solo) đều cô lập
+sạch, không nhiễm aggregate metric.
+
+**2026-08-29 — (phần cũ) Giữ nguyên data gpt-oss:20b seed 43. Không chạy lại.**
 
 Lý do: run **complete** (400/400 call, 80/80 cell, 10/10 benchmark), **config-matched** với
 seed 42 (chỉ khác `seed`), **metric nhất quán** (overall ASR 0.88% vs 0.84%, TSR 73.4% vs
@@ -402,6 +649,9 @@ chắc chắn ra data tương đương — vì phải giữ `num_predict=4096` �
 | 8 crash CUDA → 4 `http_error` | Cô lập sạch (abort + respawn), aggregate metric bám seed 42; 4/400 call = 1% |
 | ASR≠0 ở 2 ô lẻ, khác hướng seed 42 | Noise-level (1–2 misclassification/~1,600 call); ASR ở sàn ở mọi approach |
 | Latency seed 43 chậm hơn seed 42 ~30% | Do Ollama 0.33.2 + 8 lần nạp lại model; chỉ số tài nguyên gpt-oss:20b vốn đã để riêng |
+| **4 SLM:** qwen đo solo thay vì 4-way | ASR/TSR không phụ thuộc regime; efficiency của qwen seed 43 khai báo "solo, not comparable" hoặc dùng số seed 42 |
+| **4 SLM:** llama/deepseek/phi3 thực tế chạy 3-way (qwen rớt sau ~12 phút) | Ghi chú "3-way concurrent" cho bảng efficiency của 3 model này |
+| **4 SLM:** phi3 285/400, qwen 349/400 chấm được; 3 ô trống | Cùng nguyên nhân cap như seed 42; 3/320 ô trống → "—", `completion_rate` từng ô |
 
 ### Phải khai báo trong paper (bổ sung cho checklist của `SEED42_DATA_LEDGER.md`)
 
@@ -410,66 +660,72 @@ Giữ nguyên 8 mục trong `SEED42_DATA_LEDGER.md` §"Phải khai báo". Seed 4
 9. **8 crash CUDA `illegal memory access` trong run gpt-oss:20b seed 43** → 4 call
    `http_error`, loại khỏi ASR/TSR. Một câu trong limitations là đủ; nêu rõ đã kiểm tra
    aggregate metric bám sát seed 42 nên không nhiễm phần còn lại.
-10. **Completion gpt-oss:20b theo seed:** seed 42 = 81%, seed 43 = 76%. Đưa `completion_rate`
-    từng ô từng seed vào appendix. Sensitivity check chung cho cả hai seed (ASR/TSR có/không
-    các ô n<5).
+10. **Completion theo seed:** gpt-oss:20b 81%→76%; 4 SLM seed 43: llama 98%, qwen 87%,
+    deepseek 85%, phi3 71%. Đưa `completion_rate` từng ô từng seed vào appendix. Sensitivity
+    check chung cho cả hai seed (ASR/TSR có/không các ô n<5).
 11. **ASR của gpt-oss:20b ở mức sàn, không định vị được theo benchmark.** seed 42: ASR≠0
     chỉ ở SecurityEval (safety-off). seed 43: ASR≠0 chỉ ở LLMSecEval + CyberBench (safety-on),
     SecurityEval = 0. Trình bày như "ASR ≈ 0 ở mọi approach; ô ASR≠0 lẻ tẻ là single
     misclassification" — **không** vẽ hiệu ứng theo nhánh ablation từ chúng.
 12. **Ô `ACSE-Eval / ephemeral_nopersona_nosafety` không có data ở CẢ hai seed** cho
-    gpt-oss:20b. Đánh dấu "—" trong bảng, không nội suy.
+    gpt-oss:20b. Đánh dấu "—" trong bảng, không nội suy. Thêm 3 ô trống 4 SLM seed 43:
+    qwen `ACSE-Eval/static_persona_safety_filter` (trùng seed 42), qwen `ACSE-Eval/suicide`,
+    phi3 `SECURE/static_nopersona_nosafety`.
+13. **qwen25_3b seed 43 đo dưới regime SOLO**, không phải 4-way concurrent (lần concurrent
+    fail vì `llama-server GPU discovery watchdog timed out`, đã bỏ data lần đó). ASR/TSR dùng
+    bình thường; efficiency của qwen seed 43 KHÔNG xếp cùng bảng 4-way. Ngoài ra llama/
+    deepseek/phi3 seed 43 chạy **3-way** (không phải 4-way) vì qwen rớt sau ~12 phút.
+14. **`llama32_3b / static_persona_nosafety` ASR 18% (n=5) ở seed 43** — cao lệch so với các
+    ô khác. Đối chiếu seed 42 + McNemar cấp prompt trước khi nói bất cứ điều gì về nhánh
+    `persona`; nhiều khả năng là noise cấp classifier (llama overall ASR 6% cả hai seed).
 
 ---
 
 ## Việc còn lại
 
-Phạm vi: **2 seeds**. Tiến độ: seed 42 = 5/5 model, seed 43 = **1/5 model** (chỉ gpt-oss:20b).
+Phạm vi: **2 seeds × 5 model = 4,000 call. ĐÃ ĐỦ 100%.**
 
 | | Calls | Trạng thái |
 |---|---|---|
 | seed 42, 5 model | 2,000 | Xong, đã push |
-| seed 43, gpt-oss:20b solo | 400 | **Xong, đã push (`d745ce8`)** |
-| seed 43, 4 SLM concurrent | 1,600 | **Chưa chạy** |
-| **Tổng phạm vi** | **4,000** | **2,400 / 4,000 = 60%** |
+| seed 43, gpt-oss:20b solo | 400 | Xong, đã push (`d745ce8`) |
+| seed 43, 4 SLM (3 concurrent + qwen solo) | 1,600 | **Xong, đã push (`a267a73`)** |
+| **Tổng phạm vi** | **4,000** | **4,000 / 4,000 = 100%** |
 
-Còn lại: **4 SLM seed 43**, ~7h, ~$10 ở $1.39/h.
+**Không còn run nào phải chạy.** Việc còn lại là **phân tích/viết**, không phải thu data:
 
-### Lệnh chạy 4 SLM seed 43 — PHẢI pin hai biến
+1. **Cross-seed aggregation** — average seed 42 + seed 43 (`mean ± std`) cho ASR/TSR từng
+   `(model, approach, benchmark)`. Config đã xác nhận match (5/5 "SAME EXPERIMENT").
+2. **Sensitivity check** — ASR/TSR có/không các ô n<5, chung cho cả 2 seed.
+3. **McNemar cấp prompt** cho các ô ASR≠0 đáng nghi (đặc biệt `llama32_3b /
+   static_persona_nosafety` 18%).
+4. **Bảng efficiency** — xử lý đúng regime: qwen seed 43 solo (không xếp 4-way), llama/
+   deepseek/phi3 seed 43 3-way, gpt-oss:20b luôn solo. Cân nhắc chỉ dùng seed 42 cho bảng
+   efficiency vì nó là 4-way "sạch".
+5. **`nvidia-smi -q -d ECC,ROW_REMAPPER`** — vẫn nên chạy lần restart pod tới để đóng hồ sơ
+   sự cố CUDA gpt-oss (dù 4 SLM sau đó không tái hiện lỗi trên cùng pod).
 
-Seed 43 chỉ có nghĩa nếu **cùng một thí nghiệm** với seed 42. Commit `5513406` thêm retry +
-nhân đôi timeout cho reasoning model; chạy 4 SLM bằng code hiện tại (không pin) sẽ khiến
-deepseek chạy `600s + retry` thay vì `300s + không retry` như seed 42.
+### (Lịch sử) Lệnh đã dùng để chạy 4 SLM seed 43 — pin hai biến
+
+Giữ lại để tham chiếu. Seed 43 chỉ có nghĩa nếu **cùng một thí nghiệm** với seed 42; commit
+`5513406` thêm retry + nhân đôi timeout cho reasoning model, nên phải pin về regime seed 42:
 
 ```bash
-# Sau pod restart: dựng lại môi trường trước (xem SEED42_DATA_LEDGER.md §"Vận hành"),
-# nhớ:  pip install -r requirements.txt   (compare_seed_configs.py cần `tqdm` — chỉ có trong requirements)
-#       git config --global credential.helper 'store --file=/workspace/.git-credentials'
-# và:   nvidia-smi -q -d ECC,ROW_REMAPPER   (hệ quả của sự cố CUDA seed 43 — xem mục trên)
-
 EPD_CALL_RETRIES=0 \
 EPD_REASONING_TIMEOUT_MULT=1.0 \
 python3 -u run_concurrent_experiment.py \
   --models qwen25_3b llama32_3b deepseek_r1_1_5b phi3_mini \
   --seeds 43 --pod-hourly-usd 1.39
-
-# verify sau khi xong:
-python3 analysis/compare_seed_configs.py     # exit 1 nếu bất kỳ model nào lệch seed 42
 ```
 
-Với qwen/llama/phi3 hai biến `EPD_*` là **no-op** (seed 42 không có call `empty`/`timeout`).
-Chúng chỉ giữ **deepseek** đúng regime seed 42 — cái giá là deepseek sẽ lại mất ~55 call do
-contention. Đó là đánh đổi có chủ đích: một seed 43 "tốt hơn" nhưng không so được với seed 42
-thì vô dụng cho `mean ± std`.
+Kết quả thực tế: llama/deepseek/phi3 chạy một lần xong (exit 0). qwen `exit 3` vì
+GPU-discovery watchdog timeout → chạy lại **solo** cùng lệnh (chỉ `--models qwen25_3b`),
+xong 43 phút. `compare_seed_configs.py` sau đó xác nhận 5/5 "SAME EXPERIMENT".
 
-**gpt-oss:20b thì KHÔNG chạy lại** (đã xong). Nếu vì lý do gì phải chạy lại: giữ nguyên
-`EPD_CALL_RETRIES=1`, `EPD_REASONING_TIMEOUT_MULT=2.0`, `num_predict=4096` (mặc định code
-đã đúng — **không** set `EPD_*` về 0/1.0), chạy solo.
-
-Đường cắt phạm vi nếu không đủ budget: xem `SEED42_DATA_LEDGER.md` §"Việc còn lại" —
-(1) chốt gpt-oss:20b ở single-seed (đã có seed 42+43, nên mục này **không còn áp dụng** cho
-gpt-oss:20b), (2) chốt toàn bộ ở single-seed + thống kê cấp prompt (McNemar/paired trong
-một seed).
+**Nếu vì lý do gì phải chạy lại một model 4 SLM:** dùng đúng 2 biến `EPD_*` trên. Với
+qwen/llama/phi3 chúng là no-op; chỉ giữ deepseek đúng regime (deepseek sẽ lại mất ~55–60
+call do contention — đánh đổi có chủ đích). **gpt-oss:20b KHÔNG set `EPD_*` về 0/1.0** —
+nó cần `EPD_CALL_RETRIES=1`, `EPD_REASONING_TIMEOUT_MULT=2.0`, chạy solo.
 
 ---
 
@@ -486,21 +742,28 @@ Riêng cho seed 43:
   (không phải pod) thì `pip install tqdm` trước, hoặc diff tay block `config` như mục
   [So sánh](#so-sánh-seed-42--seed-43).
 - `nvidia-smi -q -d ECC,ROW_REMAPPER` là bước **bắt buộc mới** lần restart tới, do sự cố CUDA.
-- pytest hiện là **41 tests** (seed-42 ledger ghi 23 — đã tăng qua `984ff40`/`5513406`/`ce80d3a`).
+- **latency fail-fast guard** của evaluator sẽ `exit 3` nếu 2 call liên tiếp ≥6× baseline —
+  đây là cơ chế đã cứu run qwen concurrent khỏi đốt tiền vào môi trường hỏng. Gặp exit 3:
+  đọc `run_logs/ollama_<model>.log` tìm `GPU discovery watchdog timed out`, dời data lần đó
+  vào `_failed_runs/`, chạy lại model đó **solo**.
+- pytest: seed-42 ledger ghi 23, sau `984ff40`/`5513406`/`ce80d3a` là **41 tests** (chạy
+  được trên pod có `-r requirements.txt`; môi trường volume trần không có `pytest`).
 
 ---
 
 ## Đã vào git
 
-Đã push lên `origin/runpod-results-slm`.
+Đã push lên `origin/runpod-results-slm` (local HEAD == remote).
 
 | Commit | Nội dung |
 |---|---|
-| `d745ce8` | **Kết quả gpt-oss:20b solo seed 43** — `benchmark_eval` + `benchmark_summary` (bản model + bản combined) + `multi_seed_summary` + `checkpoint_seed43` + `resource_timeseries` + `run_manifest` (8 files) |
-| (commit này) | `SEED43_DATA_LEDGER.md` — tài liệu này |
+| `d745ce8` | **Kết quả gpt-oss:20b solo seed 43** — `benchmark_eval` + `benchmark_summary` (model + combined) + `multi_seed_summary` + `checkpoint_seed43` + `resource_timeseries` + `run_manifest` (8 files) |
+| `21d8df9` | `SEED43_DATA_LEDGER.md` — bản đầu (chỉ gpt-oss:20b) |
+| `a267a73` | **Kết quả 4 SLM seed 43** — 4× (`benchmark_eval` + `benchmark_summary` model + combined + `checkpoint_seed43`) + 4× `multi_seed_summary` + 2× `run_manifest` + `resource_timeseries` 4 model + `_failed_runs/qwen25_3b_seed43_20260831_0118/` (33 files) |
+| (commit này) | `SEED43_DATA_LEDGER.md` — cập nhật cho 4 SLM + sự cố qwen GPU-discovery |
 
 Marker trên volume (không trong repo): `/workspace/SEED43_GPTOSS_RUN_COMPLETE_20260829_064135.md`,
-`/workspace/watch_seed43_gptoss.log`.
+`/workspace/watch_seed43_gptoss.log`. **4 SLM seed 43 không có marker file.**
 
 Xem thêm: [`SEED42_DATA_LEDGER.md`](SEED42_DATA_LEDGER.md) (seed đầu, đầy đủ phương pháp +
 lịch sử sự cố), [`SESSION_STATUS_2026-08-27.md`](SESSION_STATUS_2026-08-27.md).
