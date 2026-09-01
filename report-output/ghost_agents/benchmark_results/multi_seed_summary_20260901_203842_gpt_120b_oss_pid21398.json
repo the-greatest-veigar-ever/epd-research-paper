@@ -1,0 +1,207 @@
+{
+  "seeds": [
+    43
+  ],
+  "n_seeds": 1,
+  "per_benchmark": {
+    "SecurityEval": {
+      "gpt_120b_oss_static": {
+        "asr_mean": 0.0,
+        "asr_std": 0.0,
+        "tsr_mean": 1.0,
+        "tsr_std": 0.0,
+        "avg_cpu_percent_mean": 15.95,
+        "avg_ram_gb_mean": 110.491,
+        "avg_gpu_percent_mean": 21.48,
+        "avg_gpu_mem_used_gb_mean": 60.692,
+        "throughput_tasks_per_s_mean": 0.0136,
+        "total_cost_usd_mean": 0.8159,
+        "avg_init_latency_mean": 0.0,
+        "avg_inference_latency_mean": 73.4341,
+        "n_seeds": 1,
+        "asr_display": "0.00$\\pm$0.00",
+        "tsr_display": "100.00$\\pm$0.00"
+      }
+    },
+    "LLMSecEval": {
+      "gpt_120b_oss_static": {
+        "asr_mean": 0.0,
+        "asr_std": 0.0,
+        "tsr_mean": 1.0,
+        "tsr_std": 0.0,
+        "avg_cpu_percent_mean": 15.07,
+        "avg_ram_gb_mean": 110.355,
+        "avg_gpu_percent_mean": 21.32,
+        "avg_gpu_mem_used_gb_mean": 60.692,
+        "throughput_tasks_per_s_mean": 0.0132,
+        "total_cost_usd_mean": 0.8437,
+        "avg_init_latency_mean": 0.0,
+        "avg_inference_latency_mean": 75.9352,
+        "n_seeds": 1,
+        "asr_display": "0.00$\\pm$0.00",
+        "tsr_display": "100.00$\\pm$0.00"
+      }
+    },
+    "SecBench": {
+      "gpt_120b_oss_static": {
+        "asr_mean": 0.0,
+        "asr_std": 0.0,
+        "tsr_mean": 0.5,
+        "tsr_std": 0.0,
+        "avg_cpu_percent_mean": 20.83,
+        "avg_ram_gb_mean": 127.629,
+        "avg_gpu_percent_mean": 19.74,
+        "avg_gpu_mem_used_gb_mean": 60.692,
+        "throughput_tasks_per_s_mean": 0.0437,
+        "total_cost_usd_mean": 0.2545,
+        "avg_init_latency_mean": 0.0,
+        "avg_inference_latency_mean": 22.9048,
+        "n_seeds": 1,
+        "asr_display": "0.00$\\pm$0.00",
+        "tsr_display": "50.00$\\pm$0.00"
+      }
+    },
+    "CyberSecEval": {
+      "gpt_120b_oss_static": {
+        "asr_mean": 0.0,
+        "asr_std": 0.0,
+        "tsr_mean": 0.9,
+        "tsr_std": 0.0,
+        "avg_cpu_percent_mean": 21.79,
+        "avg_ram_gb_mean": 136.018,
+        "avg_gpu_percent_mean": 21.82,
+        "avg_gpu_mem_used_gb_mean": 60.692,
+        "throughput_tasks_per_s_mean": 0.0436,
+        "total_cost_usd_mean": 0.2551,
+        "avg_init_latency_mean": 0.0,
+        "avg_inference_latency_mean": 22.9572,
+        "n_seeds": 1,
+        "asr_display": "0.00$\\pm$0.00",
+        "tsr_display": "90.00$\\pm$0.00"
+      }
+    },
+    "CyberBench": {
+      "gpt_120b_oss_static": {
+        "asr_mean": 0.0,
+        "asr_std": 0.0,
+        "tsr_mean": 0.7,
+        "tsr_std": 0.0,
+        "avg_cpu_percent_mean": 15.15,
+        "avg_ram_gb_mean": 133.746,
+        "avg_gpu_percent_mean": 20.57,
+        "avg_gpu_mem_used_gb_mean": 60.692,
+        "throughput_tasks_per_s_mean": 0.0094,
+        "total_cost_usd_mean": 1.1826,
+        "avg_init_latency_mean": 0.0,
+        "avg_inference_latency_mean": 106.4385,
+        "n_seeds": 1,
+        "asr_display": "0.00$\\pm$0.00",
+        "tsr_display": "70.00$\\pm$0.00"
+      }
+    },
+    "HarmBench": {
+      "gpt_120b_oss_static": {
+        "asr_mean": 0.0,
+        "asr_std": 0.0,
+        "tsr_mean": 1.0,
+        "tsr_std": 0.0,
+        "avg_cpu_percent_mean": 13.27,
+        "avg_ram_gb_mean": 98.982,
+        "avg_gpu_percent_mean": 15.43,
+        "avg_gpu_mem_used_gb_mean": 60.692,
+        "throughput_tasks_per_s_mean": 0.2804,
+        "total_cost_usd_mean": 0.0396,
+        "avg_init_latency_mean": 0.0,
+        "avg_inference_latency_mean": 3.5669,
+        "n_seeds": 1,
+        "asr_display": "0.00$\\pm$0.00",
+        "tsr_display": "100.00$\\pm$0.00"
+      }
+    },
+    "FORMAI": {
+      "gpt_120b_oss_static": {
+        "asr_mean": 0.0,
+        "asr_std": 0.0,
+        "tsr_mean": 0.84,
+        "tsr_std": 0.0,
+        "avg_cpu_percent_mean": 12.46,
+        "avg_ram_gb_mean": 116.571,
+        "avg_gpu_percent_mean": 20.77,
+        "avg_gpu_mem_used_gb_mean": 60.693,
+        "throughput_tasks_per_s_mean": 0.015,
+        "total_cost_usd_mean": 0.7407,
+        "avg_init_latency_mean": 0.0,
+        "avg_inference_latency_mean": 66.6629,
+        "n_seeds": 1,
+        "asr_display": "0.00$\\pm$0.00",
+        "tsr_display": "84.00$\\pm$0.00"
+      }
+    },
+    "ACSE-Eval": {
+      "gpt_120b_oss_static": {
+        "asr_mean": null,
+        "asr_std": null,
+        "tsr_mean": null,
+        "tsr_std": null,
+        "avg_cpu_percent_mean": 12.64,
+        "avg_ram_gb_mean": 105.543,
+        "avg_gpu_percent_mean": 20.42,
+        "avg_gpu_mem_used_gb_mean": 60.692,
+        "throughput_tasks_per_s_mean": 0.0087,
+        "total_cost_usd_mean": 1.2735,
+        "avg_init_latency_mean": 0.0,
+        "avg_inference_latency_mean": 114.6189,
+        "n_seeds": 0,
+        "asr_display": "-",
+        "tsr_display": "-"
+      }
+    },
+    "CyberSOCEval": {
+      "gpt_120b_oss_static": {
+        "asr_mean": 0.0,
+        "asr_std": 0.0,
+        "tsr_mean": 0.66,
+        "tsr_std": 0.0,
+        "avg_cpu_percent_mean": 12.91,
+        "avg_ram_gb_mean": 111.993,
+        "avg_gpu_percent_mean": 19.16,
+        "avg_gpu_mem_used_gb_mean": 60.692,
+        "throughput_tasks_per_s_mean": 0.0402,
+        "total_cost_usd_mean": 0.2762,
+        "avg_init_latency_mean": 0.0,
+        "avg_inference_latency_mean": 24.858,
+        "n_seeds": 1,
+        "asr_display": "0.00$\\pm$0.00",
+        "tsr_display": "66.00$\\pm$0.00"
+      }
+    },
+    "SECURE": {
+      "gpt_120b_oss_static": {
+        "asr_mean": null,
+        "asr_std": null,
+        "tsr_mean": null,
+        "tsr_std": null,
+        "avg_cpu_percent_mean": 12.59,
+        "avg_ram_gb_mean": 113.621,
+        "avg_gpu_percent_mean": 21.27,
+        "avg_gpu_mem_used_gb_mean": 60.693,
+        "throughput_tasks_per_s_mean": 0.0088,
+        "total_cost_usd_mean": 1.2594,
+        "avg_init_latency_mean": 0.0,
+        "avg_inference_latency_mean": 113.3417,
+        "n_seeds": 0,
+        "asr_display": "-",
+        "tsr_display": "-"
+      }
+    }
+  },
+  "per_approach_overall": {
+    "gpt_120b_oss_static": {
+      "avg_asr_mean": 0.0,
+      "avg_asr_std_across_benchmarks": 0.0,
+      "avg_tsr_mean": 0.825,
+      "avg_tsr_std_across_benchmarks": 0.1875,
+      "benchmarks_tested": 8
+    }
+  }
+}
