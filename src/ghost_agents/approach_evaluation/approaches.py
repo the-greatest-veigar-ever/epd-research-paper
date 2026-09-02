@@ -159,18 +159,24 @@ WORD_BUDGET_RATIO = float(os.environ.get("EPD_WORD_BUDGET_RATIO", "0.7"))
 # LLM tier (llama3.3:70b, gpt-oss:120b): NOT independently calibrated --
 # both exceed this machine's 48GB RAM, so no local run was possible against
 # either of them directly.
-#   - gpt-oss:120b is set to match its smaller same-family sibling
-#     gpt-oss:20b's *empirically observed* need (3072, see above) rather
-#     than a standalone guess: OpenAI released 20b/120b as the same
-#     training recipe at different scale, so the 20b finding is a
-#     meaningfully stronger signal here than generic model-size reasoning
-#     -- but it is still not a direct measurement of the 120b model.
+#   - gpt-oss:120b: 3072 -> 8192 (2026-09-02). The 3072 value (copied from
+#     gpt-oss:20b's observed need) was verified on the pod in the
+#     2026-09-01 LLM-baseline chain and found too low: 14/50 calls per seed
+#     hit the cap mid-answer (done_reason=length), wiping ACSE-Eval and
+#     SECURE entirely (n=0 both seeds) and thinning CyberBench. The 120b
+#     writes far longer answers than the 20b -- successful calls reached
+#     ~3000 tokens and the capped ones were still mid-answer at 3072 with
+#     ~10-13k chars emitted. Raised to 8192 (num_ctx is 8192 and prompts
+#     run <2k tokens, so there is room). Both seeds re-run at 8192.
 #   - llama3.3:70b is left at the original reasoned value (1024), by loose
 #     analogy to its non-reasoning family-mate llama3.2:3b (zero failures,
 #     comfortable margin at the same cap) -- weaker evidence, since 3.2 and
 #     3.3 are different generations, not a scaled sibling pair.
-# Verify both with a real run on the RunPod pod; watch `truncated`/
-# `length_capped`/`data_quality_warning`.
+# gpt-oss:120b was verified on the pod (2026-09-01) and recalibrated
+# 3072 -> 8192; llama3.3:70b still rests on the loose 3.2:3b analogy --
+# its 2026-09-01 run capped only 2/100 calls (ACSE-Eval seed 42), so 1024
+# holds for now. Keep watching `truncated`/`length_capped`/
+# `data_quality_warning`.
 MODEL_NUM_PREDICT: Dict[str, int] = {
     # SLM tier -- calibrated (see above).
     "phi3:mini": 2048,
@@ -193,7 +199,7 @@ MODEL_NUM_PREDICT: Dict[str, int] = {
     # here must then hold for every later seed.
     "gpt-oss:20b": 4096,
     # LLM tier -- see note above.
-    "gpt-oss:120b": 3072,
+    "gpt-oss:120b": 8192,   # 3072 -> 8192 (2026-09-02), see note above
     "llama3.3:70b": 1024,
 }
 
