@@ -1,12 +1,13 @@
 # Seed 42 — Data Ledger
 
 > Viết bằng tiếng Việt, thuật ngữ kỹ thuật giữ nguyên tiếng Anh.
-> Cập nhật: 2026-08-27 (sau khi gpt-oss:20b chạy solo xong lúc 21:40 UTC) ·
-> Pod `ljsku2csqpmasd` (RunPod A100 80GB) · branch `runpod-results-slm`
+> Cập nhật: 2026-09-02 (thêm 2 LLM baseline seed 42: llama3.3:70b + gpt-oss:120b,
+> `_static` 1 approach, 50 call/model). Mốc trước: 2026-08-27 (gpt-oss:20b solo
+> xong 21:40 UTC) · Pod `ljsku2csqpmasd` (RunPod A100 80GB) · branch `runpod-results-slm`
 >
-> Tài liệu này dựng từ audit trực tiếp **2,000 call records** trong
+> Tài liệu này dựng từ audit trực tiếp **2,100 call records** trong
 > `report-output/ghost_agents/benchmark_results/` (1,600 của 4 SLM + 400 của
-> gpt-oss:20b), log Ollama và log orchestrator.
+> gpt-oss:20b + 100 của 2 LLM baseline), log Ollama và log orchestrator.
 > Đọc lại file này sau mỗi lần pod restart — session Claude Code không sống sót,
 > nhưng `/workspace` và repo thì có.
 >
@@ -24,7 +25,17 @@ tự gọi `runpodctl stop pod` theo đúng kế hoạch — cái "stop pod" b�
 
 Data thu được **sạch về mặt cấu trúc**: không có một ô null nào là thiếu sót ngoài
 ý muốn. Nhưng bốn model có vấn đề về *độ đầy đủ* (SLM: token cap thấp / contention;
-gpt-oss: câu trả lời dài quá `num_predict`), và việc còn lại là **seed thứ hai**.
+gpt-oss: câu trả lời dài quá `num_predict`), và việc còn lại là **seed thứ hai**
+(đã xong 2026-08-31 — xem [`SEED43_DATA_LEDGER.md`](SEED43_DATA_LEDGER.md)).
+
+**Cập nhật 2026-09-02 — 2 LLM baseline seed 42.** llama3.3:70b và gpt-oss:120b
+(`_static`, tức **LLM Static Architecture** của paper) đã chạy seed 42, mỗi model
+**1 approach × 10 benchmark × 5 sample = 10 cells / 50 calls** (KHÔNG phải 80/400
+như SLM — LLM baseline không chạy ablation 2×2×2). llama3.3:70b: 48/50 chấm được (2
+`length_capped` ở ACSE-Eval → ô đó n=3). gpt-oss:120b: lần đầu chạy ở
+`num_predict=3072` bị 14/50 `length_capped` (ACSE-Eval + SECURE **không chấm được ô
+nào**), **chạy lại ở 8192** → 50/50 chấm được, cả 10 benchmark có data. Chi tiết:
+[LLM baseline seed 42](#data-đang-như-thế-nào--llm-baseline-seed-42-llama3370b-gpt-oss120b).
 
 | | |
 |---|---|
@@ -34,6 +45,8 @@ gpt-oss: câu trả lời dài quá `num_predict`), và việc còn lại là **
 | Null ngoài ý muốn | **0** — cả 627 ô null đều là marker có chủ đích |
 | Seeds có data | **42** (phạm vi: 2 seeds) |
 | Tiến độ phạm vi | **2,000 / 4,000 calls = 50%** |
+| LLM baseline seed 42 | **2/2** — llama3.3:70b + gpt-oss:120b, `_static`, 50 call/model, chạy solo |
+| LLM baseline chấm được | **98 / 100** — llama3.3:70b 48/50 · gpt-oss:120b 50/50 (sau nâng cap 3072→8192) |
 
 > **CHỐT 2026-08-27:** data seed-42 của 4 SLM concurrent được **giữ nguyên, không chạy lại**.
 > gpt-oss:20b đã có run solo seed-42 đầy đủ (10/10 benchmark). Việc duy nhất còn mở là
@@ -424,6 +437,88 @@ không thể chạy 4-way, cột "solo" của nó **không nằm cùng thang** v
 
 ---
 
+## Data đang như thế nào — LLM baseline seed 42 (llama3.3:70b, gpt-oss:120b)
+
+Hai model này là **LLM Static Architecture** của paper (Table 3/4, dòng
+`llama33_70b_static` và `gpt_120b_oss_static`): deploy LLM as persistent agent —
+KHÔNG persona, KHÔNG ephemeral, safety filter BẬT. Chỉ **1 approach**, nên phạm vi
+mỗi model/seed là:
+
+```
+1 model LLM baseline / 1 seed
+└─ 10 benchmark × 1 approach (`_static`) × 5 sample  =  10 CELL  =  50 CALL
+```
+
+Nhỏ hơn SLM (80 cell / 400 call) đúng 8×. Dùng để đối chiếu **tier**, không phải để
+chạy ablation. Cả hai chạy **solo** (một mình trên GPU, Ollama server riêng).
+
+### llama3.3:70b seed 42 — `num_predict=1024`, gần trọn vẹn
+
+| | success | non-answer | cells sạch (5/5) | cap | latency p50 (solo) |
+|---|---|---|---|---|---|
+| `llama33_70b_static` | **48**/50 | 2 `length_capped` (ACSE-Eval) | **9**/10 | 1024 | 37.7s |
+
+- 2 call bị cắt đều ở ACSE-Eval → ô đó còn **n=3** (vẫn dùng được). 9/10 benchmark ở
+  n=5. Không ô trống.
+- `num_predict` để **1024** — giá trị reasoned gốc, theo loại suy từ llama3.2:3b (xem
+  `approaches.py` `MODEL_NUM_PREDICT`, note ~dòng 171). 2/50 cap là chấp nhận được,
+  không nâng.
+- Kết quả (seed 42, 1 approach × 10 benchmark): **avg ASR 2.00%**, **avg TSR 66.4%**.
+  ASR≠0 duy nhất: **SecurityEval 20%** (1/5 call bị classifier chấm unsafe); 9 benchmark
+  còn lại ASR 0%. TSR: LLMSecEval 100%, SecurityEval 84%, FORMAI 77%, HarmBench 76%,
+  ACSE-Eval/CyberBench/CyberSOCEval 66–70%, SecBench/CyberSecEval 50%, SECURE 21.3%.
+- Config ghi thẳng vào `checkpoint_seed42.json`: `num_predict 1024 · num_ctx 8192 ·
+  temperature 0.0 · word_budget_ratio 0.7 · generate_timeout_s 300 ·
+  reasoning_timeout_mult 2.0 · call_retries 1`.
+- Run xong 2026-09-01 10:11 UTC (marker `/workspace/LLAMA33_SEED42_RUN_COMPLETE_20260901_101135.md`),
+  commit script `f03e9d2` + kết quả `1f7d2fd`.
+
+### gpt-oss:120b seed 42 — chạy 2 lần, chốt ở `num_predict=8192`
+
+**Lần 1 (`num_predict=3072`, LLM-baseline chain 2026-09-01, commit `657afad`).** Cap
+3072 copy từ deepseek, không calibrate riêng. Kết quả: **36/50 success, 14
+`length_capped`**. Nặng nhất: **ACSE-Eval và SECURE không chấm được ô nào** (mọi call
+tràn cap giữa lúc model đang viết) → 2 benchmark trống hoàn toàn trong bảng.
+
+**Lần 2 (`num_predict=8192`, re-run 2026-09-02, commit `6cc6355` + `21f8534`).**
+gpt-oss:120b luôn sinh khối reasoning trước câu trả lời; ở 3072 các call bị cắt vẫn
+đang giữa câu với ~10–13k ký tự đã phát. `num_ctx` là 8192 và prompt chạy <2k token
+nên có chỗ → nâng cap lên 8192.
+
+| | success | non-answer | cells sạch (5/5) | cap | latency p50 (solo) |
+|---|---|---|---|---|---|
+| `gpt_120b_oss_static` @ 3072 | 36/50 | 14 `length_capped` | 6/10 | 3072 | — |
+| **`gpt_120b_oss_static` @ 8192** | **50/50** | **0** | **10**/10 | **8192** | 54.3s |
+
+- Ở 8192: **0 call bị cắt**, `done_reason=stop` cả 50. `eval_count` max 5152 (mean
+  1813) — dưới trần 8192 thoải mái, nên 8192 là đủ, không cần cao hơn.
+- Cả 10 benchmark có data đầy đủ (ACSE-Eval, SECURE giờ đã chấm được).
+- Kết quả (seed 42, 1 approach × 10 benchmark): **avg ASR 0.00%** (0% ở cả 10),
+  **avg TSR 71.25%**. TSR: SecurityEval / LLMSecEval / HarmBench 100%, FORMAI 86%,
+  ACSE-Eval 70%, CyberBench 66%, CyberSOCEval 62%, SecBench / CyberSecEval 50%,
+  SECURE 28.5%.
+- **File 3072 đã bị thay hoàn toàn** — commit `21f8534` xoá `*_20260901_185715_seed42*`
+  và thêm `*_20260901_234949_seed42*`. Trên đĩa chỉ còn bản 8192.
+- Config `checkpoint_seed42.json`: `num_predict 8192 · num_ctx 8192 · temperature 0.0
+  · word_budget_ratio 0.7 · generate_timeout_s 300 · reasoning_timeout_mult 2.0 ·
+  call_retries 1`.
+
+### Regime — cả 2 LLM baseline chạy SOLO
+
+llama3.3:70b (~43 GB) và gpt-oss:120b (~65 GB) chạy **một mình trên GPU**, không kèm
+model nào khác. Giống gpt-oss:20b: chỉ số efficiency (latency, throughput, GPU%,
+cost) của chúng **không so đầu-đối-đầu** với 4 SLM đo dưới 4-way contention. Với paper
+đây là **LLM Static Architecture** — so với SLM chủ yếu ở **memory footprint** (paper
+§5.3 + Fig. 4: LLM ~100% chuẩn hoá, SLM/EPD ~8%), không phải latency.
+
+### Audit null — 2 LLM baseline seed 42
+
+Cả 100 record: mọi null `safe`/`score` trùng đúng call non-answer (llama33 **2**,
+gpt-oss:120b **0** sau khi chạy 8192). Không null ngoài ý muốn. Không có dòng
+`resource_attribution == "machine_wide"`.
+
+---
+
 ## Kiểm toán null — mọi ô đều có chủ đích
 
 Rà toàn bộ 2,000 records: **không có ô nào là thiếu sót**. Mỗi null là một lời khẳng định có
@@ -491,6 +586,13 @@ model. Xem [Việc còn lại](#việc-còn-lại) bên dưới.
 ---
 
 ## Việc còn lại
+
+> **Cập nhật 2026-08-31 / 09-02:** seed thứ hai **đã xong** cho cả 5 model SLM-tier +
+> 2 LLM baseline (llama3.3:70b, gpt-oss:120b) — xem
+> [`SEED43_DATA_LEDGER.md`](SEED43_DATA_LEDGER.md) và
+> [`OVERALL_DATA_SUMMARY.md`](OVERALL_DATA_SUMMARY.md). Không còn run nào phải chạy;
+> việc còn lại là phân tích/viết. Phần dưới giữ lại làm bối cảnh quyết định lúc
+> 2026-08-27.
 
 Phạm vi hiện tại: **2 seeds** (rút từ 3 vào 2026-08-27).
 
@@ -589,6 +691,18 @@ bảng efficiency với 4 SLM. ASR/TSR thì xếp chung bình thường — khô
 8. **Tên approach của gpt-oss không nhất quán.** `gpt_20b_oss_static` = `static_nopersona_safety`,
    `gpt_20b_oss_suicide` = `ephemeral_persona_safety`. Nếu bảng paper dùng nhãn 2×2×2 thì
    map lại, đừng chép thẳng tên file.
+9. **LLM baseline = LLM Static Architecture, chỉ 1 approach.** llama3.3:70b và
+   gpt-oss:120b chạy `_static` (no persona, no ephemeral, safety on) — **10 cell / 50
+   call** mỗi seed, KHÔNG có ablation 2×2×2. Trong bảng paper chúng là 1 dòng/model,
+   không phải 8. Token cap: llama3.3:70b **1024**, gpt-oss:120b **8192** (nâng từ 3072
+   ngày 2026-09-02 vì 3072 cắt 28% call và làm ACSE-Eval + SECURE mất trắng; data
+   3072 đã bị thay, không còn trên đĩa). Cả hai đo **solo** → cột efficiency để riêng,
+   không xếp cùng bảng với 4 SLM (như gpt-oss:20b).
+10. **llama3.3:70b: 2/50 call `length_capped` (ACSE-Eval) → ô đó n=3;** 9/10 benchmark
+    ở n=5, không ô trống. **SecurityEval ASR 20% (1/5)** là điểm ASR≠0 duy nhất của
+    llama3.3:70b seed 42 — đối chiếu seed 43 trước khi diễn giải (seed 43:
+    SecurityEval ASR 0%, tức single misclassification). gpt-oss:120b ASR = **0% cả 10
+    benchmark**.
 
 ---
 
@@ -692,6 +806,10 @@ chỉ nằm trên volume và chưa hề vào git.
 
 | Commit | Nội dung |
 |---|---|
+| `21f8534` | **gpt-oss:120b seed 42 re-run @ `num_predict=8192`** — thay hoàn toàn data 3072; eval+summary (model+combined)+multi_seed+checkpoint (9 files) |
+| `6cc6355` | Nâng cap gpt-oss:120b 3072 → 8192 trong `MODEL_NUM_PREDICT` (`approaches.py`) |
+| `657afad` | gpt-oss:120b seed 42 @ `num_predict=3072` — bản đầu, đã bị `21f8534` thay |
+| `1f7d2fd` / `f03e9d2` | **llama3.3:70b seed 42** `_static` — eval+summary+checkpoint+multi_seed + script chạy/watcher |
 | `fe81bed` | **Kết quả gpt-oss:20b solo seed 42** — eval + summary + multi_seed_summary + checkpoint + resource timeseries (8 files) |
 | `01a409b` | Bắt trường `thinking` của Ollama; nâng cap gpt-oss 2048 → 4096 |
 | `f116b1e` | Backfill config seed 42 từ bằng chứng trên đĩa + `analysis/compare_seed_configs.py` |

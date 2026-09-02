@@ -1,8 +1,9 @@
 # Seed 43 — Data Ledger
 
 > Viết bằng tiếng Việt, thuật ngữ kỹ thuật giữ nguyên tiếng Anh.
-> Cập nhật: 2026-08-31 (sau khi 4 SLM concurrent seed 43 chạy xong + qwen resume solo) ·
-> gpt-oss:20b solo phần cũ: 2026-08-29 · Pod `ljsku2csqpmasd` (RunPod A100 80GB) ·
+> Cập nhật: 2026-09-02 (thêm 2 LLM baseline seed 43: llama3.3:70b + gpt-oss:120b @
+> num_predict 8192). Mốc trước: 2026-08-31 (4 SLM concurrent + qwen resume solo) ·
+> gpt-oss:20b solo: 2026-08-29 · Pod `ljsku2csqpmasd` (RunPod A100 80GB) ·
 > branch `runpod-results-slm`
 >
 > Tài liệu này dựng từ audit trực tiếp **2,000 call records** của seed 43:
@@ -17,14 +18,15 @@
 > [`SEED42_DATA_LEDGER.md`](SEED42_DATA_LEDGER.md) — ở đây chỉ nhắc lại thật ngắn và tập
 > trung vào cái **mới/khác** của seed 43.
 >
-> **Trạng thái phạm vi: seed 43 ĐÃ ĐỦ 5/5 model — 2,000/2,000 call. Toàn bộ đề tài
-> 4,000/4,000 call (2 seeds × 5 model).**
+> **Trạng thái phạm vi: seed 43 ĐỦ 5/5 model SLM-tier (2,000/2,000 call) + 2 LLM
+> baseline `_static` (100/100 call). Toàn bộ đề tài: 2 seed × 7 model config =
+> 4,200/4,200 call = 100%.** Xem thêm [`OVERALL_DATA_SUMMARY.md`](OVERALL_DATA_SUMMARY.md).
 
 ---
 
 ## Tóm tắt
 
-**Seed 43 đã đủ 5/5 model, 2,000/2,000 call.** Hai đợt chạy:
+**Seed 43 đủ 5/5 model SLM-tier (2,000 call) + 2 LLM baseline (100 call).** Ba đợt chạy:
 
 1. **gpt-oss:20b solo** — xong 2026-08-29 06:41 UTC. 10/10 benchmark, 80/80 cells, 400/400 call,
    304 chấm được (76%). Chi tiết ở các mục dưới; phần này không đổi.
@@ -32,6 +34,11 @@
    mỗi model 400 call → 80/80 cells, 10/10 benchmark. **1,363/1,600 call chấm được (85%)**.
    qwen chết giữa chừng lần chạy concurrent (GPU-discovery watchdog timeout) rồi **chạy lại
    solo** và xong sạch — xem [Sự cố qwen GPU-discovery](#sự-cố-qwen-gpu-discovery-timeout).
+3. **2 LLM baseline `_static`** — llama3.3:70b (stage 1 của LLM-baseline chain
+   `20260901_180445`, xong 2026-09-01 18:40 UTC) + gpt-oss:120b (chain stage 4 @ 3072,
+   rồi **re-run @ 8192** xong 2026-09-02 01:43 UTC). Mỗi model 10 cell / 50 call.
+   llama33 50/50 chấm được; gpt-oss:120b 50/50 sau khi nâng cap. Chi tiết:
+   [LLM baseline seed 43](#data-đang-như-thế-nào--llm-baseline-seed-43-llama3370b-gpt-oss120b).
 
 Config cả 5 model khớp seed 42 (`compare_seed_configs.py`: **cả 5 "SAME EXPERIMENT"**, exit 0),
 nên hai seed **average được**. ASR/TSR bám sát seed 42 ở mọi model (xem
@@ -52,7 +59,8 @@ Khác biệt hạ tầng so với seed 42:
 | Null ngoài ý muốn | **0** — mọi ô null `safe`/`score` đều trùng đúng call non-answer (audit 5/5 model) |
 | Ô trống hoàn toàn (n=0) | **4** trên 400 ô — 1 gpt-oss (`ACSE-Eval/ephemeral_nopersona_nosafety`) + 2 qwen (ACSE-Eval) + 1 phi3 (`SECURE/static_nopersona_nosafety`) |
 | Sự cố hạ tầng | gpt-oss: 8 crash CUDA → 4 `http_error` · qwen: 1 GPU-discovery timeout → chạy lại solo. Cả hai cô lập, không lan |
-| Tiến độ phạm vi (2 seeds) | seed 42: 5/5 · seed 43: **5/5** — **4,000 / 4,000 call = 100%** |
+| LLM baseline seed 43 | **2/2** — llama3.3:70b 50/50 (@1024) · gpt-oss:120b 50/50 (@8192, re-run cả 2 seed). 10 cell / 50 call mỗi model, chạy solo |
+| Tiến độ phạm vi | seed 42: 7/7 config · seed 43: **7/7** — **4,200 / 4,200 call = 100%** (2,000 SLM-tier + 100 LLM baseline mỗi seed) |
 
 > **CHỐT 2026-08-31:** giữ nguyên toàn bộ data seed 43 (5/5 model). Không chạy lại model nào.
 > Tất cả run complete (400/400 call mỗi model), config-matched với seed 42, metric nhất quán.
@@ -358,6 +366,77 @@ cấp prompt nếu muốn nói gì về nhánh `persona`.
 
 ---
 
+## Data đang như thế nào — LLM baseline seed 43 (llama3.3:70b, gpt-oss:120b)
+
+Cùng định nghĩa với seed 42: **LLM Static Architecture** của paper, 1 approach
+`_static`, **10 cell / 50 call** mỗi model/seed (không ablation 2×2×2). Cả 2 chạy
+**solo**. Phương pháp đầy đủ:
+[`SEED42_DATA_LEDGER.md` §"LLM baseline seed 42"](SEED42_DATA_LEDGER.md).
+
+### llama3.3:70b seed 43 — `num_predict=1024`, trọn vẹn
+
+| | success | non-answer | cells sạch (5/5) | cap | latency p50 (solo) |
+|---|---|---|---|---|---|
+| `llama33_70b_static` | **50**/50 | 0 | **10**/10 | 1024 | 44.1s |
+
+- Sạch hơn seed 42 (seed 42: 2 `length_capped` ở ACSE-Eval → n=3; seed 43: không có).
+  10/10 ô n=5, không ô trống.
+- Chạy ở **stage 1** của LLM-baseline chain `20260901_180445` (2026-09-01 18:04→18:40
+  UTC, commit `958a6ba`). Chain verify: `VERIFY [PASS] llama33_70b seed43: 10/10
+  benchmarks, 10/10 cells, 50/50 calls | status={'success': 50}`.
+- Kết quả (1 approach × 10 benchmark): **avg ASR 0.00%** (0% cả 10), **avg TSR 70.8%**.
+  → seed 42 có SecurityEval ASR 20% (1 call), seed 43 = 0% → **1/50 vs 0/50 = noise
+  cấp classifier**, không phải hiệu ứng. TSR bám seed 42 (66.4% → 70.8%, +4.4 — cùng
+  hướng +2–5 điểm như mọi model khác giữa 2 seed).
+- Config khớp seed 42 **y hệt**: `num_predict 1024 · num_ctx 8192 · temperature 0.0 ·
+  word_budget_ratio 0.7 · generate_timeout_s 300 · reasoning_timeout_mult 2.0 ·
+  call_retries 1`. → average được.
+
+### gpt-oss:120b seed 43 — chạy 2 lần, chốt ở `num_predict=8192`
+
+Giống hệt câu chuyện seed 42.
+
+**Lần 1 (`num_predict=3072`, chain stage 4, 2026-09-01 19:46→20:38, commit `ae51050`).**
+**36/50 success, 14 `length_capped`** — **trùng đúng** con số seed 42 (36/14), và cũng
+**ACSE-Eval + SECURE mất trắng**. Đây là bằng chứng cap 3072 quá thấp có hệ thống,
+không phải xui một seed.
+
+**Lần 2 (`num_predict=8192`, re-run 2026-09-02 00:44→01:43, commit `2e4f203`).**
+
+| | success | non-answer | cells sạch (5/5) | cap | latency p50 (solo) |
+|---|---|---|---|---|---|
+| `gpt_120b_oss_static` @ 3072 | 36/50 | 14 `length_capped` | 6/10 | 3072 | — |
+| **`gpt_120b_oss_static` @ 8192** | **50/50** | **0** | **10**/10 | **8192** | 60.8s |
+
+- Ở 8192: 0 cắt, `done_reason=stop` cả 50. `eval_count` max 5363 (mean 1985) — dưới
+  trần 8192.
+- Cả 10 benchmark có data (ACSE-Eval, SECURE giờ chấm được).
+- Kết quả (1 approach × 10 benchmark): **avg ASR 0.00%**, **avg TSR 75.0%**. TSR:
+  SecurityEval / LLMSecEval / HarmBench 100%, FORMAI 84%, CyberSecEval 80%,
+  ACSE-Eval / CyberBench 70%, CyberSOCEval / SecBench 50%, SECURE 29.8%. Bám seed 42
+  (71.25% → 74.98%, +3.7).
+- **File 3072 đã bị thay** — `2e4f203` xoá `*_20260901_194634_seed43*`, thêm
+  `*_20260902_004427_seed43*`. Trên đĩa chỉ còn 8192.
+- Config `checkpoint_seed43.json`: `num_predict 8192` (khớp seed 42 sau re-run) `·
+  num_ctx 8192 · temperature 0.0 · word_budget_ratio 0.7 · generate_timeout_s 300 ·
+  reasoning_timeout_mult 2.0 · call_retries 1`.
+
+> **Vì sao phải re-run CẢ 2 seed, không chỉ 1:** nâng cap chỉ ở 1 seed sẽ phá
+> config-match (seed 42 @ 3072 vs seed 43 @ 8192 → không average được). Re-run cả hai
+> ở 8192 giữ `compare_seed_configs.py` = "SAME EXPERIMENT". `num_predict` không nằm
+> trong `CONTENT_CONFIG_KEYS` (thứ đổi sampling); với greedy decode temp=0 nó chỉ mở
+> rộng trần độ dài — nên data 8192 là **siêu tập** của 3072 về phân phối câu trả lời,
+> không phải một thí nghiệm khác.
+
+### Audit null + regime
+
+- Cả 100 record seed 43: mọi null `safe`/`score` trùng call non-answer (llama33 **0**,
+  gpt-oss:120b **0** sau 8192). Không null ngoài ý muốn. Không có dòng `machine_wide`.
+- Cả 2 chạy **solo** → efficiency không so 4-way với SLM. Là **LLM Static
+  Architecture**, so với SLM chủ yếu ở memory footprint (paper §5.3, Fig. 4).
+
+---
+
 ## So sánh seed 42 ↔ seed 43
 
 ### Config — cùng một thí nghiệm
@@ -431,6 +510,19 @@ chứng mạnh nhất rằng crash chỉ làm mất 4 call, không nhiễm phầ
 ASR giữ dải sàn (2–6%), TSR +2–5 điểm đồng đều — **cùng hướng, cùng cỡ với gpt-oss:20b
 (+2.5)**. Không có model nào metric lệch bất thường → 1 GPU-discovery fail của qwen (đã
 bỏ data lần đó) + 8 crash CUDA của gpt-oss KHÔNG nhiễm sang phần còn lại.
+
+### Metric LLM baseline — nhất quán, ASR sàn
+
+| model | ASR 42→43 | TSR 42→43 | config match |
+|---|---|---|---|
+| `llama33_70b_static` | 2.0% → 0.0% | 66.4% → 70.8% | `num_predict=1024` cả 2 ✓ |
+| `gpt_120b_oss_static` | 0.0% → 0.0% | 71.25% → 74.98% | `num_predict=8192` cả 2 (sau re-run) ✓ |
+
+llama33 ASR 2.0%→0.0% = 1 call SecurityEval bị chấm unsafe ở seed 42, 0 ở seed 43 →
+noise cấp classifier, không phải tín hiệu. gpt-oss:120b ASR = **0.0% tuyệt đối cả 2
+seed × 10 benchmark** — LLM tier lớn + safety filter = sàn ASR. TSR +3–4 điểm cùng
+hướng với mọi model khác. → 2 LLM baseline average được cùng 5 model kia:
+**7 model config × 2 seed**.
 
 ---
 
@@ -678,24 +770,39 @@ Giữ nguyên 8 mục trong `SEED42_DATA_LEDGER.md` §"Phải khai báo". Seed 4
 14. **`llama32_3b / static_persona_nosafety` ASR 18% (n=5) ở seed 43** — cao lệch so với các
     ô khác. Đối chiếu seed 42 + McNemar cấp prompt trước khi nói bất cứ điều gì về nhánh
     `persona`; nhiều khả năng là noise cấp classifier (llama overall ASR 6% cả hai seed).
+15. **2 LLM baseline (llama3.3:70b, gpt-oss:120b) = LLM Static Architecture, 1
+    approach, 10 cell / 50 call mỗi seed.** Không ablation. `num_predict` của
+    gpt-oss:120b nâng 3072 → **8192** và **re-run CẢ hai seed** (2026-09-02) vì 3072
+    cắt 28% call và làm ACSE-Eval + SECURE mất trắng ở cả seed 42 lẫn 43 (36/50
+    success, 14 capped — trùng đúng cả hai seed). Data 3072 đã bị thay, không còn trên
+    đĩa. Bảng config paper phải ghi cap gpt-oss:120b = 8192, llama3.3:70b = 1024.
+16. **gpt-oss:120b ASR = 0% tuyệt đối** (cả 2 seed × 10 benchmark). llama3.3:70b ASR
+    2% seed 42 (1 call SecurityEval) → 0% seed 43. Trình bày LLM baseline như "ASR ở
+    sàn"; điểm 20%/ô lẻ của llama seed 42 là single misclassification, đối chiếu seed
+    43 = 0. Cả 2 LLM baseline đo **solo** → cột efficiency để riêng, không xếp cùng
+    bảng 4-way với SLM (nhất quán với gpt-oss:20b).
 
 ---
 
 ## Việc còn lại
 
-Phạm vi: **2 seeds × 5 model = 4,000 call. ĐÃ ĐỦ 100%.**
+Phạm vi: **2 seed × (5 model SLM-tier + 2 LLM baseline) = 4,000 + 200 call. ĐÃ ĐỦ 100%.**
 
 | | Calls | Trạng thái |
 |---|---|---|
-| seed 42, 5 model | 2,000 | Xong, đã push |
+| seed 42, 5 model SLM-tier | 2,000 | Xong, đã push |
 | seed 43, gpt-oss:20b solo | 400 | Xong, đã push (`d745ce8`) |
-| seed 43, 4 SLM (3 concurrent + qwen solo) | 1,600 | **Xong, đã push (`a267a73`)** |
-| **Tổng phạm vi** | **4,000** | **4,000 / 4,000 = 100%** |
+| seed 43, 4 SLM (3 concurrent + qwen solo) | 1,600 | Xong, đã push (`a267a73`) |
+| seed 42 + 43, llama3.3:70b `_static` @ 1024 | 2 × 50 | Xong, đã push (`f03e9d2`/`1f7d2fd`, `958a6ba`) |
+| seed 42 + 43, gpt-oss:120b `_static` @ 8192 | 2 × 50 | Xong, đã push (`21f8534`, `2e4f203`) |
+| **Tổng phạm vi** | **4,200** | **100%** |
 
 **Không còn run nào phải chạy.** Việc còn lại là **phân tích/viết**, không phải thu data:
 
 1. **Cross-seed aggregation** — average seed 42 + seed 43 (`mean ± std`) cho ASR/TSR từng
-   `(model, approach, benchmark)`. Config đã xác nhận match (5/5 "SAME EXPERIMENT").
+   `(model, approach, benchmark)`, cả **7 model config**. Config đã xác nhận match:
+   5/5 SLM-tier "SAME EXPERIMENT"; 2 LLM baseline khớp `num_predict` (llama33 1024/1024,
+   gpt-oss:120b 8192/8192 sau re-run).
 2. **Sensitivity check** — ASR/TSR có/không các ô n<5, chung cho cả 2 seed.
 3. **McNemar cấp prompt** cho các ô ASR≠0 đáng nghi (đặc biệt `llama32_3b /
    static_persona_nosafety` 18%).
@@ -760,7 +867,13 @@ Riêng cho seed 43:
 | `d745ce8` | **Kết quả gpt-oss:20b solo seed 43** — `benchmark_eval` + `benchmark_summary` (model + combined) + `multi_seed_summary` + `checkpoint_seed43` + `resource_timeseries` + `run_manifest` (8 files) |
 | `21d8df9` | `SEED43_DATA_LEDGER.md` — bản đầu (chỉ gpt-oss:20b) |
 | `a267a73` | **Kết quả 4 SLM seed 43** — 4× (`benchmark_eval` + `benchmark_summary` model + combined + `checkpoint_seed43`) + 4× `multi_seed_summary` + 2× `run_manifest` + `resource_timeseries` 4 model + `_failed_runs/qwen25_3b_seed43_20260831_0118/` (33 files) |
-| (commit này) | `SEED43_DATA_LEDGER.md` — cập nhật cho 4 SLM + sự cố qwen GPU-discovery |
+| `16f6796` | `SEED43_DATA_LEDGER.md` — cập nhật cho 4 SLM + sự cố qwen GPU-discovery |
+| `1f7d2fd` `f03e9d2` | **llama3.3:70b seed 42** `_static` — eval+summary+checkpoint+multi_seed + script (2026-09-01) |
+| `958a6ba` | **llama3.3:70b seed 43** `_static` — stage 1 của LLM-baseline chain `20260901_180445` |
+| `657afad` `ae51050` `998d322` | gpt-oss:120b seed 42/43 @ `num_predict=3072` (bản đầu, đã bị re-run 8192 thay) + chain catch-all |
+| `6cc6355` | Nâng cap gpt-oss:120b 3072 → 8192 (`approaches.py` `MODEL_NUM_PREDICT`) |
+| `21f8534` `2e4f203` | **gpt-oss:120b seed 42/43 re-run @ 8192** — thay hoàn toàn data 3072; eval+summary+multi_seed+checkpoint |
+| (commit này) | 2 ledger cập nhật cho LLM baseline (llama3.3:70b + gpt-oss:120b, seed 42 & 43) + thêm `OVERALL_DATA_SUMMARY.md` |
 
 Marker trên volume (không trong repo): `/workspace/SEED43_GPTOSS_RUN_COMPLETE_20260829_064135.md`,
 `/workspace/watch_seed43_gptoss.log`. **4 SLM seed 43 không có marker file.**
